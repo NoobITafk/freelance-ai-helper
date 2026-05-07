@@ -163,10 +163,10 @@ tail -f logs/bot.log
 
 # Автор
 
-Maks Blyshchyk
+NoobITafk
 
 GitHub:
-[MaksBlyshchyk GitHub](https://github.com/MaksBlyshchyk?utm_source=chatgpt.com)
+[NoobITafk GitHub](https://github.com/NoobITafk?utm_source=chatgpt.com)
 
 ---
 
