@@ -54,11 +54,9 @@ async def process_and_send_project(send_func, project: dict) -> bool:
     url = get_project_url(project, attributes)
 
     if not project_id:
-        logger.info("Skipped project without ID")
         return False
 
     if is_seen(project_id):
-        logger.info("Skipped seen project: %s", title)
         return False
 
     if not basic_filter(title, description):
@@ -66,69 +64,17 @@ async def process_and_send_project(send_func, project: dict) -> bool:
         return False
 
     numeric_bids_count = parse_bids_count(bids_count)
-
     if numeric_bids_count is not None and numeric_bids_count > MAX_BIDS_COUNT:
-        logger.info(
-            "Filtered by bids count: %s | bids=%s | max=%s",
-            title,
-            numeric_bids_count,
-            MAX_BIDS_COUNT,
-        )
         return False
 
-    project_text = f"""
-Назва: {title}
-Бюджет: {budget}
-Кількість ставок: {bids_count}
-Посилання: {url}
-
-Опис:
-{description}
-"""
-
-    loop = asyncio.get_running_loop()
-
-    try:
-        analysis_data = await asyncio.wait_for(
-            loop.run_in_executor(
-                None,
-                analyze_project_json,
-                project_text,
-            ),
-            timeout=AI_TIMEOUT_SECONDS,
-        )
-
-    except asyncio.TimeoutError:
-        logger.warning("Ollama timeout: %s", title)
-        return False
-
-    except Exception:
-        logger.exception("AI analysis error: %s", title)
-        return False
-
-    score = calculate_score(analysis_data)
-
-    bonus = learning_bonus(
-        title,
-        description,
-        get_good_bad_keywords(),
-    )
-
-    final_score = score + bonus
-    min_score = int(get_setting("min_score", "45"))
-
-    if final_score < min_score:
-        logger.info(
-            "Filtered by score: %s | score=%s | bonus=%s | final=%s | min=%s",
-            title,
-            score,
-            bonus,
-            final_score,
-            min_score,
-        )
-        return False
-
-    analysis = format_analysis(analysis_data)
+    useful = """
+- Python / Telegram Bot API
+- робота з API
+- бази даних / SQLite / PostgreSQL
+- парсинг даних
+- HTML / CSS / JavaScript
+- GitHub для показу коду
+""".strip()
 
     save_project(
         project_id=project_id,
@@ -137,25 +83,35 @@ async def process_and_send_project(send_func, project: dict) -> bool:
         budget=budget,
         bids_count=bids_count,
         url=url,
-        analysis=analysis,
+        analysis="AI ще не запускався",
     )
 
     message = f"""
-🆕 Новий проєкт
+🆕 Новий IT-проєкт
 
-📌 {title}
-💰 Бюджет: {budget}
-👥 Ставок: {bids_count}
-🎯 Score: {final_score}/100
-🔗 {url}
+📌 Назва:
+{title}
 
-{analysis}
-"""
+💰 Бюджет:
+{budget}
+
+👥 Ставок:
+{bids_count}
+
+📝 Опис:
+{description[:1200]}
+
+🛠 Що може знадобитись:
+{useful}
+
+🔗 Посилання:
+{url}
+""".strip()
 
     await send_func(
         message[:4000],
         reply_markup=project_keyboard(project_id),
     )
 
-    logger.info("Sent project: %s | score=%s", title, final_score)
+    logger.info("Sent project without AI: %s", title)
     return True

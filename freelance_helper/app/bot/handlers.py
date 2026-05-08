@@ -80,7 +80,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
     processed_count = 0
 
     for project in projects:
-        if processed_count >= 5:
+        if processed_count >= 20:
             break
 
         try:
@@ -134,7 +134,7 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
     processed_count = 0
 
     for project in projects:
-        if processed_count >= 5:
+        if processed_count >= 20:
             break
 
         try:
