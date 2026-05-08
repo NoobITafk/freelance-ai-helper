@@ -88,59 +88,38 @@ def normalize_analysis(data: dict) -> dict:
 
 def analyze_project_json(project_text: str) -> dict:
     prompt = f"""
-Ти аналізуєш фриланс-завдання для junior software developer.
+Ти аналізуєш фриланс-завдання для junior Software Engineer.
 
-Навички розробника:
-- Python
-- C#
-- HTML/CSS
-- SQL
-- Telegram bots
-- парсинг
-- Excel automation
-- проста автоматизація
-- базовий backend
-
-Не підходять:
-- графічний дизайн
-- логотипи
-- банери
-- листівки
-- Figma-only задачі
-- Photoshop/Illustrator
-- крипта, казино, трейдинг
-- складні ERP/CRM архітектури рівня senior
+Навички:
+- Python (FastAPI, створення API)
+- Бази даних (PostgreSQL, SQL)
+- Інфраструктура (Docker, Linux/Arch)
+- Telegram bots (python-telegram-bot)
+- Парсинг даних
+- Базовий Frontend (HTML, Tailwind CSS)
 
 Проєкт:
 {project_text}
 
-Оціни реалістично для junior-рівня.
-
-Поверни тільки JSON без markdown, без пояснень і без тексту навколо.
+Поверни тільки JSON без пояснень.
 
 Формат:
 {{
   "fit": "yes/partial/no",
   "summary": "коротка суть завдання",
-  "difficulty": 1,
-  "risk": 1,
-  "success_chance": 0,
+  "difficulty": число від 1 до 10,
+  "risk": число від 1 до 10,
+  "success_chance": число від 0 до 100,
   "competition": "low/medium/high/unknown",
   "budget_ok": "yes/partial/no/unknown",
-  "should_apply": false,
-  "reason": "короткий висновок",
+  "should_apply": true або false,
+  "reason": "коротко чому",
   "questions": ["питання 1", "питання 2", "питання 3"]
 }}
 """
 
-    raw = ask_ollama(
-        prompt=prompt,
-        temperature=0.2,
-        num_predict=ANALYSIS_NUM_PREDICT,
-    )
-
-    data = extract_json(raw)
-    return normalize_analysis(data)
+    raw = ask_ollama(prompt)
+    return extract_json(raw)
 
 
 def format_analysis(data: dict) -> str:
