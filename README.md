@@ -1,54 +1,95 @@
 # Freelance AI Helper
 
-AI Telegram-бот для автоматичного аналізу проєктів із Freelancehunt за допомогою локальної LLM-моделі через Ollama.
+**Freelance AI Helper** — це Telegram-бот для пошуку, фільтрації та AI-аналізу фриланс-проєктів із Freelancehunt.
+
+Бот отримує нові замовлення через Freelancehunt API, аналізує їх локально через Ollama, виставляє score, надсилає відповідні проєкти в Telegram і допомагає згенерувати ставку для клієнта.
 
 ---
 
-# Можливості
+## Можливості
 
-- автоматичний пошук нових проєктів;
-- аналіз проєктів через AI;
-- система score для оцінки складності та ризику;
+- отримання проєктів із Freelancehunt API;
+- автоматична перевірка нових проєктів;
+- AI-аналіз через локальну LLM-модель Ollama;
+- score-система для оцінки проєкту;
+- фільтрація неактуальних або ризикованих задач;
 - Telegram-сповіщення;
+- кнопки для взаємодії з проєктом;
 - генерація ставки для клієнта;
 - генерація уточнюючих питань;
-- система навчання через good/bad;
-- SQLite база даних;
-- система логів;
-- автоматична перевірка кожні 3 хвилини.
+- збереження проєктів у SQLite;
+- good/bad/skip система для простого навчання бота;
+- логування роботи в `logs/bot.log`.
 
 ---
 
-# Технології
+## Технології
 
 - Python
 - python-telegram-bot
+- Freelancehunt API
 - Ollama
 - SQLite
-- Freelancehunt API
+- requests
+- python-dotenv
 
 ---
 
-# Структура проєкту
+## Структура проєкту
 
 ```text
-app/
-├─ bot/
-├─ services/
-├─ ai_analyzer.py
-├─ config.py
-├─ database.py
-├─ freelancehunt_api.py
-├─ logger.py
-├─ rules.py
-└─ telegram_bot.py
+freelance_helper/
+├─ app/
+│  ├─ bot/
+│  │  ├─ handlers.py
+│  │  └─ keyboards.py
+│  ├─ services/
+│  │  └─ project_service.py
+│  ├─ ai_analyzer.py
+│  ├─ config.py
+│  ├─ database.py
+│  ├─ freelancehunt_api.py
+│  ├─ logger.py
+│  ├─ main.py
+│  ├─ rules.py
+│  └─ telegram_bot.py
+├─ data/
+├─ logs/
+├─ .env.example
+├─ .gitignore
+├─ README.md
+└─ requirements.txt
 ```
 
 ---
 
-# Встановлення
+## Як працює бот
 
-## 1. Клонування репозиторію
+1. Бот отримує список проєктів через Freelancehunt API.
+2. Спочатку застосовується швидкий keyword-фільтр.
+3. Якщо проєкт підходить за базовими словами, він передається в Ollama.
+4. AI оцінює:
+   - відповідність навичкам;
+   - складність;
+   - ризик;
+   - шанс виконання;
+   - конкуренцію;
+   - бюджет.
+5. Система рахує фінальний score.
+6. Якщо score достатній, бот надсилає проєкт у Telegram.
+7. Користувач може натиснути кнопки:
+   - `✅ Добрий`;
+   - `❌ Поганий`;
+   - `💬 Ставка`;
+   - `❓ Уточнення`;
+   - `🔁 Нова ставка`;
+   - `⏭ Пропустити`.
+
+---
+
+## Встановлення
+
+### 1. Клонування репозиторію
 
 ```bash
 git clone https://github.com/NoobITafk/freelance-ai-helper.git
@@ -57,119 +98,244 @@ cd freelance-ai-helper
 
 ---
 
-## 2. Створення virtual environment
+### 2. Створення virtual environment
 
 ```bash
 python -m venv venv
-source venv/bin/activate
 ```
 
 ---
 
-## 3. Встановлення залежностей
+### 3. Активація virtual environment
+
+#### Linux / Arch Linux
+
+```bash
+source venv/bin/activate
+```
+
+#### Windows
+
+```bash
+venv\Scripts\activate
+```
+
+---
+
+### 4. Встановлення залежностей
 
 ```bash
 pip install -r requirements.txt
 ```
 
+Якщо використовується автоперевірка через `job_queue`, встанови також:
+
+```bash
+pip install "python-telegram-bot[job-queue]"
+```
+
 ---
 
-## 4. Встановлення Ollama
+## Ollama
 
-Встановити Ollama:
+Бот використовує локальну LLM-модель через Ollama.
 
-[Ollama](https://ollama.com?utm_source=chatgpt.com)
+### Встановлення Ollama
 
-Завантажити модель:
+Офіційний сайт:
+
+```text
+https://ollama.com
+```
+
+### Завантаження моделі
 
 ```bash
 ollama pull qwen2.5:7b
 ```
 
+Для слабшого ноутбука можна використати легшу модель:
+
+```bash
+ollama pull qwen2.5:3b
+```
+
 ---
 
-## 5. Налаштування `.env`
+## Налаштування `.env`
 
-Створити `.env` на основі `.env.example`
+Створи файл `.env` у корені проєкту на основі `.env.example`.
 
 Приклад:
 
 ```env
-TELEGRAM_BOT_TOKEN=your_token
-TELEGRAM_CHAT_ID=your_chat_id
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_telegram_chat_id
 
-FREELANCEHUNT_API_TOKEN=your_api_token
+FREELANCEHUNT_TOKEN=your_freelancehunt_api_token
 
-OLLAMA_URL=http://localhost:11434/api/generate
 OLLAMA_MODEL=qwen2.5:7b
 ```
 
 ---
 
-# Запуск
+## Де взяти токени
+
+### Telegram Bot Token
+
+1. Відкрити Telegram.
+2. Знайти `@BotFather`.
+3. Виконати команду:
+
+```text
+/newbot
+```
+
+4. Скопіювати токен у `.env`.
+
+### Telegram Chat ID
+
+1. Запусти бота.
+2. Напиши йому:
+
+```text
+/start
+```
+
+3. Бот покаже твій `chat_id`.
+4. Встав його в `.env`.
+
+### Freelancehunt API Token
+
+Токен потрібно створити в особистому кабінеті Freelancehunt у розділі API / Apps.
+
+---
+
+## Запуск
 
 ```bash
 python -m app.main
 ```
 
+Після запуску бот автоматично почне перевіряти проєкти, якщо в `.env` вказаний `TELEGRAM_CHAT_ID`.
+
 ---
 
-# Команди бота
+## Команди бота
 
 | Команда | Опис |
 |---|---|
-| `/check` | перевірити проєкти зараз |
+| `/start` | запуск бота і показ chat_id |
+| `/help` | список команд |
+| `/check` | перевірити проєкти вручну |
 | `/auto_on` | увімкнути автопошук |
 | `/auto_off` | вимкнути автопошук |
-| `/stats` | статистика |
+| `/stats` | показати статистику |
 | `/settings` | показати мінімальний score |
 | `/settings 35` | змінити мінімальний score |
-| `/help` | список команд |
 
 ---
 
-# Як працює система
+## Логи
 
-1. Бот отримує проєкти через Freelancehunt API.
-2. AI аналізує:
-   - складність;
-   - ризики;
-   - відповідність навичкам;
-   - бюджет;
-   - кількість ставок.
-3. Система виставляє score.
-4. Якщо score проходить мінімальний поріг:
-   - бот надсилає проєкт у Telegram;
-   - генерує ставку;
-   - генерує уточнення для клієнта.
-
----
-
-# Логи
-
-Логи зберігаються у:
+Логи зберігаються у файлі:
 
 ```text
 logs/bot.log
 ```
 
-Перегляд у реальному часі:
+Перегляд логів у реальному часі:
 
 ```bash
 tail -f logs/bot.log
 ```
 
+У логах можна побачити:
+
+- коли бот стартував;
+- коли почалась автоперевірка;
+- скільки проєктів отримано;
+- які проєкти відфільтровані;
+- причину відсіювання;
+- помилки API;
+- помилки AI-аналізу.
+
 ---
 
-# Автор
+## Score-система
+
+Бот рахує score на основі:
+
+- шансу виконання;
+- складності;
+- ризику;
+- відповідності навичкам;
+- бюджету;
+- конкуренції;
+- good/bad оцінок користувача.
+
+Мінімальний score можна змінити командою:
+
+```text
+/settings 35
+```
+
+---
+
+## Безпека
+
+У репозиторій не можна додавати:
+
+- `.env`;
+- API токени;
+- Telegram token;
+- базу даних;
+- логи;
+- virtual environment.
+
+Для цього використовується `.gitignore`.
+
+---
+
+## GitHub
+
+Після змін:
+
+```bash
+git status
+git add .
+git commit -m "Update project"
+git push
+```
+
+---
+
+## Автор
 
 NoobITafk
 
 GitHub:
-[NoobITafk GitHub](https://github.com/NoobITafk?utm_source=chatgpt.com)
+
+```text
+https://github.com/NoobITafk
+```
 
 ---
 
-# License
+## Статус проєкту
+
+Проєкт є pet-project для практики:
+
+- API integration;
+- Telegram bot development;
+- local AI;
+- async Python;
+- SQLite;
+- logging;
+- project architecture.
+
+---
+
+## License
 
 MIT
