@@ -1,4 +1,5 @@
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from concurrent.futures import ThreadPoolExecutor
 
 from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 from app.database import init_db
@@ -17,7 +18,7 @@ from app.bot.handlers import (
 
 )
 
-
+executor = ThreadPoolExecutor(max_workers=2)
 def run_bot():
     setup_logger()
     init_db()

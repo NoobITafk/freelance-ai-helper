@@ -10,8 +10,8 @@ def ask_ollama(prompt: str) -> str:
         model=OLLAMA_MODEL,
         messages=[{"role": "user", "content": prompt}],
         options={
-            "temperature": 0.2,
-            "num_predict": 900,
+            "temperature": 0.5,
+            "num_predict": 500,
         },
     )
 

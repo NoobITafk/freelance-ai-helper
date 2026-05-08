@@ -1,6 +1,8 @@
 from pydoc import text
 from turtle import update
 from turtle import update
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -21,7 +23,7 @@ from app.database import (
 )
 from app.services.project_service import process_and_send_project
 from app.logger import logger
-
+executor = ThreadPoolExecutor(max_workers=2)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     await update.message.reply_text(f"Бот працює ✅\nТвій chat_id: {chat_id}")
@@ -55,13 +57,25 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     sent_count = 0
+    processed_count = 0
 
     for project in projects:
+        if processed_count >= 5:
+            break
+
         try:
-            was_sent = await process_and_send_project(update.message.reply_text, project)
+            was_sent = await process_and_send_project(
+                update.message.reply_text,
+                project
+            )
+
+            processed_count += 1
+
         except Exception as error:
             logger.exception("Project processing error")
-            await update.message.reply_text(f"Помилка обробки проєкту:\n{error}")
+            await update.message.reply_text(
+                f"Помилка обробки проєкту:\n{error}"
+            )
             continue
 
         if was_sent:
@@ -73,7 +87,11 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if sent_count == 0:
         await update.message.reply_text("Нових відповідних проєктів поки немає.")
 
-    logger.info("Manual check finished | sent=%s", sent_count)
+    logger.info(
+    "Manual check finished | sent=%s | processed=%s",
+    sent_count,
+    processed_count
+)
 
 
 async def auto_check(context: ContextTypes.DEFAULT_TYPE):
@@ -89,17 +107,20 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         return
 
     sent_count = 0
-
-    async def send_func(text, reply_markup=None):
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            reply_markup=reply_markup
-        )
+    processed_count = 0
 
     for project in projects:
+        if processed_count >= 5:
+            break
+
         try:
-            was_sent = await process_and_send_project(send_func, project)
+            was_sent = await process_and_send_project(
+                send_func,
+                project
+            )
+
+            processed_count += 1
+
         except Exception:
             logger.exception("Auto project processing error")
             continue
@@ -110,7 +131,11 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         if sent_count >= 3:
             break
 
-    logger.info("Auto check finished | sent=%s", sent_count)
+    logger.info(
+    "Auto check finished | sent=%s | processed=%s",
+    sent_count,
+    processed_count
+)
 
 
 async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):

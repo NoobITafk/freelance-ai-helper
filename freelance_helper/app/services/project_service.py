@@ -8,7 +8,7 @@ from app.database import (
 from app.rules import basic_filter, learning_bonus
 from app.bot.keyboards import project_keyboard
 from app.logger import logger
-
+import asyncio
 
 def get_project_url(project: dict, attributes: dict) -> str:
     links = project.get("links", {})
@@ -52,14 +52,21 @@ async def process_and_send_project(send_func, project: dict) -> bool:
     project_text = f"""
 Назва: {title}
 Бюджет: {budget}
-Кількість ставок: {bids_count}
+Кількість ставок: {bids_count};
 Посилання: {url}
 
 Опис:
 {description}
 """
 
-    analysis_data = analyze_project_json(project_text)
+    loop = asyncio.get_running_loop()
+
+    analysis_data = await loop.run_in_executor(
+    None,
+    analyze_project_json,
+    project_text
+)
+
     score = calculate_score(analysis_data)
 
     bonus = learning_bonus(
