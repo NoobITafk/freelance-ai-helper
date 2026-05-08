@@ -1,25 +1,27 @@
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from concurrent.futures import ThreadPoolExecutor
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler
 
+from app.bot.handlers import (
+    auto_check,
+    auto_off,
+    auto_on,
+    check_projects,
+    handle_button,
+    help_command,
+    settings_command,
+    start,
+    stats_command,
+    test_ai,
+)
 from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 from app.database import init_db
-from app.logger import setup_logger, logger
-from app.bot.handlers import (
-    help_command,
-    start,
-    test_ai,
-    check_projects,
-    auto_check,
-    auto_on,
-    auto_off,
-    stats_command,
-    settings_command,
-    handle_button,
+from app.logger import logger, setup_logger
 
-)
 
-executor = ThreadPoolExecutor(max_workers=2)
-def run_bot():
+AUTO_CHECK_INTERVAL_SECONDS = 180
+AUTO_CHECK_FIRST_RUN_SECONDS = 10
+
+
+def run_bot() -> None:
     setup_logger()
     init_db()
 
@@ -31,14 +33,19 @@ def run_bot():
     if TELEGRAM_CHAT_ID:
         app.job_queue.run_repeating(
             auto_check,
-            interval=180,
-            first=10,
+            interval=AUTO_CHECK_INTERVAL_SECONDS,
+            first=AUTO_CHECK_FIRST_RUN_SECONDS,
             chat_id=int(TELEGRAM_CHAT_ID),
             name="auto_search",
         )
-        logger.info("Auto search scheduled on startup")
-    app.add_handler(CommandHandler("help", help_command))
+
+        logger.info(
+            "Auto search scheduled on startup | interval=%s seconds",
+            AUTO_CHECK_INTERVAL_SECONDS,
+        )
+
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("test_ai", test_ai))
     app.add_handler(CommandHandler("check", check_projects))
     app.add_handler(CommandHandler("auto_on", auto_on))

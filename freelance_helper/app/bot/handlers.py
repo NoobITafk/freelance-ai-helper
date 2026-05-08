@@ -1,11 +1,6 @@
-from pydoc import text
-from turtle import update
-from turtle import update
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from app.ai_analyzer import (
     analyze_project_json,
     format_analysis,
@@ -23,10 +18,35 @@ from app.database import (
 )
 from app.services.project_service import process_and_send_project
 from app.logger import logger
-executor = ThreadPoolExecutor(max_workers=2)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     await update.message.reply_text(f"Бот працює ✅\nТвій chat_id: {chat_id}")
+
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = """
+🤖 Команди бота
+
+/start — запуск бота
+/help — список команд
+/check — перевірити проєкти зараз
+/auto_on — увімкнути автопошук
+/auto_off — вимкнути автопошук
+/stats — статистика
+/settings — показати мінімальний score
+/settings 35 — змінити мінімальний score
+
+📌 Кнопки:
+✅ Добрий — хороший проєкт
+❌ Поганий — поганий проєкт
+💬 Ставка — генерація відповіді
+❓ Уточнення — питання клієнту
+🔁 Нова ставка — перегенерувати відповідь
+⏭ Пропустити — пропустити проєкт
+"""
+    await update.message.reply_text(text)
 
 
 async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -66,16 +86,13 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             was_sent = await process_and_send_project(
                 update.message.reply_text,
-                project
+                project,
             )
-
             processed_count += 1
 
         except Exception as error:
             logger.exception("Project processing error")
-            await update.message.reply_text(
-                f"Помилка обробки проєкту:\n{error}"
-            )
+            await update.message.reply_text(f"Помилка обробки проєкту:\n{error}")
             continue
 
         if was_sent:
@@ -88,10 +105,10 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Нових відповідних проєктів поки немає.")
 
     logger.info(
-    "Manual check finished | sent=%s | processed=%s",
-    sent_count,
-    processed_count
-)
+        "Manual check finished | sent=%s | processed=%s",
+        sent_count,
+        processed_count,
+    )
 
 
 async def auto_check(context: ContextTypes.DEFAULT_TYPE):
@@ -106,6 +123,13 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=chat_id, text=f"Помилка API:\n{error}")
         return
 
+    async def send_func(text, reply_markup=None):
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            reply_markup=reply_markup,
+        )
+
     sent_count = 0
     processed_count = 0
 
@@ -116,9 +140,8 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         try:
             was_sent = await process_and_send_project(
                 send_func,
-                project
+                project,
             )
-
             processed_count += 1
 
         except Exception:
@@ -132,10 +155,10 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
             break
 
     logger.info(
-    "Auto check finished | sent=%s | processed=%s",
-    sent_count,
-    processed_count
-)
+        "Auto check finished | sent=%s | processed=%s",
+        sent_count,
+        processed_count,
+    )
 
 
 async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -266,29 +289,13 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "questions":
         await query.message.reply_text("Генерую питання клієнту...")
 
-    try:
-        questions = generate_questions(project)
-    except Exception as error:
-        logger.exception("Questions generation error")
-        await query.message.reply_text(f"Помилка генерації питань:\n{error}")
-        return
+        try:
+            questions = generate_questions(project)
+        except Exception as error:
+            logger.exception("Questions generation error")
+            await query.message.reply_text(f"Помилка генерації питань:\n{error}")
+            return
 
-    await query.message.reply_text(
-        f"❓ Що уточнити:\n\n{questions}\n\n🔗 {project.get('url')}"
-    )
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = """
-🤖 Команди бота
-
-/start — запуск бота
-/help — список команд
-/check — перевірити проєкти зараз
-/auto_on — увімкнути автопошук
-/auto_off — вимкнути автопошук
-/stats — статистика
-/settings — показати мінімальний score
-/settings 35 — змінити мінімальний score
-"""
-
-    await update.message.reply_text(text)
+        await query.message.reply_text(
+            f"❓ Що уточнити:\n\n{questions}\n\n🔗 {project.get('url')}"
+        )

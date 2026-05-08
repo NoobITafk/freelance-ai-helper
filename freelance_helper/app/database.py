@@ -1,103 +1,146 @@
 import sqlite3
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 DB_PATH = Path("data/projects.db")
+DEFAULT_MIN_SCORE = "45"
+ALLOWED_RATINGS = {"good", "bad", "skip"}
 
 
-def get_connection():
+def get_connection() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(exist_ok=True)
-    return sqlite3.connect(DB_PATH)
+
+    conn = sqlite3.connect(
+        DB_PATH,
+        timeout=10,
+    )
+
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-def init_db():
+def init_db() -> None:
     with get_connection() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS projects (
                 project_id TEXT PRIMARY KEY,
-                title TEXT,
+                title TEXT NOT NULL,
                 description TEXT,
                 budget TEXT,
                 bids_count TEXT,
                 url TEXT,
                 analysis TEXT,
                 user_rating TEXT,
-                created_at TEXT
+                created_at TEXT NOT NULL
             )
         """)
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
-                value TEXT
+                value TEXT NOT NULL
             )
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_projects_user_rating
+            ON projects(user_rating)
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_projects_created_at
+            ON projects(created_at)
         """)
 
         conn.execute("""
             INSERT OR IGNORE INTO settings (key, value)
-            VALUES ('min_score', '45')
-        """)
+            VALUES ('min_score', ?)
+        """, (DEFAULT_MIN_SCORE,))
 
 
-def save_project(project_id, title, description, budget, bids_count, url, analysis):
+def save_project(
+    project_id: str,
+    title: str,
+    description: str,
+    budget,
+    bids_count,
+    url: str,
+    analysis: str,
+) -> None:
     with get_connection() as conn:
         conn.execute("""
             INSERT OR IGNORE INTO projects (
-                project_id, title, description, budget, bids_count, url, analysis, created_at
+                project_id,
+                title,
+                description,
+                budget,
+                bids_count,
+                url,
+                analysis,
+                created_at
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            project_id,
-            title,
-            description,
+            str(project_id),
+            title or "Без назви",
+            description or "",
             str(budget),
             str(bids_count),
-            url,
-            analysis,
-            datetime.now().isoformat(timespec="seconds")
+            url or "",
+            analysis or "",
+            datetime.now().isoformat(timespec="seconds"),
         ))
 
 
 def is_seen(project_id: str) -> bool:
     with get_connection() as conn:
         cursor = conn.execute(
-            "SELECT 1 FROM projects WHERE project_id = ?",
-            (project_id,)
+            "SELECT 1 FROM projects WHERE project_id = ? LIMIT 1",
+            (str(project_id),),
         )
+
         return cursor.fetchone() is not None
 
 
-def get_project(project_id: str):
+def get_project(project_id: str) -> Optional[dict]:
     with get_connection() as conn:
-        conn.row_factory = sqlite3.Row
         cursor = conn.execute(
             "SELECT * FROM projects WHERE project_id = ?",
-            (project_id,)
+            (str(project_id),),
         )
+
         row = cursor.fetchone()
         return dict(row) if row else None
 
 
-def set_project_rating(project_id: str, rating: str):
+def set_project_rating(project_id: str, rating: str) -> None:
+    if rating not in ALLOWED_RATINGS:
+        raise ValueError(f"Невідомий рейтинг проєкту: {rating}")
+
     with get_connection() as conn:
         conn.execute(
             "UPDATE projects SET user_rating = ? WHERE project_id = ?",
-            (rating, project_id)
+            (rating, str(project_id)),
         )
 
 
-def get_stats():
+def get_stats() -> dict:
     with get_connection() as conn:
-        cursor = conn.execute("SELECT COUNT(*) FROM projects")
-        total = cursor.fetchone()[0]
+        total = conn.execute(
+            "SELECT COUNT(*) FROM projects"
+        ).fetchone()[0]
 
-        cursor = conn.execute("""
-            SELECT user_rating, COUNT(*)
+        rows = conn.execute("""
+            SELECT user_rating, COUNT(*) AS count
             FROM projects
             GROUP BY user_rating
-        """)
+        """).fetchall()
 
-        ratings = dict(cursor.fetchall())
+        ratings = {
+            row["user_rating"]: row["count"]
+            for row in rows
+        }
 
         return {
             "total": total,
@@ -112,31 +155,44 @@ def get_setting(key: str, default=None):
     with get_connection() as conn:
         cursor = conn.execute(
             "SELECT value FROM settings WHERE key = ?",
-            (key,)
+            (key,),
         )
+
         row = cursor.fetchone()
-        return row[0] if row else default
+        return row["value"] if row else default
 
 
-def set_setting(key: str, value: str):
+def set_setting(key: str, value: str) -> None:
     with get_connection() as conn:
         conn.execute("""
             INSERT INTO settings (key, value)
             VALUES (?, ?)
             ON CONFLICT(key) DO UPDATE SET value = excluded.value
-        """, (key, value))
+        """, (key, str(value)))
 
 
-def get_good_bad_keywords():
+def get_good_bad_keywords() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     with get_connection() as conn:
         good_rows = conn.execute("""
-            SELECT title, description FROM projects
+            SELECT title, description
+            FROM projects
             WHERE user_rating = 'good'
         """).fetchall()
 
         bad_rows = conn.execute("""
-            SELECT title, description FROM projects
+            SELECT title, description
+            FROM projects
             WHERE user_rating = 'bad'
         """).fetchall()
 
-    return good_rows, bad_rows
+        good = [
+            (row["title"], row["description"])
+            for row in good_rows
+        ]
+
+        bad = [
+            (row["title"], row["description"])
+            for row in bad_rows
+        ]
+
+        return good, bad

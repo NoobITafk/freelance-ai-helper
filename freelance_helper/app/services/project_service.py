@@ -1,3 +1,5 @@
+import asyncio
+
 from app.ai_analyzer import analyze_project_json, format_analysis, calculate_score
 from app.database import (
     is_seen,
@@ -8,7 +10,11 @@ from app.database import (
 from app.rules import basic_filter, learning_bonus
 from app.bot.keyboards import project_keyboard
 from app.logger import logger
-import asyncio
+
+
+AI_TIMEOUT_SECONDS = 40
+MAX_BIDS_COUNT = 40
+
 
 def get_project_url(project: dict, attributes: dict) -> str:
     links = project.get("links", {})
@@ -20,6 +26,16 @@ def get_project_url(project: dict, attributes: dict) -> str:
         or links.get("self", {}).get("href")
         or "Посилання не знайдено"
     )
+
+
+def parse_bids_count(bids_count) -> int | None:
+    if isinstance(bids_count, int):
+        return bids_count
+
+    if isinstance(bids_count, str) and bids_count.isdigit():
+        return int(bids_count)
+
+    return None
 
 
 async def process_and_send_project(send_func, project: dict) -> bool:
@@ -49,10 +65,21 @@ async def process_and_send_project(send_func, project: dict) -> bool:
         logger.info("Filtered by keywords: %s", title)
         return False
 
+    numeric_bids_count = parse_bids_count(bids_count)
+
+    if numeric_bids_count is not None and numeric_bids_count > MAX_BIDS_COUNT:
+        logger.info(
+            "Filtered by bids count: %s | bids=%s | max=%s",
+            title,
+            numeric_bids_count,
+            MAX_BIDS_COUNT,
+        )
+        return False
+
     project_text = f"""
 Назва: {title}
 Бюджет: {budget}
-Кількість ставок: {bids_count};
+Кількість ставок: {bids_count}
 Посилання: {url}
 
 Опис:
@@ -61,18 +88,30 @@ async def process_and_send_project(send_func, project: dict) -> bool:
 
     loop = asyncio.get_running_loop()
 
-    analysis_data = await loop.run_in_executor(
-    None,
-    analyze_project_json,
-    project_text
-)
+    try:
+        analysis_data = await asyncio.wait_for(
+            loop.run_in_executor(
+                None,
+                analyze_project_json,
+                project_text,
+            ),
+            timeout=AI_TIMEOUT_SECONDS,
+        )
+
+    except asyncio.TimeoutError:
+        logger.warning("Ollama timeout: %s", title)
+        return False
+
+    except Exception:
+        logger.exception("AI analysis error: %s", title)
+        return False
 
     score = calculate_score(analysis_data)
 
     bonus = learning_bonus(
         title,
         description,
-        get_good_bad_keywords()
+        get_good_bad_keywords(),
     )
 
     final_score = score + bonus
@@ -80,10 +119,11 @@ async def process_and_send_project(send_func, project: dict) -> bool:
 
     if final_score < min_score:
         logger.info(
-            "Filtered by score: %s | score=%s | bonus=%s | min=%s",
+            "Filtered by score: %s | score=%s | bonus=%s | final=%s | min=%s",
             title,
             score,
             bonus,
+            final_score,
             min_score,
         )
         return False
@@ -114,7 +154,7 @@ async def process_and_send_project(send_func, project: dict) -> bool:
 
     await send_func(
         message[:4000],
-        reply_markup=project_keyboard(project_id)
+        reply_markup=project_keyboard(project_id),
     )
 
     logger.info("Sent project: %s | score=%s", title, final_score)

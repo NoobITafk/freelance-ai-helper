@@ -1,17 +1,29 @@
 import json
 import re
+from typing import Any
+
 import ollama
 
 from app.config import OLLAMA_MODEL
 
 
-def ask_ollama(prompt: str) -> str:
+ANALYSIS_NUM_PREDICT = 350
+TEXT_NUM_PREDICT = 500
+
+
+def ask_ollama(
+    prompt: str,
+    temperature: float = 0.3,
+    num_predict: int = 500,
+) -> str:
     response = ollama.chat(
         model=OLLAMA_MODEL,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
         options={
-            "temperature": 0.5,
-            "num_predict": 500,
+            "temperature": temperature,
+            "num_predict": num_predict,
         },
     )
 
@@ -19,19 +31,66 @@ def ask_ollama(prompt: str) -> str:
 
 
 def extract_json(text: str) -> dict:
-    match = re.search(r"\{.*\}", text, re.DOTALL)
+    json_match = re.search(r"\{.*\}", text, re.DOTALL)
 
-    if not match:
-        raise ValueError("AI не повернув JSON")
+    if not json_match:
+        raise ValueError(f"AI не повернув JSON. Відповідь AI: {text[:300]}")
 
-    return json.loads(match.group(0))
+    json_text = json_match.group(0)
+
+    try:
+        return json.loads(json_text)
+
+    except json.JSONDecodeError as error:
+        raise ValueError(f"Некоректний JSON від AI: {error}") from error
+
+
+def safe_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_analysis(data: dict) -> dict:
+    fit = str(data.get("fit", "no")).lower()
+    competition = str(data.get("competition", "unknown")).lower()
+    budget_ok = str(data.get("budget_ok", "unknown")).lower()
+
+    if fit not in {"yes", "partial", "no"}:
+        fit = "no"
+
+    if competition not in {"low", "medium", "high", "unknown"}:
+        competition = "unknown"
+
+    if budget_ok not in {"yes", "partial", "no", "unknown"}:
+        budget_ok = "unknown"
+
+    questions = data.get("questions", [])
+
+    if not isinstance(questions, list):
+        questions = []
+
+    return {
+        "fit": fit,
+        "summary": str(data.get("summary", "Немає даних")).strip(),
+        "difficulty": max(1, min(10, safe_int(data.get("difficulty"), 10))),
+        "risk": max(1, min(10, safe_int(data.get("risk"), 10))),
+        "success_chance": max(0, min(100, safe_int(data.get("success_chance"), 0))),
+        "competition": competition,
+        "budget_ok": budget_ok,
+        "should_apply": bool(data.get("should_apply", False)),
+        "reason": str(data.get("reason", "Немає висновку")).strip(),
+        "questions": [str(question).strip() for question in questions[:5] if str(question).strip()],
+    }
 
 
 def analyze_project_json(project_text: str) -> dict:
     prompt = f"""
-Ти аналізуєш фриланс-завдання для junior розробника.
+Ти аналізуєш фриланс-завдання для junior software developer.
 
-Навички:
+Навички розробника:
 - Python
 - C#
 - HTML/CSS
@@ -42,34 +101,56 @@ def analyze_project_json(project_text: str) -> dict:
 - проста автоматизація
 - базовий backend
 
+Не підходять:
+- графічний дизайн
+- логотипи
+- банери
+- листівки
+- Figma-only задачі
+- Photoshop/Illustrator
+- крипта, казино, трейдинг
+- складні ERP/CRM архітектури рівня senior
+
 Проєкт:
 {project_text}
 
-Поверни тільки JSON без пояснень.
+Оціни реалістично для junior-рівня.
+
+Поверни тільки JSON без markdown, без пояснень і без тексту навколо.
 
 Формат:
 {{
   "fit": "yes/partial/no",
   "summary": "коротка суть завдання",
-  "difficulty": число від 1 до 10,
-  "risk": число від 1 до 10,
-  "success_chance": число від 0 до 100,
+  "difficulty": 1,
+  "risk": 1,
+  "success_chance": 0,
   "competition": "low/medium/high/unknown",
   "budget_ok": "yes/partial/no/unknown",
-  "should_apply": true або false,
-  "reason": "коротко чому",
+  "should_apply": false,
+  "reason": "короткий висновок",
   "questions": ["питання 1", "питання 2", "питання 3"]
 }}
 """
 
-    raw = ask_ollama(prompt)
-    return extract_json(raw)
+    raw = ask_ollama(
+        prompt=prompt,
+        temperature=0.2,
+        num_predict=ANALYSIS_NUM_PREDICT,
+    )
+
+    data = extract_json(raw)
+    return normalize_analysis(data)
 
 
 def format_analysis(data: dict) -> str:
     questions = data.get("questions", [])
+    questions_text = "\n".join(f"- {question}" for question in questions)
 
-    questions_text = "\n".join(f"- {q}" for q in questions)
+    if not questions_text:
+        questions_text = "- Немає уточнень"
+
+    should_apply = "так" if data.get("should_apply") else "ні"
 
     return f"""
 📌 Суть:
@@ -93,6 +174,9 @@ def format_analysis(data: dict) -> str:
 💰 Бюджет:
 {data.get("budget_ok", "unknown")}
 
+📝 Подаватися:
+{should_apply}
+
 ❓ Що уточнити:
 {questions_text}
 
@@ -102,28 +186,43 @@ def format_analysis(data: dict) -> str:
 
 
 def calculate_score(data: dict) -> int:
-    success = int(data.get("success_chance", 0))
-    difficulty = int(data.get("difficulty", 10))
-    risk = int(data.get("risk", 10))
+    success = safe_int(data.get("success_chance"), 0)
+    difficulty = safe_int(data.get("difficulty"), 10)
+    risk = safe_int(data.get("risk"), 10)
 
     score = success - difficulty * 4 - risk * 3
 
-    if data.get("fit") == "yes":
+    fit = data.get("fit")
+
+    if fit == "yes":
         score += 15
-    elif data.get("fit") == "partial":
+    elif fit == "partial":
         score += 5
-    elif data.get("fit") == "no":
+    elif fit == "no":
         score -= 30
 
-    if data.get("budget_ok") == "yes":
+    budget_ok = data.get("budget_ok")
+
+    if budget_ok == "yes":
         score += 10
-    elif data.get("budget_ok") == "no":
+    elif budget_ok == "partial":
+        score += 2
+    elif budget_ok == "no":
         score -= 20
 
-    if data.get("competition") == "high":
-        score -= 15
-    elif data.get("competition") == "low":
+    competition = data.get("competition")
+
+    if competition == "low":
         score += 10
+    elif competition == "medium":
+        score -= 3
+    elif competition == "high":
+        score -= 15
+
+    if data.get("should_apply"):
+        score += 5
+    else:
+        score -= 5
 
     return max(0, min(100, score))
 
@@ -132,32 +231,53 @@ def generate_bid(project: dict) -> str:
     prompt = f"""
 Напиши коротку ставку клієнту на Freelancehunt.
 
+Дані проєкту:
 Назва: {project.get("title")}
 Бюджет: {project.get("budget")}
+Кількість ставок: {project.get("bids_count")}
 Опис:
 {project.get("description")}
 
 Стиль:
-- українською або мовою завдання
-- 4-7 речень
-- без брехні про великий досвід
-- впевнено
-- як junior, який реально може виконати задачу
-- додай 1-2 уточнювальні питання
+- мовою завдання;
+- 4-7 речень;
+- без брехні про великий досвід;
+- впевнено, але без перебільшень;
+- як junior developer, який може виконати задачу;
+- не згадуй, що текст написаний AI;
+- додай 1-2 уточнювальні питання.
+
+Поверни тільки готовий текст ставки.
 """
 
-    return ask_ollama(prompt)
+    return ask_ollama(
+        prompt=prompt,
+        temperature=0.5,
+        num_predict=TEXT_NUM_PREDICT,
+    )
 
 
 def generate_questions(project: dict) -> str:
     prompt = f"""
 Склади 3-5 коротких питань клієнту.
 
+Дані проєкту:
 Назва: {project.get("title")}
+Бюджет: {project.get("budget")}
 Опис:
 {project.get("description")}
 
-Відповідай списком українською.
+Питання мають уточнити:
+- обсяг роботи;
+- формат результату;
+- терміни;
+- технічні ризики.
+
+Поверни тільки список питань українською.
 """
 
-    return ask_ollama(prompt)
+    return ask_ollama(
+        prompt=prompt,
+        temperature=0.4,
+        num_predict=300,
+    )
