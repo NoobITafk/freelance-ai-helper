@@ -1,6 +1,9 @@
+from pydoc import text
+from turtle import update
+from turtle import update
+
 from telegram import Update
 from telegram.ext import ContextTypes
-
 from app.ai_analyzer import (
     analyze_project_json,
     format_analysis,
@@ -18,7 +21,6 @@ from app.database import (
 )
 from app.services.project_service import process_and_send_project
 from app.logger import logger
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -239,13 +241,29 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "questions":
         await query.message.reply_text("Генерую питання клієнту...")
 
-        try:
-            questions = generate_questions(project)
-        except Exception as error:
-            logger.exception("Questions generation error")
-            await query.message.reply_text(f"Помилка генерації питань:\n{error}")
-            return
+    try:
+        questions = generate_questions(project)
+    except Exception as error:
+        logger.exception("Questions generation error")
+        await query.message.reply_text(f"Помилка генерації питань:\n{error}")
+        return
 
-        await query.message.reply_text(
-            f"❓ Що уточнити:\n\n{questions}\n\n🔗 {project.get('url')}"
-        )
+    await query.message.reply_text(
+        f"❓ Що уточнити:\n\n{questions}\n\n🔗 {project.get('url')}"
+    )
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = """
+🤖 Команди бота
+
+/start — запуск бота
+/help — список команд
+/check — перевірити проєкти зараз
+/auto_on — увімкнути автопошук
+/auto_off — вимкнути автопошук
+/stats — статистика
+/settings — показати мінімальний score
+/settings 35 — змінити мінімальний score
+"""
+
+    await update.message.reply_text(text)

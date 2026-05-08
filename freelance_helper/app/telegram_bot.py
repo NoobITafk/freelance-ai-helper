@@ -4,6 +4,7 @@ from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 from app.database import init_db
 from app.logger import setup_logger, logger
 from app.bot.handlers import (
+    help_command,
     start,
     test_ai,
     check_projects,
@@ -13,6 +14,7 @@ from app.bot.handlers import (
     stats_command,
     settings_command,
     handle_button,
+
 )
 
 
@@ -34,7 +36,7 @@ def run_bot():
             name="auto_search",
         )
         logger.info("Auto search scheduled on startup")
-
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("test_ai", test_ai))
     app.add_handler(CommandHandler("check", check_projects))
