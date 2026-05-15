@@ -1,24 +1,32 @@
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler
 
-from app.bot.handlers import (
+from .bot.handlers import (
+    ai_off,
+    ai_on,
     auto_check,
     auto_off,
     auto_on,
     check_projects,
     handle_button,
     help_command,
+    profile_command,
+    profile_set_command,
+    recent_command,
     settings_command,
     start,
     stats_command,
     test_ai,
+    threshold_command,
+    why_command,
 )
-from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-from app.database import init_db
-from app.logger import logger, setup_logger
-
-
-AUTO_CHECK_INTERVAL_SECONDS = 180
-AUTO_CHECK_FIRST_RUN_SECONDS = 10
+from .config import (
+    AUTO_CHECK_FIRST_RUN_SECONDS,
+    AUTO_CHECK_INTERVAL_SECONDS,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+)
+from .database import init_db
+from .logger import logger, setup_logger
 
 
 def run_bot() -> None:
@@ -31,18 +39,21 @@ def run_bot() -> None:
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     if TELEGRAM_CHAT_ID:
-        app.job_queue.run_repeating(
-            auto_check,
-            interval=AUTO_CHECK_INTERVAL_SECONDS,
-            first=AUTO_CHECK_FIRST_RUN_SECONDS,
-            chat_id=int(TELEGRAM_CHAT_ID),
-            name="auto_search",
-        )
-
-        logger.info(
-            "Auto search scheduled on startup | interval=%s seconds",
-            AUTO_CHECK_INTERVAL_SECONDS,
-        )
+        try:
+            app.job_queue.run_repeating(
+                auto_check,
+                interval=AUTO_CHECK_INTERVAL_SECONDS,
+                first=AUTO_CHECK_FIRST_RUN_SECONDS,
+                chat_id=int(TELEGRAM_CHAT_ID),
+                name="auto_search",
+            )
+        except ValueError:
+            logger.warning("TELEGRAM_CHAT_ID must be an integer: %s", TELEGRAM_CHAT_ID)
+        else:
+            logger.info(
+                "Auto search scheduled on startup | interval=%s seconds",
+                AUTO_CHECK_INTERVAL_SECONDS,
+            )
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
@@ -52,7 +63,14 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("auto_off", auto_off))
     app.add_handler(CommandHandler("stats", stats_command))
     app.add_handler(CommandHandler("settings", settings_command))
+    app.add_handler(CommandHandler("threshold", threshold_command))
+    app.add_handler(CommandHandler("profile", profile_command))
+    app.add_handler(CommandHandler("profile_set", profile_set_command))
+    app.add_handler(CommandHandler("ai_on", ai_on))
+    app.add_handler(CommandHandler("ai_off", ai_off))
+    app.add_handler(CommandHandler("recent", recent_command))
+    app.add_handler(CommandHandler("why", why_command))
     app.add_handler(CallbackQueryHandler(handle_button))
 
     logger.info("Bot started")
-    app.run_polling()
+    app.run_polling(bootstrap_retries=5)

@@ -1,14 +1,15 @@
 import json
 import re
+from pathlib import Path
 from typing import Any
+import requests
 
-import ollama
-
-from app.config import OLLAMA_MODEL
+from .config import OLLAMA_MODEL, OLLAMA_URL, USER_PROFILE
 
 
 ANALYSIS_NUM_PREDICT = 350
 TEXT_NUM_PREDICT = 500
+AI_RAW_LOG_PATH = Path("logs/ai_raw.log")
 
 
 def ask_ollama(
@@ -16,18 +17,30 @@ def ask_ollama(
     temperature: float = 0.3,
     num_predict: int = 500,
 ) -> str:
-    response = ollama.chat(
-        model=OLLAMA_MODEL,
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
-        options={
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
             "temperature": temperature,
             "num_predict": num_predict,
         },
-    )
+    }
 
-    return response["message"]["content"].strip()
+    response = requests.post(OLLAMA_URL, json=payload, timeout=120)
+    response.raise_for_status()
+
+    data = response.json()
+    return str(data.get("response", "")).strip()
+
+
+def log_raw_ai_response(task: str, response: str) -> None:
+    AI_RAW_LOG_PATH.parent.mkdir(exist_ok=True)
+
+    with AI_RAW_LOG_PATH.open("a", encoding="utf-8") as file:
+        file.write(f"\n--- {task} ---\n")
+        file.write(response.strip())
+        file.write("\n")
 
 
 def extract_json(text: str) -> dict:
@@ -86,22 +99,21 @@ def normalize_analysis(data: dict) -> dict:
     }
 
 
-def analyze_project_json(project_text: str) -> dict:
+def analyze_project_json(project_text: str, user_profile: str | None = None) -> dict:
+    profile = user_profile or USER_PROFILE
     prompt = f"""
 Ти аналізуєш фриланс-завдання для junior Software Engineer.
+Відповідай українською.
 
-Навички:
-- Python (FastAPI, створення API)
-- Бази даних (PostgreSQL, SQL)
-- Інфраструктура (Docker, Linux/Arch)
-- Telegram bots (python-telegram-bot)
-- Парсинг даних
-- Базовий Frontend (HTML, Tailwind CSS)
+Профіль виконавця:
+{profile}
 
 Проєкт:
 {project_text}
 
 Поверни тільки JSON без пояснень.
+Оцінюй не занадто суворо: якщо junior з AI може розібратися і виконати задачу,
+став fit="partial" або "yes", але чесно піднімай risk/difficulty.
 
 Формат:
 {{
@@ -118,8 +130,36 @@ def analyze_project_json(project_text: str) -> dict:
 }}
 """
 
-    raw = ask_ollama(prompt)
-    return extract_json(raw)
+    raw = ask_ollama(prompt, num_predict=ANALYSIS_NUM_PREDICT)
+    log_raw_ai_response("analysis", raw)
+
+    try:
+        return extract_json(raw)
+    except ValueError:
+        repair_prompt = f"""
+Перетвори відповідь нижче на валідний JSON рівно у вказаному форматі.
+Не додавай markdown, пояснення або текст поза JSON.
+
+Відповідь:
+{raw}
+
+Формат:
+{{
+  "fit": "yes/partial/no",
+  "summary": "коротка суть завдання",
+  "difficulty": 1,
+  "risk": 1,
+  "success_chance": 50,
+  "competition": "low/medium/high/unknown",
+  "budget_ok": "yes/partial/no/unknown",
+  "should_apply": true,
+  "reason": "коротко чому",
+  "questions": ["питання 1", "питання 2", "питання 3"]
+}}
+"""
+        repaired = ask_ollama(repair_prompt, temperature=0.1, num_predict=ANALYSIS_NUM_PREDICT)
+        log_raw_ai_response("analysis_repair", repaired)
+        return extract_json(repaired)
 
 
 def format_analysis(data: dict) -> str:
@@ -206,9 +246,18 @@ def calculate_score(data: dict) -> int:
     return max(0, min(100, score))
 
 
-def generate_bid(project: dict) -> str:
+def generate_bid(project: dict, user_profile: str | None = None, variant: str = "short") -> str:
+    profile = user_profile or USER_PROFILE
+    variant_instruction = {
+        "short": "Зроби коротку ставку.",
+        "confident": "Зроби трохи впевненішу ставку, але без перебільшень.",
+    }.get(variant, "Зроби коротку ставку.")
+
     prompt = f"""
 Напиши коротку ставку клієнту на Freelancehunt.
+
+Профіль виконавця:
+{profile}
 
 Дані проєкту:
 Назва: {project.get("title")}
@@ -218,11 +267,13 @@ def generate_bid(project: dict) -> str:
 {project.get("description")}
 
 Стиль:
-- мовою завдання;
+- {variant_instruction}
+- мовою клієнта/завдання, якщо її можна визначити;
+- якщо завдання українською або мовна ситуація незрозуміла, пиши українською;
 - 4-7 речень;
 - без брехні про великий досвід;
 - впевнено, але без перебільшень;
-- як junior developer, який може виконати задачу;
+- як junior developer, який вміє швидко розбиратися, вчиться і може використовувати AI як помічника;
 - не згадуй, що текст написаний AI;
 - додай 1-2 уточнювальні питання.
 

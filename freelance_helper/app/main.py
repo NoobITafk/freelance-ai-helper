@@ -1,4 +1,4 @@
-from app.telegram_bot import run_bot
+from .telegram_bot import run_bot
 
 
 if __name__ == "__main__":

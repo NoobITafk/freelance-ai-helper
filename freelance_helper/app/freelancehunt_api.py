@@ -1,6 +1,6 @@
 import requests
 
-from app.config import FREELANCEHUNT_TOKEN
+from .config import FREELANCEHUNT_TOKEN
 
 
 API_URL = "https://api.freelancehunt.com/v2/projects"

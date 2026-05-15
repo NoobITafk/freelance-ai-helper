@@ -5,7 +5,7 @@ from typing import Optional
 
 DB_PATH = Path("data/projects.db")
 DEFAULT_MIN_SCORE = "45"
-ALLOWED_RATINGS = {"good", "bad", "skip"}
+ALLOWED_RATINGS = {"great", "good", "maybe", "bad", "not_mine", "skip"}
 
 
 def get_connection() -> sqlite3.Connection:
@@ -144,8 +144,11 @@ def get_stats() -> dict:
 
         return {
             "total": total,
+            "great": ratings.get("great", 0),
             "good": ratings.get("good", 0),
+            "maybe": ratings.get("maybe", 0),
             "bad": ratings.get("bad", 0),
+            "not_mine": ratings.get("not_mine", 0),
             "skip": ratings.get("skip", 0),
             "unrated": ratings.get(None, 0),
         }
@@ -171,18 +174,30 @@ def set_setting(key: str, value: str) -> None:
         """, (key, str(value)))
 
 
+def get_recent_projects(limit: int = 5) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT *
+            FROM projects
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+
+        return [dict(row) for row in rows]
+
+
 def get_good_bad_keywords() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     with get_connection() as conn:
         good_rows = conn.execute("""
             SELECT title, description
             FROM projects
-            WHERE user_rating = 'good'
+            WHERE user_rating IN ('great', 'good')
         """).fetchall()
 
         bad_rows = conn.execute("""
             SELECT title, description
             FROM projects
-            WHERE user_rating = 'bad'
+            WHERE user_rating IN ('bad', 'not_mine')
         """).fetchall()
 
         good = [

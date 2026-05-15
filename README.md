@@ -174,7 +174,15 @@ TELEGRAM_CHAT_ID=your_telegram_chat_id
 
 FREELANCEHUNT_TOKEN=your_freelancehunt_api_token
 
-OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=qwen2.5:3b
+AI_ANALYSIS_ENABLED=true
+AI_TIMEOUT_SECONDS=40
+AUTO_CHECK_INTERVAL_SECONDS=180
+AUTO_CHECK_FIRST_RUN_SECONDS=10
+MAX_BIDS_COUNT=40
+ANALYZE_MAYBE_PROJECTS=true
+USER_PROFILE="Я студент 2 курсу інженерії програмного забезпечення, вчуся програмувати, можу vibe-code з AI, робити невеликі Python-скрипти, Telegram-ботів, API, парсинг, простий frontend і бази даних."
 ```
 
 ---
@@ -214,7 +222,7 @@ OLLAMA_MODEL=qwen2.5:7b
 ## Запуск
 
 ```bash
-python -m app.main
+python -m freelance_helper.app.main
 ```
 
 Після запуску бот автоматично почне перевіряти проєкти, якщо в `.env` вказаний `TELEGRAM_CHAT_ID`.
@@ -233,6 +241,13 @@ python -m app.main
 | `/stats` | показати статистику |
 | `/settings` | показати мінімальний score |
 | `/settings 35` | змінити мінімальний score |
+| `/threshold 35` | швидко змінити мінімальний score |
+| `/profile` | показати профіль виконавця для AI |
+| `/profile_set текст` | змінити профіль виконавця |
+| `/ai_on` | увімкнути AI-аналіз |
+| `/ai_off` | вимкнути AI-аналіз і лишити fallback |
+| `/recent` | показати останні 5 збережених проєктів |
+| `/why project_id` | показати збережений аналіз проєкту |
 
 ---
 
@@ -242,6 +257,12 @@ python -m app.main
 
 ```text
 logs/bot.log
+```
+
+Сирі відповіді AI для дебагу зберігаються у файлі:
+
+```text
+logs/ai_raw.log
 ```
 
 Перегляд логів у реальному часі:

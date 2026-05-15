@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 
 
 GOOD_KEYWORDS = [
@@ -7,15 +8,19 @@ GOOD_KEYWORDS = [
     "docker", "linux", "bash", "сервер", "деплой",
     "telegram", "bot", "бот", "ai", "штучний інтелект",
     "c#", ".net", "java", "c++", "архітектура",
-    "javascript", "typescript", "react", "vue", "node"
+    "javascript", "typescript", "react", "vue", "node",
+    "парсинг", "скрипт", "автоматизація", "інтеграція",
 ]
 
-BAD_KEYWORDS = [
+HARD_BAD_KEYWORDS = [
     "crypto", "крипта", "casino", "казино", "nft", "trading", "трейдинг",
-    "figma", "photoshop", "illustrator", "дизайн", "logo", "банер",
-    "копірайт", "рерайт", "текст", "переклад", "seo", "просування", "таргет",
-    "wordpress", "tilda", "wix", "shopify",
     "1с", "bas", "бухгалтерія",
+]
+
+SOFT_BAD_KEYWORDS = [
+    "figma", "photoshop", "illustrator", "дизайн", "logo", "банер",
+    "копірайт", "рерайт", "переклад", "seo", "просування", "таргет",
+    "wordpress", "tilda", "wix", "shopify",
     "excel", "word", "презентація"
 ]
 
@@ -25,19 +30,58 @@ GOOD_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-BAD_PATTERN = re.compile(
-    "|".join(re.escape(word) for word in BAD_KEYWORDS),
+HARD_BAD_PATTERN = re.compile(
+    "|".join(re.escape(word) for word in HARD_BAD_KEYWORDS),
+    re.IGNORECASE,
+)
+
+SOFT_BAD_PATTERN = re.compile(
+    "|".join(re.escape(word) for word in SOFT_BAD_KEYWORDS),
     re.IGNORECASE,
 )
 
 
-def basic_filter(title: str, description: str) -> bool:
+@dataclass(frozen=True)
+class FilterResult:
+    category: str
+    reason: str
+
+
+def classify_project(title: str, description: str) -> FilterResult:
     text = f"{title or ''} {description or ''}"
 
-    if BAD_PATTERN.search(text):
-        return False
+    hard_bad = HARD_BAD_PATTERN.search(text)
 
-    return GOOD_PATTERN.search(text) is not None
+    if hard_bad:
+        return FilterResult(
+            category="bad",
+            reason=f"Стоп-слово: {hard_bad.group(0)}",
+        )
+
+    good = GOOD_PATTERN.search(text)
+
+    if good:
+        return FilterResult(
+            category="good",
+            reason=f"Збіг по ключовому слову: {good.group(0)}",
+        )
+
+    soft_bad = SOFT_BAD_PATTERN.search(text)
+
+    if soft_bad:
+        return FilterResult(
+            category="bad",
+            reason=f"Схоже не на IT-задачу: {soft_bad.group(0)}",
+        )
+
+    return FilterResult(
+        category="maybe",
+        reason="Немає явного збігу, але й немає жорстких стоп-слів.",
+    )
+
+
+def basic_filter(title: str, description: str) -> bool:
+    return classify_project(title, description).category != "bad"
 
 
 def learning_bonus(title: str, description: str, good_bad_keywords) -> int:
