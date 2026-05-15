@@ -141,6 +141,32 @@ def format_score_reason(filter_category: str, filter_reason: str, score: int, mi
 """.strip()
 
 
+def save_project_status(
+    project_id: str,
+    title: str,
+    description: str,
+    budget,
+    bids_count,
+    url: str,
+    status: str,
+    reason: str,
+    score: int | None = None,
+    analysis: str = "",
+) -> None:
+    save_project(
+        project_id=project_id,
+        title=title,
+        description=description,
+        budget=budget,
+        bids_count=bids_count,
+        url=url,
+        analysis=analysis,
+        status=status,
+        score=score,
+        reason=reason,
+    )
+
+
 async def process_and_send_project(send_func, project: dict) -> bool:
     project_id = str(project.get("id"))
     attributes = project.get("attributes", {})
@@ -165,15 +191,49 @@ async def process_and_send_project(send_func, project: dict) -> bool:
     filter_result = classify_project(title, description)
 
     if filter_result.category == "bad":
-        logger.info("Filtered by keywords: %s | %s", title, filter_result.reason)
+        reason = f"skipped: {filter_result.reason}"
+        save_project_status(
+            project_id,
+            title,
+            description,
+            budget,
+            bids_count,
+            url,
+            status="skipped",
+            reason=reason,
+        )
+        logger.info("Filtered by keywords: %s | %s", title, reason)
         return False
 
     if filter_result.category == "maybe" and not ANALYZE_MAYBE_PROJECTS:
-        logger.info("Filtered maybe project: %s | %s", title, filter_result.reason)
+        reason = f"skipped: maybe-проєкти вимкнені ({filter_result.reason})"
+        save_project_status(
+            project_id,
+            title,
+            description,
+            budget,
+            bids_count,
+            url,
+            status="skipped",
+            reason=reason,
+        )
+        logger.info("Filtered maybe project: %s | %s", title, reason)
         return False
 
     numeric_bids_count = parse_bids_count(bids_count)
     if numeric_bids_count is not None and numeric_bids_count > MAX_BIDS_COUNT:
+        reason = f"skipped: bids_count {numeric_bids_count} більше MAX_BIDS_COUNT {MAX_BIDS_COUNT}"
+        save_project_status(
+            project_id,
+            title,
+            description,
+            budget,
+            bids_count,
+            url,
+            status="skipped",
+            reason=reason,
+        )
+        logger.info("Filtered by bids_count: %s | %s", title, reason)
         return False
 
     project_text = build_project_text(
@@ -201,24 +261,50 @@ async def process_and_send_project(send_func, project: dict) -> bool:
         f"{analysis}"
     )
 
-    save_project(
-        project_id=project_id,
-        title=title,
-        description=description,
-        budget=budget,
-        bids_count=bids_count,
-        url=url,
-        analysis=analysis_for_db,
-    )
-
     if not should_send_project(analysis_data, score, min_score, ai_used):
+        reason = f"skipped: score {score}/100 нижче MIN_SCORE {min_score}/100"
+
+        if analysis_data.get("fit") == "no":
+            reason = f"skipped: AI вирішив, що проєкт не підходить; score {score}/100"
+
+        save_project_status(
+            project_id,
+            title,
+            description,
+            budget,
+            bids_count,
+            url,
+            status="skipped",
+            reason=reason,
+            score=score,
+            analysis=analysis_for_db,
+        )
         logger.info(
-            "Filtered by score: %s | score=%s | min_score=%s",
+            "Filtered by score: %s | score=%s | min_score=%s | reason=%s",
             title,
             score,
             min_score,
+            reason,
         )
         return False
+
+    send_reason = (
+        f"sent: {filter_result.reason}; score {score}/100; "
+        f"AI: {'OK' if ai_used else 'fallback'}"
+    )
+
+    save_project_status(
+        project_id,
+        title,
+        description,
+        budget,
+        bids_count,
+        url,
+        status="sent",
+        reason=send_reason,
+        score=score,
+        analysis=analysis_for_db,
+    )
 
     useful = """
 - Python / Telegram Bot API

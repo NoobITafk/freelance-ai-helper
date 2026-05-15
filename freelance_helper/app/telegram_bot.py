@@ -8,7 +8,9 @@ from .bot.handlers import (
     auto_on,
     check_projects,
     handle_button,
+    health_command,
     help_command,
+    last_command,
     profile_command,
     profile_set_command,
     recent_command,
@@ -57,6 +59,7 @@ def run_bot() -> None:
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("health", health_command))
     app.add_handler(CommandHandler("test_ai", test_ai))
     app.add_handler(CommandHandler("check", check_projects))
     app.add_handler(CommandHandler("auto_on", auto_on))
@@ -68,6 +71,7 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("profile_set", profile_set_command))
     app.add_handler(CommandHandler("ai_on", ai_on))
     app.add_handler(CommandHandler("ai_off", ai_off))
+    app.add_handler(CommandHandler("last", last_command))
     app.add_handler(CommandHandler("recent", recent_command))
     app.add_handler(CommandHandler("why", why_command))
     app.add_handler(CallbackQueryHandler(handle_button))

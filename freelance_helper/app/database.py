@@ -31,10 +31,17 @@ def init_db() -> None:
                 bids_count TEXT,
                 url TEXT,
                 analysis TEXT,
+                status TEXT,
+                score INTEGER,
+                reason TEXT,
                 user_rating TEXT,
                 created_at TEXT NOT NULL
             )
         """)
+
+        ensure_column(conn, "projects", "status", "TEXT")
+        ensure_column(conn, "projects", "score", "INTEGER")
+        ensure_column(conn, "projects", "reason", "TEXT")
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS settings (
@@ -59,6 +66,21 @@ def init_db() -> None:
         """, (DEFAULT_MIN_SCORE,))
 
 
+def ensure_column(
+    conn: sqlite3.Connection,
+    table_name: str,
+    column_name: str,
+    column_type: str,
+) -> None:
+    columns = {
+        row["name"]
+        for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    }
+
+    if column_name not in columns:
+        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
+
+
 def save_project(
     project_id: str,
     title: str,
@@ -67,10 +89,13 @@ def save_project(
     bids_count,
     url: str,
     analysis: str,
+    status: str = "skipped",
+    score: int | None = None,
+    reason: str = "",
 ) -> None:
     with get_connection() as conn:
         conn.execute("""
-            INSERT OR IGNORE INTO projects (
+            INSERT INTO projects (
                 project_id,
                 title,
                 description,
@@ -78,9 +103,22 @@ def save_project(
                 bids_count,
                 url,
                 analysis,
+                status,
+                score,
+                reason,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(project_id) DO UPDATE SET
+                title = excluded.title,
+                description = excluded.description,
+                budget = excluded.budget,
+                bids_count = excluded.bids_count,
+                url = excluded.url,
+                analysis = excluded.analysis,
+                status = excluded.status,
+                score = excluded.score,
+                reason = excluded.reason
         """, (
             str(project_id),
             title or "Без назви",
@@ -89,6 +127,9 @@ def save_project(
             str(bids_count),
             url or "",
             analysis or "",
+            status,
+            score,
+            reason or "",
             datetime.now().isoformat(timespec="seconds"),
         ))
 
@@ -184,6 +225,16 @@ def get_recent_projects(limit: int = 5) -> list[dict]:
         """, (limit,)).fetchall()
 
         return [dict(row) for row in rows]
+
+
+def check_database() -> tuple[bool, str]:
+    try:
+        with get_connection() as conn:
+            conn.execute("SELECT 1").fetchone()
+        return True, "OK"
+
+    except Exception as error:
+        return False, str(error)
 
 
 def get_good_bad_keywords() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:

@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -11,9 +12,17 @@ from ..ai_analyzer import (
     generate_questions,
     normalize_analysis,
 )
-from ..config import AI_ANALYSIS_ENABLED, OLLAMA_MODEL, OLLAMA_URL, USER_PROFILE
+from ..config import (
+    AI_ANALYSIS_ENABLED,
+    AUTO_CHECK_FIRST_RUN_SECONDS,
+    AUTO_CHECK_INTERVAL_SECONDS,
+    OLLAMA_MODEL,
+    OLLAMA_URL,
+    USER_PROFILE,
+)
 from ..freelancehunt_api import get_projects
 from ..database import (
+    check_database,
     get_project,
     get_recent_projects,
     set_project_rating,
@@ -23,6 +32,42 @@ from ..database import (
 )
 from ..services.project_service import process_and_send_project
 from ..logger import logger
+
+
+LAST_PROJECTS_LIMIT = 10
+
+
+def is_auto_search_on(context: ContextTypes.DEFAULT_TYPE, chat_id: int) -> bool:
+    job_queue = context.job_queue
+
+    if not job_queue:
+        return False
+
+    return bool(
+        job_queue.get_jobs_by_name("auto_search")
+        or job_queue.get_jobs_by_name(str(chat_id))
+    )
+
+
+def set_last_check_stats(
+    received_count: int,
+    sent_count: int,
+    error: str = "",
+) -> None:
+    set_setting("last_check_at", datetime.now().isoformat(timespec="seconds"))
+    set_setting("last_projects_received", str(received_count))
+    set_setting("last_projects_sent", str(sent_count))
+    set_setting("last_check_error", error)
+
+
+def project_short_description(project: dict, limit: int = 200) -> str:
+    description = project.get("description") or ""
+    description = " ".join(description.split())
+
+    if len(description) <= limit:
+        return description or "Опис відсутній"
+
+    return f"{description[:limit].rstrip()}..."
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -40,6 +85,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /auto_on — увімкнути автопошук
 /auto_off — вимкнути автопошук
 /stats — статистика
+/health — стан Telegram/API/бази/автопошуку
+/last — останні знайдені проєкти
 /settings — показати мінімальний score
 /settings 35 — змінити мінімальний score
 /threshold 35 — те саме, коротше
@@ -100,6 +147,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info("Fetched projects: %s", len(projects))
     except Exception as error:
         logger.exception("Freelancehunt API error")
+        set_last_check_stats(0, 0, str(error))
         await update.message.reply_text(f"Помилка Freelancehunt API:\n{error}")
         return
 
@@ -131,6 +179,8 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if sent_count == 0:
         await update.message.reply_text("Нових відповідних проєктів поки немає.")
 
+    set_last_check_stats(len(projects), sent_count)
+
     logger.info(
         "Manual check finished | sent=%s | processed=%s",
         sent_count,
@@ -147,6 +197,7 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         logger.info("Fetched projects: %s", len(projects))
     except Exception as error:
         logger.exception("Auto API error")
+        set_last_check_stats(0, 0, str(error))
         await context.bot.send_message(chat_id=chat_id, text=f"Помилка API:\n{error}")
         return
 
@@ -186,6 +237,7 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         sent_count,
         processed_count,
     )
+    set_last_check_stats(len(projects), sent_count)
 
 
 async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -198,14 +250,16 @@ async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.job_queue.run_repeating(
         auto_check,
-        interval=180,
-        first=5,
+        interval=AUTO_CHECK_INTERVAL_SECONDS,
+        first=AUTO_CHECK_FIRST_RUN_SECONDS,
         chat_id=chat_id,
         name=str(chat_id),
     )
 
     logger.info("Auto check enabled for chat_id=%s", chat_id)
-    await update.message.reply_text("Автоперевірку увімкнено ✅\nІнтервал: 3 хвилини.")
+    await update.message.reply_text(
+        f"Автоперевірку увімкнено ✅\nІнтервал: {AUTO_CHECK_INTERVAL_SECONDS} сек."
+    )
 
 
 async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -217,6 +271,42 @@ async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     logger.info("Auto check disabled for chat_id=%s", chat_id)
     await update.message.reply_text("Автоперевірку вимкнено ⏹")
+
+
+async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    auto_status = "ON" if is_auto_search_on(context, chat_id) else "OFF"
+
+    database_ok, database_reason = check_database()
+
+    try:
+        projects = get_projects()
+        api_status = "OK"
+        api_reason = f"отримано {len(projects)} проєктів"
+    except Exception as error:
+        logger.exception("Health Freelancehunt API check failed")
+        api_status = "ERROR"
+        api_reason = str(error)
+
+    last_check = get_setting("last_check_at", "ще не було")
+    projects_received = get_setting("last_projects_received", "0")
+    projects_sent = get_setting("last_projects_sent", "0")
+    last_error = get_setting("last_check_error", "")
+
+    text = f"""
+🩺 Health
+
+Telegram: OK
+Freelancehunt API: {api_status} ({api_reason})
+Database: {"OK" if database_ok else "ERROR"} ({database_reason})
+Auto search: {auto_status}
+Last check: {last_check}
+Projects received: {projects_received}
+Projects sent: {projects_sent}
+Last error: {last_error or "немає"}
+""".strip()
+
+    await update.message.reply_text(text[:4000])
 
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -305,24 +395,36 @@ async def ai_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recent_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    projects = get_recent_projects(limit=5)
+    projects = get_recent_projects(limit=LAST_PROJECTS_LIMIT)
 
     if not projects:
         await update.message.reply_text("Поки немає збережених проєктів.")
         return
 
-    lines = ["🕘 Останні проєкти:"]
+    lines = ["🕘 Останні знайдені проєкти:"]
 
     for project in projects:
-        rating = project.get("user_rating") or "без оцінки"
+        status = project.get("status") or "unknown"
+        score = project.get("score")
+        score_text = "?" if score is None else str(score)
+        reason = project.get("reason") or "reason не збережено"
         lines.append(
             f"\nID: {project['project_id']}\n"
-            f"{project['title']}\n"
-            f"Оцінка: {rating}\n"
+            f"Назва: {project['title']}\n"
+            f"Опис: {project_short_description(project)}\n"
+            f"Budget: {project.get('budget')}\n"
+            f"Bids: {project.get('bids_count')}\n"
+            f"Score: {score_text}\n"
+            f"Status: {status}\n"
+            f"Reason: {reason}\n"
             f"{project.get('url') or ''}"
         )
 
     await update.message.reply_text("\n".join(lines)[:4000])
+
+
+async def last_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await recent_command(update, context)
 
 
 async def why_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -381,7 +483,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(labels[action])
 
     elif action in ["bid", "rebid"]:
-        await query.message.reply_text("Генерую ставку...")
+        await query.message.reply_text("Генерую відповідь клієнту...")
 
         try:
             user_profile = get_setting("user_profile", USER_PROFILE)
@@ -393,8 +495,8 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         await query.message.reply_text(
-            f"💬 Коротка ставка:\n\n{short_bid}\n\n"
-            f"💪 Впевненіша ставка:\n\n{confident_bid}\n\n"
+            f"📝 Коротка відповідь клієнту:\n\n{short_bid}\n\n"
+            f"💪 Впевненіший варіант:\n\n{confident_bid}\n\n"
             f"🔗 {project.get('url')}"
         )
 

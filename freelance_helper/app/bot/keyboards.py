@@ -36,7 +36,7 @@ def project_keyboard(project_id: str):
 
         [
             InlineKeyboardButton(
-                "💬 Ставка",
+                "📝 Згенерувати відповідь",
                 callback_data=f"bid:{project_id}"
             ),
 

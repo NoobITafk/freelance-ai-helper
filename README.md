@@ -235,10 +235,12 @@ python -m freelance_helper.app.main
 |---|---|
 | `/start` | запуск бота і показ chat_id |
 | `/help` | список команд |
+| `/health` | стан Telegram, Freelancehunt API, бази й автопошуку |
 | `/check` | перевірити проєкти вручну |
 | `/auto_on` | увімкнути автопошук |
 | `/auto_off` | вимкнути автопошук |
 | `/stats` | показати статистику |
+| `/last` | показати останні знайдені sent/skipped проєкти |
 | `/settings` | показати мінімальний score |
 | `/settings 35` | змінити мінімальний score |
 | `/threshold 35` | швидко змінити мінімальний score |
@@ -246,7 +248,7 @@ python -m freelance_helper.app.main
 | `/profile_set текст` | змінити профіль виконавця |
 | `/ai_on` | увімкнути AI-аналіз |
 | `/ai_off` | вимкнути AI-аналіз і лишити fallback |
-| `/recent` | показати останні 5 збережених проєктів |
+| `/recent` | те саме, що `/last` |
 | `/why project_id` | показати збережений аналіз проєкту |
 
 ---

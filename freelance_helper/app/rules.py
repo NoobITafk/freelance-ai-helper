@@ -4,12 +4,14 @@ from dataclasses import dataclass
 
 GOOD_KEYWORDS = [
     "python", "api", "backend", "fastapi", "django", "flask",
-    "sql", "postgresql", "mysql", "база даних",
+    "sqlite", "postgresql", "mysql", "sql", "база даних",
     "docker", "linux", "bash", "сервер", "деплой",
     "telegram", "bot", "бот", "ai", "штучний інтелект",
-    "c#", ".net", "java", "c++", "архітектура",
-    "javascript", "typescript", "react", "vue", "node",
-    "парсинг", "скрипт", "автоматизація", "інтеграція",
+    "c#", ".net", "asp.net", "java", "spring", "c++", "архітектура",
+    "javascript", "typescript", "node", "react", "vue",
+    "html", "css", "bootstrap",
+    "парсинг", "scraping", "скрипт", "automation", "автоматизація",
+    "інтеграція",
 ]
 
 HARD_BAD_KEYWORDS = [
@@ -18,8 +20,12 @@ HARD_BAD_KEYWORDS = [
 ]
 
 SOFT_BAD_KEYWORDS = [
-    "figma", "photoshop", "illustrator", "дизайн", "logo", "банер",
-    "копірайт", "рерайт", "переклад", "seo", "просування", "таргет",
+    "figma", "photoshop", "illustrator", "дизайн", "design", "logo",
+    "banner", "банер",
+    "копірайт", "копірайтинг", "рерайт", "переклад", "seo", "smm",
+    "просування", "таргет",
+    "реферат", "курсова", "дипломна",
+    "instagram", "tiktok",
     "wordpress", "tilda", "wix", "shopify",
     "excel", "word", "презентація"
 ]
@@ -49,6 +55,7 @@ class FilterResult:
 
 def classify_project(title: str, description: str) -> FilterResult:
     text = f"{title or ''} {description or ''}"
+    text_lower = text.lower()
 
     hard_bad = HARD_BAD_PATTERN.search(text)
 
@@ -58,20 +65,28 @@ def classify_project(title: str, description: str) -> FilterResult:
             reason=f"Стоп-слово: {hard_bad.group(0)}",
         )
 
-    good = GOOD_PATTERN.search(text)
+    good_matches = [
+        word
+        for word in GOOD_KEYWORDS
+        if word.lower() in text_lower
+    ]
 
-    if good:
+    if good_matches:
         return FilterResult(
             category="good",
-            reason=f"Збіг по ключовому слову: {good.group(0)}",
+            reason=f"знайдено GOOD_KEYWORDS: {', '.join(good_matches[:5])}",
         )
 
-    soft_bad = SOFT_BAD_PATTERN.search(text)
+    bad_matches = [
+        word
+        for word in SOFT_BAD_KEYWORDS
+        if word.lower() in text_lower
+    ]
 
-    if soft_bad:
+    if bad_matches:
         return FilterResult(
             category="bad",
-            reason=f"Схоже не на IT-задачу: {soft_bad.group(0)}",
+            reason=f"знайдено BAD_KEYWORDS: {', '.join(bad_matches[:5])}",
         )
 
     return FilterResult(

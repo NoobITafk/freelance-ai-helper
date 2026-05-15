@@ -272,3 +272,119 @@ TimeoutError
 2026-05-15 20:05:07,452 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
 2026-05-15 20:05:17,587 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
 2026-05-15 20:05:27,726 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:05:37,772 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:05:42,140 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:08:42 UTC)" (scheduled at 2026-05-15 17:05:42.134814+00:00)
+2026-05-15 20:05:42,140 | INFO | freelance_helper | Auto check started
+2026-05-15 20:05:42,332 | INFO | freelance_helper | Fetched projects: 10
+2026-05-15 20:05:42,335 | INFO | freelance_helper | Filtered by keywords: Создание NFT | Стоп-слово: NFT
+2026-05-15 20:05:42,336 | INFO | freelance_helper | Filtered by keywords: Looking for a Qt/C++ Desktop App Developer | Стоп-слово: bas
+2026-05-15 20:05:42,339 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-15 20:05:42,339 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:08:42 UTC)" executed successfully
+2026-05-15 20:05:47,818 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:05:57,860 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:06:07,970 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:06:18,102 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:06:28,244 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:06:38,288 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:06:48,333 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:06:58,376 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:07:08,480 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:07:18,528 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:07:28,577 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:07:39,452 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:07:49,498 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:07:59,566 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:08:09,621 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:08:19,798 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:08:29,992 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:08:40,034 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:08:42,138 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:11:42 UTC)" (scheduled at 2026-05-15 17:08:42.134814+00:00)
+2026-05-15 20:08:42,138 | INFO | freelance_helper | Auto check started
+2026-05-15 20:08:42,739 | INFO | freelance_helper | Fetched projects: 10
+2026-05-15 20:08:42,741 | INFO | freelance_helper | Filtered by keywords: Создание NFT | Стоп-слово: NFT
+2026-05-15 20:08:42,742 | INFO | freelance_helper | Filtered by keywords: Looking for a Qt/C++ Desktop App Developer | Стоп-слово: bas
+2026-05-15 20:08:42,744 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-15 20:08:42,745 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:11:42 UTC)" executed successfully
+2026-05-15 20:08:50,338 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:09:01,299 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:09:11,356 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:09:22,494 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:09:32,612 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:09:43,115 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:09:53,425 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:10:03,466 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:10:13,629 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:10:23,678 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:10:33,721 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:10:43,802 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:10:53,847 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:11:04,011 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:11:14,053 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:11:24,100 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:11:34,140 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:11:42,143 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:14:42 UTC)" (scheduled at 2026-05-15 17:11:42.134814+00:00)
+2026-05-15 20:11:42,144 | INFO | freelance_helper | Auto check started
+2026-05-15 20:11:42,350 | INFO | freelance_helper | Fetched projects: 10
+2026-05-15 20:11:45,995 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:11:53,912 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/sendMessage "HTTP/1.1 200 OK"
+2026-05-15 20:11:53,915 | INFO | freelance_helper | Sent project: Перемалювати png в вектор для друку/шовкодруку. | score=48 | ai=True
+2026-05-15 20:11:53,917 | INFO | freelance_helper | Filtered by keywords: Создание NFT | Стоп-слово: NFT
+2026-05-15 20:11:53,919 | INFO | freelance_helper | Filtered by keywords: Looking for a Qt/C++ Desktop App Developer | Стоп-слово: bas
+2026-05-15 20:11:53,921 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-15 20:11:53,922 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:14:42 UTC)" executed successfully
+2026-05-15 20:11:56,074 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:12:06,116 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:12:16,158 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:12:26,203 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:12:36,245 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:12:46,286 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:12:56,332 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:13:06,417 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:13:16,464 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:13:26,505 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:13:36,552 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:13:46,593 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:13:56,856 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:14:07,003 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:14:17,046 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:14:27,275 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:14:37,442 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:14:42,141 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:17:42 UTC)" (scheduled at 2026-05-15 17:14:42.134814+00:00)
+2026-05-15 20:14:42,141 | INFO | freelance_helper | Auto check started
+2026-05-15 20:14:43,620 | INFO | freelance_helper | Fetched projects: 10
+2026-05-15 20:14:43,622 | INFO | freelance_helper | Filtered by keywords: Создание NFT | Стоп-слово: NFT
+2026-05-15 20:14:43,624 | INFO | freelance_helper | Filtered by keywords: Looking for a Qt/C++ Desktop App Developer | Стоп-слово: bas
+2026-05-15 20:14:43,626 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-15 20:14:43,626 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:17:42 UTC)" executed successfully
+2026-05-15 20:14:47,563 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:14:58,060 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:15:09,363 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:15:19,410 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:15:29,535 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:15:39,577 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:15:49,816 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:15:59,937 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:16:10,764 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:16:19,856 | INFO | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-15 20:16:19,856 | INFO | freelance_helper | Auto search scheduled on startup | interval=180 seconds
+2026-05-15 20:16:19,856 | INFO | freelance_helper | Bot started
+2026-05-15 20:16:20,397 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getMe "HTTP/1.1 200 OK"
+2026-05-15 20:16:20,443 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/deleteWebhook "HTTP/1.1 200 OK"
+2026-05-15 20:16:20,446 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
+2026-05-15 20:16:20,446 | INFO | apscheduler.scheduler | Scheduler started
+2026-05-15 20:16:20,447 | INFO | telegram.ext.Application | Application started
+2026-05-15 20:16:29,865 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:19:29 UTC)" (scheduled at 2026-05-15 17:16:29.855579+00:00)
+2026-05-15 20:16:29,865 | INFO | freelance_helper | Auto check started
+2026-05-15 20:16:30,314 | INFO | freelance_helper | Fetched projects: 10
+2026-05-15 20:16:30,326 | INFO | freelance_helper | Filtered by keywords: Создание NFT | skipped: Стоп-слово: NFT
+2026-05-15 20:16:30,330 | INFO | freelance_helper | Filtered by keywords: Looking for a Qt/C++ Desktop App Developer | skipped: Стоп-слово: bas
+2026-05-15 20:16:30,332 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-15 20:16:30,342 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-15 17:19:29 UTC)" executed successfully
+2026-05-15 20:16:30,868 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:16:39,876 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:16:41,898 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/sendMessage "HTTP/1.1 200 OK"
+2026-05-15 20:16:48,859 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:16:49,201 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/sendMessage "HTTP/1.1 200 OK"
+2026-05-15 20:16:59,137 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:17:09,281 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-15 20:17:19,412 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
