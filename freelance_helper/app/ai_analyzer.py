@@ -11,6 +11,60 @@ TEXT_NUM_PREDICT = 500
 AI_RAW_LOG_PATH = Path("logs/ai_raw.log")
 BID_VARIANTS = ("short", "technical", "cautious")
 
+TECHNICAL_KEYWORDS = {
+    "python",
+    "telegram",
+    "телеграм",
+    "bot",
+    "бот",
+    "api",
+    "парсинг",
+    "parsing",
+    "parser",
+    "scraping",
+    "html",
+    "css",
+    "wordpress",
+    "javascript",
+    "sqlite",
+    "google sheets",
+    "google sheet",
+    "excel",
+    "bugfix",
+    "bug fix",
+    "інтеграція",
+    "integration",
+    "форма",
+    "form",
+    "landing",
+    "лендінг",
+}
+
+NON_TECHNICAL_KEYWORDS = {
+    "логотип": ("дизайн/логотип", "Illustrator/CorelDRAW/Figma/Inkscape"),
+    "logo": ("дизайн/логотип", "Illustrator/CorelDRAW/Figma/Inkscape"),
+    "векториза": ("векторизація зображення", "Illustrator/CorelDRAW/Inkscape"),
+    "vector": ("векторизація зображення", "Illustrator/CorelDRAW/Inkscape"),
+    "банер": ("банери/графічний дизайн", "Photoshop/Illustrator/Figma"),
+    "banner": ("банери/графічний дизайн", "Photoshop/Illustrator/Figma"),
+    "дизайн": ("дизайн", "Figma/Photoshop/Illustrator"),
+    "design": ("дизайн", "Figma/Photoshop/Illustrator"),
+    "презентац": ("презентації", "PowerPoint/Keynote/Canva"),
+    "presentation": ("презентації", "PowerPoint/Keynote/Canva"),
+    "поліграф": ("поліграфія", "Illustrator/CorelDRAW/InDesign"),
+    "polygraph": ("поліграфія", "Illustrator/CorelDRAW/InDesign"),
+    "ілюстрац": ("ілюстрації", "Illustrator/Photoshop/Procreate"),
+    "illustration": ("ілюстрації", "Illustrator/Photoshop/Procreate"),
+    "відеомонтаж": ("відеомонтаж", "Premiere Pro/DaVinci Resolve/After Effects"),
+    "video editing": ("відеомонтаж", "Premiere Pro/DaVinci Resolve/After Effects"),
+    "копірайт": ("копірайтинг", "копірайтинг/редактура"),
+    "copywriting": ("копірайтинг", "копірайтинг/редактура"),
+    "переклад": ("переклади", "професійний переклад/локалізація"),
+    "translation": ("переклади", "професійний переклад/локалізація"),
+    "translator": ("переклади", "професійний переклад/локалізація"),
+    "smm": ("SMM", "SMM/контент-маркетинг"),
+}
+
 
 def check_ollama_available(timeout: float = 5) -> tuple[bool, str]:
     base_url = OLLAMA_URL.rsplit("/api/", 1)[0]
@@ -261,8 +315,39 @@ def calculate_score(data: dict) -> int:
     return max(0, min(100, score))
 
 
+def project_text(project: dict) -> str:
+    return f"{project.get('title', '')} {project.get('description', '')}".lower()
+
+
+def non_technical_reason(project: dict) -> tuple[str, str] | None:
+    text = project_text(project)
+
+    if "seo" in text and not any(
+        word in text for word in ["api", "html", "css", "код", "code", "розроб", "programming"]
+    ):
+        return "SEO без програмування", "SEO/SMM-маркетинг"
+
+    has_technical_keyword = any(word in text for word in TECHNICAL_KEYWORDS)
+
+    for keyword, reason in NON_TECHNICAL_KEYWORDS.items():
+        if keyword in text and not has_technical_keyword:
+            return reason
+
+    return None
+
+
+def is_technical_project(project: dict) -> bool:
+    text = project_text(project)
+    return non_technical_reason(project) is None and any(
+        word in text for word in TECHNICAL_KEYWORDS
+    )
+
+
 def project_type(project: dict) -> str:
     text = f"{project.get('title', '')} {project.get('description', '')}".lower()
+
+    if non_technical_reason(project):
+        return "non_technical"
 
     if any(word in text for word in ["telegram", "телеграм", "bot", "бот"]):
         return "telegram_bot"
@@ -273,7 +358,19 @@ def project_type(project: dict) -> str:
     if any(word in text for word in ["парсинг", "parser", "parsing", "scraping", "scrape"]):
         return "parsing"
 
-    return "general"
+    if any(word in text for word in ["html", "css", "верстк", "layout", "landing", "лендінг"]):
+        return "html_css"
+
+    if "api" in text:
+        return "api"
+
+    if any(word in text for word in ["excel", "google sheets", "google sheet", "таблиц"]):
+        return "excel"
+
+    if any(word in text for word in TECHNICAL_KEYWORDS):
+        return "unknown"
+
+    return "unknown"
 
 
 def project_tags_text(project: dict) -> str:
@@ -309,6 +406,8 @@ def project_context(project: dict) -> str:
         f"score: {project.get('score') if project.get('score') is not None else 'Невідомо'}",
         f"why_fit: {project.get('reason') or 'Не вказано'}",
         f"risks: {project.get('analysis') or 'Не вказано'}",
+        f"is_technical_project: {str(is_technical_project(project)).lower()}",
+        f"project_type: {project_type(project)}",
     ]
 
     if is_short_description:
@@ -321,6 +420,9 @@ def project_context(project: dict) -> str:
 
 def fallback_bid(project: dict, variant: str = "short") -> str:
     kind = project_type(project)
+
+    if kind == "non_technical":
+        return unsuitable_project_text(project)
 
     if kind == "telegram_bot":
         return (
@@ -347,6 +449,30 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             "захист. Після цього можна буде підібрати підхід, терміни й вартість."
         )
 
+    if kind == "html_css":
+        return (
+            "Добрий день. Можу допомогти з версткою HTML/CSS або правками інтерфейсу. "
+            "Попередньо потрібно уточнити макет, кількість сторінок, адаптивні "
+            "брейкпоінти, форми та можливу інтеграцію з CMS. Після цього можна буде "
+            "точніше оцінити стек, терміни й вартість."
+        )
+
+    if kind == "api":
+        return (
+            "Добрий день. Можу допомогти з інтеграцією API або невеликою backend-задачею. "
+            "Перед оцінкою потрібно уточнити документацію API, потрібні сценарії, "
+            "формат даних, доступи до тестового середовища та вимоги до логування. "
+            "Після цього можна буде точніше визначити терміни й вартість."
+        )
+
+    if kind == "excel":
+        return (
+            "Добрий день. Можу допомогти з автоматизацією Google Sheets або Excel. "
+            "Перед оцінкою потрібно уточнити структуру таблиць, джерело даних, "
+            "потрібні формули або скрипти, формат результату та частоту оновлення. "
+            "Після цього можна буде точніше визначити терміни й вартість."
+        )
+
     return (
         "Добрий день. Можу допомогти з виконанням цього технічного завдання. "
         "Попередньо потрібно уточнити очікуваний результат, доступи, формат готової "
@@ -359,6 +485,12 @@ def fallback_questions(project: dict) -> str:
     kind = project_type(project)
 
     question_sets = {
+        "non_technical": [
+            "який точний формат результату потрібен?",
+            "які розміри, матеріали або технічні вимоги до друку?",
+            "чи є вихідні файли або приклади бажаного результату?",
+            "у яких форматах потрібно передати готові файли?",
+        ],
         "telegram_bot": [
             "які команди або сценарії має виконувати бот?",
             "чи потрібна база даних для користувачів, історії або налаштувань?",
@@ -380,6 +512,26 @@ def fallback_questions(project: dict) -> str:
             "як часто має запускатися парсинг?",
             "чи є авторизація, CAPTCHA або інший захист?",
         ],
+        "html_css": [
+            "чи є Figma або інший макет?",
+            "скільки сторінок потрібно зверстати?",
+            "які брейкпоінти адаптиву потрібні?",
+            "чи потрібні форми?",
+            "чи потрібна інтеграція з CMS?",
+        ],
+        "api": [
+            "з яким API потрібно працювати?",
+            "які endpoints або сценарії потрібні?",
+            "чи є документація та тестові доступи?",
+            "який формат даних очікується?",
+            "чи потрібне логування помилок?",
+        ],
+        "excel": [
+            "які саме дані потрібно обробляти?",
+            "який формат вхідного файлу або таблиці?",
+            "який результат має бути на виході?",
+            "чи потрібна автоматизація запуску?",
+        ],
         "general": [
             "який кінцевий результат потрібно отримати?",
             "які доступи або матеріали вже є?",
@@ -387,7 +539,7 @@ def fallback_questions(project: dict) -> str:
             "у якому форматі потрібно передати готову роботу?",
         ],
     }
-    questions = question_sets[kind]
+    questions = question_sets.get(kind, question_sets["general"])
     numbered = "\n".join(f"{index}. {question}" for index, question in enumerate(questions, 1))
 
     return (
@@ -398,6 +550,9 @@ def fallback_questions(project: dict) -> str:
 
 
 def generate_bid(project: dict, user_profile: str | None = None, variant: str = "short") -> str:
+    if not is_technical_project(project):
+        return unsuitable_project_text(project)
+
     variant_instruction = {
         "short": "Коротка ставка: найважливіше, без зайвих деталей.",
         "technical": "Більш технічна ставка: коротко поясни стек або етапи реалізації.",
@@ -415,7 +570,7 @@ def generate_bid(project: dict, user_profile: str | None = None, variant: str = 
 
 Вимоги до ставки:
 - відповідай мовою проєкту, не змішуй мови;
-- 800-1200 символів максимум;
+- 600-1200 символів;
 - тон впевнений, нейтральний, без перебільшень;
 - не згадуй, що виконавець студент, навчається, новачок;
 - не згадуй AI/vibe coding як спосіб виконання;
@@ -423,6 +578,7 @@ def generate_bid(project: dict, user_profile: str | None = None, variant: str = 
 - не пиши "маю 5 років досвіду", "гарантую результат", "робив десятки таких проєктів";
 - використовуй формулювання на кшталт "Можу допомогти", "Попередньо бачу реалізацію через...", "Перед точною оцінкою потрібно уточнити...";
 - якщо опис короткий, дай більше питань і менше обіцянок.
+- якщо is_technical_project=false або project_type=non_technical, не генеруй ставку розробника; поверни коротку рекомендацію пропустити проєкт.
 
 Структура:
 1. Привітання.
@@ -467,6 +623,7 @@ def generate_questions(project: dict) -> str:
 - для Telegram-бота уточни сценарії/команди, базу даних, адмін-функції, AI/API-сервіс, деплой;
 - для WordPress уточни доступи, тему, список правок, адаптивність, макет;
 - для парсингу уточни джерело, поля, формат результату, частоту запуску, авторизацію/захист;
+- для HTML/CSS уточни макет, кількість сторінок, брейкпоінти, форми, інтеграцію з CMS;
 - не додавай пропозицію виконання робіт, тільки питання у вказаному форматі.
 """
 
@@ -478,3 +635,19 @@ def generate_questions(project: dict) -> str:
         )
     except requests.RequestException:
         return fallback_questions(project)
+
+
+def unsuitable_project_text(project: dict) -> str:
+    reason = non_technical_reason(project)
+    sphere, skills = reason or ("нетехнічна задача", "профільні нетехнічні інструменти")
+
+    return (
+        "⚠️ Проєкт, імовірно, не підходить.\n\n"
+        "Причина:\n"
+        f"- задача стосується {sphere};\n"
+        "- немає Python, Telegram-ботів, API, парсингу, HTML/CSS, WordPress, "
+        "Google Sheets/Excel або простих інтеграцій;\n"
+        f"- для виконання потрібні навички {skills}.\n\n"
+        "Рекомендація:\n"
+        "Краще пропустити, якщо немає досвіду в цій сфері."
+    )

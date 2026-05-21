@@ -11,11 +11,15 @@ from ..ai_analyzer import (
     check_ollama_available,
     format_analysis,
     calculate_score,
+    fallback_bid,
+    fallback_questions,
     generate_bid,
     generate_questions,
+    is_technical_project,
     normalize_analysis,
+    unsuitable_project_text,
 )
-from .keyboards import bid_keyboard, questions_keyboard
+from .keyboards import bid_keyboard, questions_keyboard, unsuitable_project_keyboard
 from ..config import (
     AI_ANALYSIS_ENABLED,
     AI_TIMEOUT_SECONDS,
@@ -634,6 +638,13 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text(labels[action])
 
     elif action in ["bid", "rebid"]:
+        if not is_technical_project(project):
+            await message.reply_text(
+                unsuitable_project_text(project),
+                reply_markup=unsuitable_project_keyboard(project_id),
+            )
+            return
+
         await message.reply_text("Генерую відповідь клієнту...")
 
         try:
@@ -657,12 +668,10 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except asyncio.TimeoutError:
             logger.exception("Bid generation timed out")
-            await message.reply_text(f"Помилка генерації ставки: timeout {AI_TIMEOUT_SECONDS} сек.")
-            return
+            bid_text = fallback_bid(project, variant=variant)
         except Exception as error:
             logger.exception("Bid generation error")
-            await message.reply_text(f"Помилка генерації ставки:\n{error}")
-            return
+            bid_text = fallback_bid(project, variant=variant)
 
         await message.reply_text(
             f"📝 Варіант ставки:\n\n{bid_text}",
@@ -679,14 +688,18 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except asyncio.TimeoutError:
             logger.exception("Questions generation timed out")
-            await message.reply_text(f"Помилка генерації питань: timeout {AI_TIMEOUT_SECONDS} сек.")
-            return
+            questions = fallback_questions(project)
         except Exception as error:
             logger.exception("Questions generation error")
-            await message.reply_text(f"Помилка генерації питань:\n{error}")
-            return
+            questions = fallback_questions(project)
+
+        reply_markup = (
+            questions_keyboard(project_id)
+            if is_technical_project(project)
+            else unsuitable_project_keyboard(project_id)
+        )
 
         await message.reply_text(
             f"❓ Що уточнити:\n\n{questions}",
-            reply_markup=questions_keyboard(project_id),
+            reply_markup=reply_markup,
         )

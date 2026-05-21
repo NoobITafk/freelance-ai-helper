@@ -46,3 +46,14 @@ def questions_keyboard(project_id: str):
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+def unsuitable_project_keyboard(project_id: str):
+    keyboard = [
+        [
+            InlineKeyboardButton("⏭ Пропустити", callback_data=f"skip:{project_id}"),
+            InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
+        ],
+    ]
+
+    return InlineKeyboardMarkup(keyboard)

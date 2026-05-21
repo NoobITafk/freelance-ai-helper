@@ -9823,3 +9823,122 @@ telegram.error.TimedOut: Timed out
 2026-05-21 18:41:57,302 | INFO | freelance_helper | Fetched projects: 10
 2026-05-21 18:41:57,305 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
 2026-05-21 18:41:57,316 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:44:57 UTC)" executed successfully
+2026-05-21 18:42:59,327 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 18:44:57,072 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:47:57 UTC)" (scheduled at 2026-05-21 15:44:57.063580+00:00)
+2026-05-21 18:44:57,072 | INFO | freelance_helper | Auto check started
+2026-05-21 18:44:57,259 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 18:44:57,260 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 18:44:57,264 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 18:44:57,276 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:47:57 UTC)" executed successfully
+2026-05-21 18:47:57,069 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:50:57 UTC)" (scheduled at 2026-05-21 15:47:57.063580+00:00)
+2026-05-21 18:47:57,069 | INFO | freelance_helper | Auto check started
+2026-05-21 18:47:57,434 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 18:47:57,434 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 18:47:57,436 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 18:47:57,448 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:50:57 UTC)" executed successfully
+2026-05-21 18:50:57,068 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:53:57 UTC)" (scheduled at 2026-05-21 15:50:57.063580+00:00)
+2026-05-21 18:50:57,069 | INFO | freelance_helper | Auto check started
+2026-05-21 18:50:57,297 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 18:50:57,297 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 18:50:57,310 | INFO | freelance_helper | Filtered by max bids: Контент для Телеграм-каналу | skipped: 26 ставок > MAX_BIDS_COUNT 20
+2026-05-21 18:50:57,312 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 18:50:57,315 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:53:57 UTC)" executed successfully
+2026-05-21 18:53:57,067 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:56:57 UTC)" (scheduled at 2026-05-21 15:53:57.063580+00:00)
+2026-05-21 18:53:57,067 | INFO | freelance_helper | Auto check started
+2026-05-21 18:53:57,295 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 18:53:57,295 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 18:54:06,464 | INFO | freelance_helper | Filtered by score: Отзыв на Clutch.co | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 18:54:06,467 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 18:54:06,471 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:56:57 UTC)" executed successfully
+2026-05-21 18:56:57,075 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:59:57 UTC)" (scheduled at 2026-05-21 15:56:57.063580+00:00)
+2026-05-21 18:56:57,075 | INFO | freelance_helper | Auto check started
+2026-05-21 18:56:57,301 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 18:56:57,301 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 18:57:02,728 | INFO | freelance_helper | Sent project: Векторизація логотипу для друку на одязі | score=70 | ai=True | fallback=none
+2026-05-21 18:57:02,731 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 18:57:02,738 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 15:59:57 UTC)" executed successfully
+2026-05-21 18:59:57,071 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:02:57 UTC)" (scheduled at 2026-05-21 15:59:57.063580+00:00)
+2026-05-21 18:59:57,072 | INFO | freelance_helper | Auto check started
+2026-05-21 18:59:57,448 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 18:59:57,449 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 19:00:03,210 | INFO | freelance_helper | Sent project: Верстка односторінкового сайту  у Wix Studio | score=48 | ai=True | fallback=none
+2026-05-21 19:00:03,213 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 19:00:03,225 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:02:57 UTC)" executed successfully
+2026-05-21 19:02:57,071 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:05:57 UTC)" (scheduled at 2026-05-21 16:02:57.063580+00:00)
+2026-05-21 19:02:57,071 | INFO | freelance_helper | Auto check started
+2026-05-21 19:02:57,271 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 19:02:57,272 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 19:02:57,284 | INFO | freelance_helper | Filtered by keywords: Дизайн карточки товара! | skipped: Не IT keywords: figma, дизайн
+2026-05-21 19:02:57,287 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 19:02:57,292 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:05:57 UTC)" executed successfully
+2026-05-21 19:05:57,071 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:08:57 UTC)" (scheduled at 2026-05-21 16:05:57.063580+00:00)
+2026-05-21 19:05:57,074 | INFO | freelance_helper | Auto check started
+2026-05-21 19:05:57,327 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 19:05:57,328 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 19:06:14,010 | ERROR | freelance_helper | AI analysis failed, using fallback rules
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/ai_analyzer.py", line 152, in analyze_project_json
+    questions = data.get("questions", [])
+               ^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/ai_analyzer.py", line 65, in extract_json
+    "smm": ("SMM", "SMM/контент-маркетинг"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: AI не повернув JSON. Відповідь AI: {
+  "fit": "no",
+  "summary": "Проект потребує багато розуміння та використання сучасних технологій, які не підтримуються студентом 2-го курсу. Також потребує високого рівня комунікації на англійську мову та операції з клієнтами.",
+  "difficulty": 8,
+  "risk": 9,
+  "success_chance": 20,
+  "competiti
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/services/project_service.py", line 128, in analyze_project_with_timeout
+    raw_analysis = await asyncio.wait_for(
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+    )
+    ^
+  File "/usr/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.14/asyncio/threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/concurrent/futures/thread.py", line 86, in run
+    result = ctx.run(self.task)
+  File "/usr/lib/python3.14/concurrent/futures/thread.py", line 73, in run
+    return fn(*args, **kwargs)
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/ai_analyzer.py", line 177, in analyze_project_json
+    Профіль виконавця:
+            ^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/ai_analyzer.py", line 65, in extract_json
+    "smm": ("SMM", "SMM/контент-маркетинг"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: AI не повернув JSON. Відповідь AI: {
+  "fit": "no",
+  "summary": "Проект потребує багато розуміння та використання сучасних технологій, які не підтримуються студентом 2-го курсу. Також потребує високого рівня комунікації на англійську мову та операції з клієнтами.",
+  "difficulty": 8,
+  "risk": 9,
+  "success_chance": 20,
+  "competiti
+2026-05-21 19:06:14,309 | INFO | freelance_helper | Sent project: Software Developer & Technical Interview Specialist (English Communication Focus) | score=55 | ai=False | fallback=unavailable
+2026-05-21 19:06:14,313 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 19:06:14,328 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:08:57 UTC)" executed successfully
+2026-05-21 19:08:57,068 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:11:57 UTC)" (scheduled at 2026-05-21 16:08:57.063580+00:00)
+2026-05-21 19:08:57,069 | INFO | freelance_helper | Auto check started
+2026-05-21 19:08:57,284 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 19:08:57,285 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 19:08:57,291 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 19:08:57,303 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 16:11:57 UTC)" executed successfully
+2026-05-21 19:09:50,382 | INFO | telegram.ext.Application | Application is stopping. This might take a moment.
+2026-05-21 19:09:50,391 | INFO | apscheduler.scheduler | Scheduler has been shut down
+2026-05-21 19:09:50,402 | INFO | telegram.ext.Application | Application.stop() complete
+2026-05-21 19:10:14,390 | INFO | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-21 19:10:14,391 | INFO | freelance_helper | Auto search scheduled on startup | interval=180 seconds
+2026-05-21 19:10:14,391 | INFO | freelance_helper | Bot started | run: python -m freelance_helper.app.main
+2026-05-21 19:10:14,392 | INFO | freelance_helper | Auto search scheduled for TELEGRAM_CHAT_ID=6212873712
+2026-05-21 19:10:14,624 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
+2026-05-21 19:10:14,625 | INFO | apscheduler.scheduler | Scheduler started
+2026-05-21 19:10:14,625 | INFO | telegram.ext.Application | Application started

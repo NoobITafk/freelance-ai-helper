@@ -83,8 +83,21 @@ SOFT_BAD_KEYWORDS = [
     "photoshop",
     "illustrator",
     "logo",
+    "логотип",
+    "векторизація",
+    "векторизувати",
+    "vector",
     "банер",
     "banner",
+    "презентація",
+    "presentation",
+    "поліграфія",
+    "поліграф",
+    "ілюстрація",
+    "ілюстрації",
+    "illustration",
+    "відеомонтаж",
+    "video editing",
     "копірайт",
     "копірайтинг",
     "рерайт",
@@ -152,7 +165,7 @@ def classify_project(title: str, description: str) -> FilterResult:
         word for word in good_matches if word.lower() not in WEAK_GOOD_KEYWORDS
     ]
 
-    if bad_matches and not strong_good_matches:
+    if bad_matches and not strong_good_matches and len(good_matches) < 2:
         return FilterResult(
             category="bad",
             reason=f"Не IT keywords: {', '.join(bad_matches[:5])}",
