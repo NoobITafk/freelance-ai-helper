@@ -49,11 +49,10 @@ ANALYZE_MAYBE_PROJECTS = env_bool("ANALYZE_MAYBE_PROJECTS", True)
 USER_PROFILE = os.getenv(
     "USER_PROFILE",
     (
-        "Я студент 2 курсу інженерії програмного забезпечення. "
-        "Вчуся програмувати, можу vibe-code з AI, розбиратися в чужому коді, "
-        "робити невеликі Python-скрипти, Telegram-ботів, API, парсинг, "
-        "простий frontend і бази даних. Потрібно чесно оцінювати ризики "
-        "для junior-рівня і не радити брати задачі, де потрібен сильний senior."
+        "Можу виконувати невеликі Python-скрипти, Telegram-ботів, API-інтеграції, "
+        "парсинг, HTML/CSS, WordPress-правки, Google Sheets/Excel автоматизацію "
+        "і прості задачі з базами даних. Потрібно чесно оцінювати ризики "
+        "і не радити брати задачі, де потрібна глибока вузька експертиза."
     ),
 )
 FREELANCEHUNT_TOKEN = os.getenv("FREELANCEHUNT_TOKEN")

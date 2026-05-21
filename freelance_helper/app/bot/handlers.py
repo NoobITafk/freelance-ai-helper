@@ -103,13 +103,14 @@ def format_check_debug_stats(
     received_count: int,
     processed_count: int,
 ) -> str:
-    filter_rejected = stats["basic_rejected"] + stats["already_seen"]
+    filter_rejected = stats["basic_rejected"]
 
     lines = [
         "🔍 Перевірка завершена",
         "",
         f"Отримано з Freelancehunt: {received_count}",
         f"Оброблено: {processed_count}",
+        f"Вже були в базі: {stats['already_seen']}",
         f"Відкинуто фільтрами: {filter_rejected}",
         f"Передано в AI: {stats['ai_analyzed']}",
         f"Fallback без AI: {stats['fallback_used']}",

@@ -73,6 +73,18 @@ CASES = [
         expected_technical=True,
     ),
     Case(
+        name="Figma design only",
+        project={
+            "title": "Дизайн головної сторінки у Figma",
+            "description": "Потрібно намалювати дизайн лендингу без верстки та програмування.",
+            "budget": "2500 грн",
+            "bids_count": 11,
+            "url": "https://example.com/figma-design",
+        },
+        expected_type="non_technical",
+        expected_technical=False,
+    ),
+    Case(
         name="Google Sheets",
         project={
             "title": "Автоматизація Google Sheets",
@@ -83,6 +95,18 @@ CASES = [
         },
         expected_type="excel",
         expected_technical=True,
+    ),
+    Case(
+        name="Excel data entry",
+        project={
+            "title": "Data entry в Excel",
+            "description": "Потрібно вручну перенести дані з PDF у таблицю Excel.",
+            "budget": "900 грн",
+            "bids_count": 20,
+            "url": "https://example.com/data-entry",
+        },
+        expected_type="non_technical",
+        expected_technical=False,
     ),
     Case(
         name="Logo vectorization",
@@ -119,6 +143,18 @@ CASES = [
         },
         expected_type="non_technical",
         expected_technical=False,
+    ),
+    Case(
+        name="SEO with code fixes",
+        project={
+            "title": "Технічні SEO-правки HTML",
+            "description": "Потрібно виправити HTML-заголовки, schema markup і дрібні CSS-проблеми на сайті.",
+            "budget": "3000 грн",
+            "bids_count": 6,
+            "url": "https://example.com/technical-seo",
+        },
+        expected_type="html_css",
+        expected_technical=True,
     ),
 ]
 

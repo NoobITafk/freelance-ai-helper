@@ -2,9 +2,11 @@
 venv/
 __pycache__/
 *.pyc
+
 data/*.db
 logs/*.log
 logs/ai_raw.log
+
 .DS_Store
 .idea/
 .vscode/

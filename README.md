@@ -39,27 +39,28 @@
 
 ```text
 freelance-ai-helper/
-├─ AGENTS.md
 ├─ .env.example
 ├─ .gitignore
 ├─ requirements.txt
 ├─ data/
 ├─ logs/
 ├─ freelance_helper/
-├─ app/
-│  ├─ bot/
-│  │  ├─ handlers.py
-│  │  └─ keyboards.py
-│  ├─ services/
-│  │  └─ project_service.py
-│  ├─ ai_analyzer.py
-│  ├─ config.py
-│  ├─ database.py
-│  ├─ freelancehunt_api.py
-│  ├─ logger.py
-│  ├─ main.py
-│  ├─ rules.py
-│  └─ telegram_bot.py
+│  └─ app/
+│     ├─ bot/
+│     │  ├─ handlers.py
+│     │  └─ keyboards.py
+│     ├─ services/
+│     │  └─ project_service.py
+│     ├─ ai_analyzer.py
+│     ├─ config.py
+│     ├─ database.py
+│     ├─ freelancehunt_api.py
+│     ├─ logger.py
+│     ├─ main.py
+│     ├─ rules.py
+│     └─ telegram_bot.py
+├─ scripts/
+│  └─ check_project_logic.py
 └─ README.md
 ```
 
@@ -183,6 +184,7 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_telegram_chat_id
 FREELANCEHUNT_TOKEN=your_freelancehunt_api_token
 OLLAMA_MODEL=qwen2.5:3b
+OLLAMA_URL=http://localhost:11434/api/generate
 AI_ANALYSIS_ENABLED=true
 AI_TIMEOUT_SECONDS=40
 AUTO_CHECK_INTERVAL_SECONDS=180
@@ -190,7 +192,7 @@ AUTO_CHECK_FIRST_RUN_SECONDS=10
 MAX_BIDS_COUNT=40
 MIN_SCORE=45
 ANALYZE_MAYBE_PROJECTS=true
-USER_PROFILE="Я студент 2 курсу інженерії програмного забезпечення, вчуся програмувати, можу виконувати невеликі Python-скрипти, Telegram-ботів, API, парсинг, простий frontend і бази даних."
+USER_PROFILE="Можу виконувати невеликі Python-скрипти, Telegram-ботів, API-інтеграції, парсинг, HTML/CSS, WordPress-правки, Google Sheets/Excel автоматизацію і прості задачі з базами даних."
 ```
 
 Важливо: використовуй саме `FREELANCEHUNT_TOKEN`. Якщо в старому `.env` було `FREELANCEHUNT_API_TOKEN`, перейменуй змінну вручну (файл `.env` не комітиться в Git).
@@ -245,8 +247,10 @@ python -m freelance_helper.app.main
 
 ```bash
 python -m compileall freelance_helper
-python -m freelance_helper.app.main
+./venv/bin/python scripts/check_project_logic.py
 ```
+
+Команда `python -m freelance_helper.app.main` запускає реального polling-бота. Використовуй її тільки коли готовий перевіряти Telegram вручну.
 
 ### У Telegram
 
@@ -270,7 +274,7 @@ python -m freelance_helper.app.main
 | `/start` | запуск бота і показ chat_id |
 | `/help` | список команд |
 | `/health` | діагностика: токени, SQLite, Freelancehunt API, Ollama, AI, MIN_SCORE |
-| `/check` | перевірити проєкти вручну + статистика (отримано / оброблено / надіслано / відкинуто) |
+| `/check` | перевірити проєкти вручну + статистика: отримано, оброблено, вже бачені, AI, fallback, score, конкуренція, надіслано |
 | `/auto_on` | увімкнути автопошук у поточному чаті |
 | `/auto_off` | вимкнути автопошук у поточному чаті |
 | `/stats` | статистика оцінок і налаштувань |
@@ -361,10 +365,18 @@ tail -f logs/bot.log
 
 ```bash
 git status
-git add README.md AGENTS.md requirements.txt .env.example .gitignore
-git add freelance_helper/app/config.py freelance_helper/app/rules.py
-git add freelance_helper/app/bot/handlers.py freelance_helper/app/services/project_service.py
-git commit -m "Оновлення документації та налаштувань"
+git add README.md requirements.txt .env.example .gitignore
+git add freelance_helper/app/main.py
+git add freelance_helper/app/telegram_bot.py
+git add freelance_helper/app/bot/handlers.py
+git add freelance_helper/app/bot/keyboards.py
+git add freelance_helper/app/ai_analyzer.py
+git add freelance_helper/app/config.py
+git add freelance_helper/app/freelancehunt_api.py
+git add freelance_helper/app/services/project_service.py
+git add freelance_helper/app/rules.py
+git add scripts/check_project_logic.py
+git commit -m "Fix project startup and bot responses"
 git push
 ```
 

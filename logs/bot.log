@@ -10140,3 +10140,354 @@ ValueError: AI не повернув JSON. Відповідь AI: {
 2026-05-21 20:35:13,842 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
 2026-05-21 20:35:13,842 | INFO | apscheduler.scheduler | Scheduler started
 2026-05-21 20:35:13,842 | INFO | telegram.ext.Application | Application started
+2026-05-21 20:35:23,625 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:38:23 UTC)" (scheduled at 2026-05-21 17:35:23.616415+00:00)
+2026-05-21 20:35:23,626 | INFO | freelance_helper | Auto check started
+2026-05-21 20:35:23,803 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:35:23,805 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:35:23,815 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 20:35:23,835 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:38:23 UTC)" executed successfully
+2026-05-21 20:38:23,625 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:41:23 UTC)" (scheduled at 2026-05-21 17:38:23.616415+00:00)
+2026-05-21 20:38:23,625 | INFO | freelance_helper | Auto check started
+2026-05-21 20:38:23,854 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:38:23,854 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:38:23,856 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 20:38:23,868 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:41:23 UTC)" executed successfully
+2026-05-21 20:41:23,624 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:44:23 UTC)" (scheduled at 2026-05-21 17:41:23.616415+00:00)
+2026-05-21 20:41:23,625 | INFO | freelance_helper | Auto check started
+2026-05-21 20:41:23,831 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:41:23,832 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:41:23,835 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 20:41:23,839 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:44:23 UTC)" executed successfully
+2026-05-21 20:44:23,623 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:47:23 UTC)" (scheduled at 2026-05-21 17:44:23.616415+00:00)
+2026-05-21 20:44:23,623 | INFO | freelance_helper | Auto check started
+2026-05-21 20:44:23,851 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:44:23,851 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:44:23,854 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 20:44:23,865 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:47:23 UTC)" executed successfully
+2026-05-21 20:47:23,622 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:50:23 UTC)" (scheduled at 2026-05-21 17:47:23.616415+00:00)
+2026-05-21 20:47:23,623 | INFO | freelance_helper | Auto check started
+2026-05-21 20:47:33,635 | ERROR | freelance_helper | Freelancehunt API request failed
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connection.py", line 204, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 987, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 788, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 1106, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connection.py", line 759, in connect
+    self.sock = sock = self._new_conn()
+                       ~~~~~~~~~~~~~~^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connection.py", line 211, in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+urllib3.exceptions.NameResolutionError: HTTPSConnection(host='api.freelancehunt.com', port=443): Failed to resolve 'api.freelancehunt.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/adapters.py", line 667, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 842, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/util/retry.py", line 543, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.freelancehunt.com', port=443): Max retries exceeded with url: /v2/projects (Caused by NameResolutionError("HTTPSConnection(host='api.freelancehunt.com', port=443): Failed to resolve 'api.freelancehunt.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/freelancehunt_api.py", line 26, in get_projects
+    response = requests.get(API_URL, headers=headers, timeout=20)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/adapters.py", line 700, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='api.freelancehunt.com', port=443): Max retries exceeded with url: /v2/projects (Caused by NameResolutionError("HTTPSConnection(host='api.freelancehunt.com', port=443): Failed to resolve 'api.freelancehunt.com' ([Errno -3] Temporary failure in name resolution)"))
+2026-05-21 20:47:33,653 | ERROR | freelance_helper | Auto API error
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connection.py", line 204, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/util/connection.py", line 60, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/socket.py", line 987, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 788, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 488, in _make_request
+    raise new_e
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 1106, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connection.py", line 759, in connect
+    self.sock = sock = self._new_conn()
+                       ~~~~~~~~~~~~~~^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connection.py", line 211, in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+urllib3.exceptions.NameResolutionError: HTTPSConnection(host='api.freelancehunt.com', port=443): Failed to resolve 'api.freelancehunt.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/adapters.py", line 667, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/connectionpool.py", line 842, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/urllib3/util/retry.py", line 543, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.freelancehunt.com', port=443): Max retries exceeded with url: /v2/projects (Caused by NameResolutionError("HTTPSConnection(host='api.freelancehunt.com', port=443): Failed to resolve 'api.freelancehunt.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/freelancehunt_api.py", line 26, in get_projects
+    response = requests.get(API_URL, headers=headers, timeout=20)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/api.py", line 73, in get
+    return request("get", url, params=params, **kwargs)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/requests/adapters.py", line 700, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='api.freelancehunt.com', port=443): Max retries exceeded with url: /v2/projects (Caused by NameResolutionError("HTTPSConnection(host='api.freelancehunt.com', port=443): Failed to resolve 'api.freelancehunt.com' ([Errno -3] Temporary failure in name resolution)"))
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/bot/handlers.py", line 305, in auto_check
+    try:
+    
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/freelancehunt_api.py", line 29, in get_projects
+    raise FreelancehuntAPIError(
+        f"Не вдалося підключитися до Freelancehunt API: {error}"
+    ) from error
+freelance_helper.app.freelancehunt_api.FreelancehuntAPIError: Не вдалося підключитися до Freelancehunt API: HTTPSConnectionPool(host='api.freelancehunt.com', port=443): Max retries exceeded with url: /v2/projects (Caused by NameResolutionError("HTTPSConnection(host='api.freelancehunt.com', port=443): Failed to resolve 'api.freelancehunt.com' ([Errno -3] Temporary failure in name resolution)"))
+2026-05-21 20:47:38,673 | ERROR | telegram.ext.Application | No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_async/connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    raise exc
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_async/connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_backends/auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_backends/anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_httpxrequest.py", line 279, in do_request
+    res = await self._client.request(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectTimeout
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_jobqueue.py", line 1010, in _run
+    await self.callback(context)
+  File "/home/arch/freelance-ai-helper/freelance_helper/app/bot/handlers.py", line 310, in auto_check
+    set_last_check_stats(0, 0, str(error))
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 3118, in send_message
+    return await super().send_message(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<23 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 1123, in send_message
+    return await self._send_message(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<21 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 630, in _send_message
+    result = await super()._send_message(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<23 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 820, in _send_message
+    result = await self._post(
+             ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 704, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 370, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 733, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 305, in _request_wrapper
+    code, payload = await self.do_request(
+                    ^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_httpxrequest.py", line 296, in do_request
+    raise TimedOut from err
+telegram.error.TimedOut: Timed out
+2026-05-21 20:47:38,697 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:50:23 UTC)" executed successfully
+2026-05-21 20:50:22,152 | INFO | telegram.ext.Application | Application is stopping. This might take a moment.
+2026-05-21 20:50:22,152 | INFO | apscheduler.scheduler | Scheduler has been shut down
+2026-05-21 20:50:22,163 | INFO | telegram.ext.Application | Application.stop() complete
+2026-05-21 20:50:23,923 | INFO | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-21 20:50:23,923 | INFO | freelance_helper | Auto search scheduled on startup | interval=180 seconds
+2026-05-21 20:50:23,923 | INFO | freelance_helper | Bot started | run: python -m freelance_helper.app.main
+2026-05-21 20:50:23,924 | INFO | freelance_helper | Auto search scheduled for TELEGRAM_CHAT_ID=6212873712
+2026-05-21 20:50:24,109 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
+2026-05-21 20:50:24,109 | INFO | apscheduler.scheduler | Scheduler started
+2026-05-21 20:50:24,109 | INFO | telegram.ext.Application | Application started
+2026-05-21 20:50:33,933 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:53:33 UTC)" (scheduled at 2026-05-21 17:50:33.922422+00:00)
+2026-05-21 20:50:33,933 | INFO | freelance_helper | Auto check started
+2026-05-21 20:50:34,276 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:50:34,277 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:50:42,223 | INFO | freelance_helper | Sent project: Создать аккаунт и верифицировать компанию на сайте Work.ua/Rabota.ua | score=91 | ai=True | fallback=none
+2026-05-21 20:50:42,228 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 20:50:42,246 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:53:33 UTC)" executed successfully
