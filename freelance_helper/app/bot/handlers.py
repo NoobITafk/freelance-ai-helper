@@ -18,6 +18,7 @@ from ..config import (
     AUTO_CHECK_FIRST_RUN_SECONDS,
     AUTO_CHECK_INTERVAL_SECONDS,
     FREELANCEHUNT_TOKEN,
+    MIN_SCORE,
     OLLAMA_MODEL,
     OLLAMA_URL,
     TELEGRAM_BOT_TOKEN,
@@ -72,8 +73,11 @@ def make_check_debug_stats() -> dict:
         "fallback_used": 0,
         "sent": 0,
         "low_score_skipped": 0,
+        "competition_skipped": 0,
         "api_errors": [],
         "ai_errors": [],
+        "api_ok": True,
+        "ai_ok": True,
     }
 
 
@@ -82,30 +86,43 @@ def format_check_debug_stats(
     received_count: int,
     processed_count: int,
 ) -> str:
-    rejected = (
-        stats["already_seen"]
-        + stats["basic_rejected"]
-        + stats["low_score_skipped"]
-    )
+    filter_rejected = stats["basic_rejected"] + stats["already_seen"]
 
     lines = [
-        "📊 Результат /check",
+        "🔍 Перевірка завершена",
         "",
         f"Отримано з Freelancehunt: {received_count}",
         f"Оброблено: {processed_count}",
-        f"Надіслано в Telegram: {stats['sent']}",
-        f"Відкинуто: {rejected}",
+        f"Відкинуто фільтрами: {filter_rejected}",
+        f"Передано в AI: {stats['ai_analyzed']}",
+        f"Fallback без AI: {stats['fallback_used']}",
+        f"Відкинуто через score: {stats['low_score_skipped']}",
+        f"Відкинуто через конкуренцію: {stats['competition_skipped']}",
+        f"Надіслано: {stats['sent']}",
+        "",
+        f"API: {'OK' if stats['api_ok'] and not stats['api_errors'] else 'ERROR'}",
     ]
 
     if stats["api_errors"]:
-        api_short = "; ".join(stats["api_errors"][:3])[:300]
-        lines.append(f"Помилки API: {api_short}")
+        lines.append(f"Остання помилка API: {stats['api_errors'][-1][:200]}")
+
+    if stats["ai_ok"] and stats["fallback_used"] == 0 and stats["ai_analyzed"] > 0:
+        lines.append("AI: OK")
+    elif stats["fallback_used"] > 0:
+        lines.append("AI: unavailable, used fallback rules")
+    elif not stats["ai_ok"]:
+        lines.append("AI: ERROR")
+    else:
+        lines.append("AI: OK")
 
     if stats["ai_errors"]:
-        ai_short = "; ".join(stats["ai_errors"][:3])[:300]
-        lines.append(f"Помилки AI: {ai_short}")
+        lines.append(f"Остання помилка AI: {stats['ai_errors'][-1][:200]}")
 
     return "\n".join(lines)
+
+
+def env_status(value) -> str:
+    return "OK" if value else "missing"
 
 
 def project_short_description(project: dict, limit: int = 200) -> str:
@@ -147,11 +164,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /why project_id — показати збережений аналіз
 
 📌 Кнопки під проєктом:
-✅ Добрий
-❌ Поганий
-💬 Ставка
-❓ Уточнення
-⏭ Пропустити
+✅ Добрий | ❌ Поганий
+📝 Ставка | ❓ Уточнення
+🔁 Нова ставка | ⏭ Пропустити
 """
     await update.message.reply_text(text)
 
@@ -193,9 +208,16 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info("Fetched projects: %s", len(projects))
     except Exception as error:
         logger.exception("Freelancehunt API error")
+        debug_stats["api_ok"] = False
         debug_stats["api_errors"].append(str(error))
         set_last_check_stats(0, 0, str(error))
         await update.message.reply_text(f"Помилка Freelancehunt API:\n{error}")
+        await update.message.reply_text(format_check_debug_stats(debug_stats, 0, 0))
+        return
+
+    if not projects:
+        await update.message.reply_text("Отримано 0 проєктів з Freelancehunt.")
+        set_last_check_stats(0, 0)
         await update.message.reply_text(format_check_debug_stats(debug_stats, 0, 0))
         return
 
@@ -216,6 +238,8 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         except Exception as error:
             logger.exception("Project processing error")
+            debug_stats["ai_ok"] = False
+            debug_stats["ai_errors"].append(str(error)[:200])
             await update.message.reply_text(f"Помилка обробки проєкту:\n{error}")
             continue
 
@@ -331,32 +355,38 @@ async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if ai_setting is None:
         ai_setting = get_setting("ai_enabled")
     runtime_ai_enabled = setting_bool_from_env(ai_setting, AI_ANALYSIS_ENABLED)
-    min_score = get_setting("min_score", "45")
+    min_score = get_setting("min_score", str(MIN_SCORE))
+
+    api_status = "OK"
+    api_reason = "not checked"
 
     try:
         projects = get_projects()
-        api_status = "OK"
-        api_reason = f"отримано {len(projects)} проєктів"
+        api_reason = f"{len(projects)} projects"
     except Exception as error:
-        logger.exception("Health Freelancehunt API check failed")
-        api_status = "ERROR"
-        api_reason = str(error)
+        logger.warning("Health Freelancehunt API check failed: %s", error)
+        api_status = "error"
+        api_reason = str(error)[:120]
 
-    ollama_ok, ollama_reason = check_ollama_available()
+    try:
+        ollama_ok, ollama_reason = check_ollama_available()
+    except Exception as error:
+        ollama_ok = False
+        ollama_reason = str(error)[:120]
 
     text = f"""
 🩺 Health
 
 Bot: OK
-TELEGRAM_BOT_TOKEN: {"є" if TELEGRAM_BOT_TOKEN else "немає"}
-TELEGRAM_CHAT_ID: {"є" if TELEGRAM_CHAT_ID else "немає"}
-FREELANCEHUNT_TOKEN: {"є" if FREELANCEHUNT_TOKEN else "немає"}
-SQLite database: {"OK" if database_ok else "ERROR"} ({database_reason})
+TELEGRAM_BOT_TOKEN: {env_status(TELEGRAM_BOT_TOKEN)}
+TELEGRAM_CHAT_ID: {env_status(TELEGRAM_CHAT_ID)}
+FREELANCEHUNT_TOKEN: {env_status(FREELANCEHUNT_TOKEN)}
+Database: {"OK" if database_ok else "error"} ({database_reason})
 Freelancehunt API: {api_status} ({api_reason})
-AI enabled: {"так" if runtime_ai_enabled else "ні"} (env={AI_ANALYSIS_ENABLED})
+AI_ANALYSIS_ENABLED: {str(runtime_ai_enabled).lower()}
 OLLAMA_URL: {OLLAMA_URL}
 OLLAMA_MODEL: {OLLAMA_MODEL}
-Ollama available: {"так" if ollama_ok else "ні"} ({ollama_reason})
+Ollama: {"OK" if ollama_ok else "unavailable"} ({ollama_reason})
 AUTO_CHECK_INTERVAL_SECONDS: {AUTO_CHECK_INTERVAL_SECONDS}
 MIN_SCORE: {min_score}
 """.strip()
@@ -373,7 +403,7 @@ def setting_bool_from_env(value, default: bool) -> bool:
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     stats = get_stats()
-    min_score = get_setting("min_score", "45")
+    min_score = get_setting("min_score", str(MIN_SCORE))
     ai_enabled = get_setting("AI_ANALYSIS_ENABLED", str(AI_ANALYSIS_ENABLED)).lower()
 
     text = f"""
@@ -398,7 +428,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        min_score = get_setting("min_score", "45")
+        min_score = get_setting("min_score", str(MIN_SCORE))
         await update.message.reply_text(
             f"Поточний мінімальний score: {min_score}\n\n"
             f"Щоб змінити:\n/settings 35"

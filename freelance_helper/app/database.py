@@ -3,8 +3,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from .config import MIN_SCORE
+
 DB_PATH = Path("data/projects.db")
-DEFAULT_MIN_SCORE = "45"
+DEFAULT_MIN_SCORE = str(MIN_SCORE)
 ALLOWED_RATINGS = {"great", "good", "maybe", "bad", "not_mine", "skip"}
 
 

@@ -13,7 +13,10 @@ class FreelancehuntAPIError(RuntimeError):
 
 def get_projects():
     if not FREELANCEHUNT_TOKEN:
-        raise FreelancehuntAPIError("FREELANCEHUNT_TOKEN не знайдено в .env")
+        logger.error("Freelancehunt API: FREELANCEHUNT_TOKEN missing in .env")
+        raise FreelancehuntAPIError(
+            "FREELANCEHUNT_TOKEN не знайдено в .env (перевір назву змінної)"
+        )
 
     headers = {
         "Authorization": f"Bearer {FREELANCEHUNT_TOKEN}",
@@ -24,7 +27,9 @@ def get_projects():
         response = requests.get(API_URL, headers=headers, timeout=20)
     except requests.RequestException as error:
         logger.exception("Freelancehunt API request failed")
-        raise FreelancehuntAPIError(f"Не вдалося підключитися до Freelancehunt API: {error}") from error
+        raise FreelancehuntAPIError(
+            f"Не вдалося підключитися до Freelancehunt API: {error}"
+        ) from error
 
     if not response.ok:
         error_text = response.text[:300].replace("\n", " ").strip()
@@ -34,14 +39,15 @@ def get_projects():
             error_text,
         )
         raise FreelancehuntAPIError(
-            f"Freelancehunt API повернув HTTP {response.status_code}: {error_text or 'без тексту помилки'}"
+            f"Freelancehunt API HTTP {response.status_code}: "
+            f"{error_text or 'без тексту помилки'}"
         )
 
     try:
         data = response.json()
     except ValueError as error:
         logger.error(
-            "Freelancehunt API returned invalid JSON | status=%s | body=%s",
+            "Freelancehunt API invalid JSON | status=%s | body=%s",
             response.status_code,
             response.text[:300].replace("\n", " ").strip(),
         )
@@ -58,4 +64,6 @@ def get_projects():
         logger.error("Freelancehunt API data field is not a list")
         raise FreelancehuntAPIError("Freelancehunt API повернув поле data не як список")
 
-    return data["data"]
+    projects = data["data"]
+    logger.info("Freelancehunt API: received %s projects", len(projects))
+    return projects

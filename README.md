@@ -38,7 +38,14 @@
 ## Структура проєкту
 
 ```text
-freelance_helper/
+freelance-ai-helper/
+├─ AGENTS.md
+├─ .env.example
+├─ .gitignore
+├─ requirements.txt
+├─ data/
+├─ logs/
+├─ freelance_helper/
 ├─ app/
 │  ├─ bot/
 │  │  ├─ handlers.py
@@ -53,12 +60,7 @@ freelance_helper/
 │  ├─ main.py
 │  ├─ rules.py
 │  └─ telegram_bot.py
-├─ data/
-├─ logs/
-├─ .env.example
-├─ .gitignore
-├─ README.md
-└─ requirements.txt
+└─ README.md
 ```
 
 ---
@@ -80,8 +82,9 @@ freelance_helper/
 7. Користувач може натиснути кнопки:
    - `✅ Добрий`;
    - `❌ Поганий`;
-   - `💬 Ставка`;
+   - `📝 Ставка`;
    - `❓ Уточнення`;
+   - `🔁 Нова ставка`;
    - `⏭ Пропустити`.
 
 ---
@@ -132,10 +135,10 @@ PowerShell:
 ### 4. Встановлення залежностей
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-У `requirements.txt` уже вказано `python-telegram-bot[job-queue]` для автоперевірки.
+У `requirements.txt` вже є `python-telegram-bot[job-queue]` для автоперевірки.
 
 ---
 
@@ -167,26 +170,31 @@ ollama pull qwen2.5:3b
 
 ## Налаштування `.env`
 
-Створи файл `.env` у корені проєкту на основі `.env.example`.
+Створи файл `.env` у **корені репозиторію** (або скопіюй `.env.example`):
 
-Приклад:
+```bash
+cp .env.example .env
+```
+
+Приклад змінних (див. також `.env.example`):
 
 ```env
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_telegram_chat_id
-
 FREELANCEHUNT_TOKEN=your_freelancehunt_token
-
 OLLAMA_URL=http://localhost:11434/api/generate
 OLLAMA_MODEL=qwen2.5:3b
 AI_ANALYSIS_ENABLED=true
 AI_TIMEOUT_SECONDS=40
 AUTO_CHECK_INTERVAL_SECONDS=180
 AUTO_CHECK_FIRST_RUN_SECONDS=10
-MAX_BIDS_COUNT=40
+MAX_BIDS_COUNT=20
+MIN_SCORE=45
 ANALYZE_MAYBE_PROJECTS=true
-USER_PROFILE="Я студент 2 курсу інженерії програмного забезпечення, вчуся програмувати, можу vibe-code з AI, робити невеликі Python-скрипти, Telegram-ботів, API, парсинг, простий frontend і бази даних."
+USER_PROFILE="Я студент 2 курсу інженерії програмного забезпечення, вчуся програмувати, можу виконувати невеликі Python-скрипти, Telegram-ботів, API, парсинг, простий frontend і бази даних."
 ```
+
+Важливо: використовуй саме `FREELANCEHUNT_TOKEN`. Якщо в старому `.env` було `FREELANCEHUNT_API_TOKEN`, перейменуй змінну вручну (файл `.env` не комітиться в Git).
 
 ---
 
@@ -229,6 +237,30 @@ python -m freelance_helper.app.main
 ```
 
 Після запуску бот автоматично почне перевіряти проєкти, якщо в `.env` вказаний `TELEGRAM_CHAT_ID`.
+
+---
+
+## Як перевірити, що бот працює
+
+### Локально
+
+```bash
+python -m compileall freelance_helper
+python -m freelance_helper.app.main
+```
+
+### У Telegram
+
+| Команда | Що перевіряє |
+|---|---|
+| `/start` | бот відповідає і показує `chat_id` |
+| `/health` | токени, база, Freelancehunt API, Ollama, MIN_SCORE |
+| `/check` | ручний пошук + статистика фільтрів |
+| `/recent` | останні проєкти з бази |
+| `/last` | те саме, що `/recent` |
+| `/test_ai` | тест Ollama |
+| `/settings` | мінімальний score |
+| `/stats` | статистика оцінок |
 
 ---
 
@@ -330,8 +362,9 @@ tail -f logs/bot.log
 
 ```bash
 git status
-git add README.md requirements.txt .env.example
-git add freelance_helper/app/config.py freelance_helper/app/bot/handlers.py
+git add README.md AGENTS.md requirements.txt .env.example .gitignore
+git add freelance_helper/app/config.py freelance_helper/app/rules.py
+git add freelance_helper/app/bot/handlers.py freelance_helper/app/services/project_service.py
 git commit -m "Оновлення документації та налаштувань"
 git push
 ```

@@ -13,6 +13,10 @@ for env_path in (PROJECT_ROOT / ".env", PROJECT_ROOT / "freelance_helper" / ".en
 else:
     load_dotenv()
 
+# Сумісність: старе ім'я змінної (не використовуй у нових .env)
+if not os.getenv("FREELANCEHUNT_TOKEN") and os.getenv("FREELANCEHUNT_API_TOKEN"):
+    os.environ["FREELANCEHUNT_TOKEN"] = os.environ["FREELANCEHUNT_API_TOKEN"]
+
 
 def env_bool(name: str, default: bool) -> bool:
     value = os.getenv(name)
@@ -38,7 +42,9 @@ AI_ANALYSIS_ENABLED = env_bool("AI_ANALYSIS_ENABLED", True)
 AI_TIMEOUT_SECONDS = env_int("AI_TIMEOUT_SECONDS", 40)
 AUTO_CHECK_INTERVAL_SECONDS = env_int("AUTO_CHECK_INTERVAL_SECONDS", 180)
 AUTO_CHECK_FIRST_RUN_SECONDS = env_int("AUTO_CHECK_FIRST_RUN_SECONDS", 10)
-MAX_BIDS_COUNT = env_int("MAX_BIDS_COUNT", 40)
+MAX_BIDS_COUNT = env_int("MAX_BIDS_COUNT", 20)
+MIN_SCORE = env_int("MIN_SCORE", 45)
+HIGH_COMPETITION_BIDS = env_int("HIGH_COMPETITION_BIDS", 40)
 ANALYZE_MAYBE_PROJECTS = env_bool("ANALYZE_MAYBE_PROJECTS", True)
 USER_PROFILE = os.getenv(
     "USER_PROFILE",
@@ -50,4 +56,4 @@ USER_PROFILE = os.getenv(
         "для junior-рівня і не радити брати задачі, де потрібен сильний senior."
     ),
 )
-FREELANCEHUNT_TOKEN = os.getenv("FREELANCEHUNT_TOKEN") or os.getenv("FREELANCEHUNT_API_TOKEN")
+FREELANCEHUNT_TOKEN = os.getenv("FREELANCEHUNT_TOKEN")

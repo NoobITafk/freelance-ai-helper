@@ -76,5 +76,9 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("why", why_command))
     app.add_handler(CallbackQueryHandler(handle_button))
 
-    logger.info("Bot started")
+    logger.info("Bot started | run: python -m freelance_helper.app.main")
+    if TELEGRAM_CHAT_ID:
+        logger.info("Auto search scheduled for TELEGRAM_CHAT_ID=%s", TELEGRAM_CHAT_ID)
+    else:
+        logger.info("TELEGRAM_CHAT_ID not set; use /auto_on in chat")
     app.run_polling(bootstrap_retries=5)
