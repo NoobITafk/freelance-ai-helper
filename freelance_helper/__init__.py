@@ -1,1 +1,1 @@
-
+"""Freelance AI Helper package."""

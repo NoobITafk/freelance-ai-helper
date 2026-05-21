@@ -38,7 +38,6 @@ from ..database import (
 from ..services.project_service import process_and_send_project
 from ..logger import logger
 
-
 LAST_PROJECTS_LIMIT = 10
 
 
@@ -49,8 +48,7 @@ def is_auto_search_on(context: ContextTypes.DEFAULT_TYPE, chat_id: int) -> bool:
         return False
 
     return bool(
-        job_queue.get_jobs_by_name("auto_search")
-        or job_queue.get_jobs_by_name(str(chat_id))
+        job_queue.get_jobs_by_name("auto_search") or job_queue.get_jobs_by_name(str(chat_id))
     )
 
 
@@ -179,9 +177,7 @@ async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Термін: 1 день.
 """
 
-    await update.message.reply_text(
-        f"Тестую AI...\nМодель: {OLLAMA_MODEL}\nURL: {OLLAMA_URL}"
-    )
+    await update.message.reply_text(f"Тестую AI...\nМодель: {OLLAMA_MODEL}\nURL: {OLLAMA_URL}")
 
     try:
         started_at = time.monotonic()
@@ -430,8 +426,7 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         min_score = get_setting("min_score", str(MIN_SCORE))
         await update.message.reply_text(
-            f"Поточний мінімальний score: {min_score}\n\n"
-            f"Щоб змінити:\n/settings 35"
+            f"Поточний мінімальний score: {min_score}\n\n" f"Щоб змінити:\n/settings 35"
         )
         return
 
@@ -604,6 +599,4 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text(f"Помилка генерації питань:\n{error}")
             return
 
-        await query.message.reply_text(
-            f"❓ Що уточнити:\n\n{questions}\n\n🔗 {project.get('url')}"
-        )
+        await query.message.reply_text(f"❓ Що уточнити:\n\n{questions}\n\n🔗 {project.get('url')}")

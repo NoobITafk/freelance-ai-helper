@@ -1,3 +1,4 @@
 python-telegram-bot[job-queue]==22.7
 python-dotenv==1.0.1
 requests==2.32.3
+ollama==0.6.1

@@ -31,7 +31,6 @@ from ..rules import (
 from ..bot.keyboards import project_keyboard
 from ..logger import logger
 
-
 BORDERLINE_SCORE_MARGIN = 10
 
 
@@ -220,7 +219,9 @@ def format_project_message(
     return "\n".join(lines)
 
 
-def format_score_reason(filter_category: str, filter_reason: str, score: int, min_score: int) -> str:
+def format_score_reason(
+    filter_category: str, filter_reason: str, score: int, min_score: int
+) -> str:
     return f"""
 🔎 Чому показано:
 - Фільтр: {filter_category} ({filter_reason})
@@ -255,7 +256,9 @@ def save_project_status(
     )
 
 
-async def process_and_send_project(send_func, project: dict, debug_stats: dict | None = None) -> bool:
+async def process_and_send_project(
+    send_func, project: dict, debug_stats: dict | None = None
+) -> bool:
     raw_project_id = project.get("id")
     project_id = str(raw_project_id) if raw_project_id is not None else ""
     attributes = project.get("attributes", {})
@@ -323,9 +326,7 @@ async def process_and_send_project(send_func, project: dict, debug_stats: dict |
     if numeric_bids_count is not None and numeric_bids_count > MAX_BIDS_COUNT:
         if debug_stats is not None:
             debug_stats["competition_skipped"] += 1
-        reason = (
-            f"skipped: {numeric_bids_count} ставок > MAX_BIDS_COUNT {MAX_BIDS_COUNT}"
-        )
+        reason = f"skipped: {numeric_bids_count} ставок > MAX_BIDS_COUNT {MAX_BIDS_COUNT}"
         save_project_status(
             project_id,
             title,
@@ -402,11 +403,7 @@ async def process_and_send_project(send_func, project: dict, debug_stats: dict |
         f"{analysis}"
     )
     if not ai_used:
-        notice = (
-            FALLBACK_AI_DISABLED
-            if fallback_mode == "disabled"
-            else FALLBACK_AI_UNAVAILABLE
-        )
+        notice = FALLBACK_AI_DISABLED if fallback_mode == "disabled" else FALLBACK_AI_UNAVAILABLE
         analysis_for_db = f"{notice}\n\n{analysis_for_db}"
 
     if not should_send_project(analysis_data, score, min_score, ai_used):

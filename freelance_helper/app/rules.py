@@ -1,30 +1,108 @@
 import re
 from dataclasses import dataclass
 
-
 GOOD_KEYWORDS = [
-    "python", "telegram", "bot", "бот", "api", "backend", "fastapi", "django", "flask",
-    "parsing", "парсинг", "scraping", "parser", "html", "css", "javascript", "typescript",
-    "wordpress", "sqlite", "postgresql", "mysql", "sql", "база даних",
-    "excel", "google sheets", "google sheet", "automation", "автоматизація",
-    "bug fix", "bugfix", "виправити помилку", "form", "форма", "landing", "лендінг",
-    "docker", "linux", "bash", "інтеграція", "integration", "скрипт", "script",
-    "node", "react", "vue", "bootstrap",
+    "python",
+    "telegram",
+    "bot",
+    "бот",
+    "api",
+    "backend",
+    "fastapi",
+    "django",
+    "flask",
+    "parsing",
+    "парсинг",
+    "scraping",
+    "parser",
+    "html",
+    "css",
+    "javascript",
+    "typescript",
+    "wordpress",
+    "sqlite",
+    "postgresql",
+    "mysql",
+    "sql",
+    "база даних",
+    "excel",
+    "google sheets",
+    "google sheet",
+    "automation",
+    "автоматизація",
+    "bug fix",
+    "bugfix",
+    "виправити помилку",
+    "form",
+    "форма",
+    "landing",
+    "лендінг",
+    "docker",
+    "linux",
+    "bash",
+    "інтеграція",
+    "integration",
+    "скрипт",
+    "script",
+    "node",
+    "react",
+    "vue",
+    "bootstrap",
 ]
 
 HARD_BAD_KEYWORDS = [
-    "crypto", "крипта", "casino", "казино", "nft", "trading", "трейдинг", "forex",
-    "blockchain", "блокчейн", "payment gateway", "платіжний шлюз", "meta app review",
-    "facebook app review", "highload", "high load", "crm", "erp", "1с", "бухгалтерія",
+    "crypto",
+    "крипта",
+    "casino",
+    "казино",
+    "nft",
+    "trading",
+    "трейдинг",
+    "forex",
+    "blockchain",
+    "блокчейн",
+    "payment gateway",
+    "платіжний шлюз",
+    "meta app review",
+    "facebook app review",
+    "highload",
+    "high load",
+    "crm",
+    "erp",
+    "1с",
+    "бухгалтерія",
 ]
 
 SOFT_BAD_KEYWORDS = [
-    "seo strategy", "seo стратег", "seo-стратег", "seo просування",
-    "figma", "photoshop", "illustrator", "logo", "банер", "banner",
-    "копірайт", "копірайтинг", "рерайт", "переклад", "перекладач",
-    "translation", "translator", "smm", "таргет", "instagram", "tiktok",
-    "реферат", "курсова", "дипломна", "tilda", "wix", "shopify",
-    "дизайн", "design",
+    "seo strategy",
+    "seo стратег",
+    "seo-стратег",
+    "seo просування",
+    "figma",
+    "photoshop",
+    "illustrator",
+    "logo",
+    "банер",
+    "banner",
+    "копірайт",
+    "копірайтинг",
+    "рерайт",
+    "переклад",
+    "перекладач",
+    "translation",
+    "translator",
+    "smm",
+    "таргет",
+    "instagram",
+    "tiktok",
+    "реферат",
+    "курсова",
+    "дипломна",
+    "tilda",
+    "wix",
+    "shopify",
+    "дизайн",
+    "design",
 ]
 
 
@@ -47,11 +125,7 @@ def classify_project(title: str, description: str) -> FilterResult:
     text = f"{title or ''} {description or ''}"
     text_lower = text.lower()
 
-    hard_bad = [
-        word
-        for word in HARD_BAD_KEYWORDS
-        if keyword_in_text(word, text_lower)
-    ]
+    hard_bad = [word for word in HARD_BAD_KEYWORDS if keyword_in_text(word, text_lower)]
 
     if hard_bad:
         return FilterResult(
@@ -59,11 +133,7 @@ def classify_project(title: str, description: str) -> FilterResult:
             reason=f"Стоп-слово: {', '.join(hard_bad[:3])}",
         )
 
-    good_matches = [
-        word
-        for word in GOOD_KEYWORDS
-        if keyword_in_text(word, text_lower)
-    ]
+    good_matches = [word for word in GOOD_KEYWORDS if keyword_in_text(word, text_lower)]
 
     if good_matches:
         return FilterResult(
@@ -71,11 +141,7 @@ def classify_project(title: str, description: str) -> FilterResult:
             reason=f"IT keywords: {', '.join(good_matches[:5])}",
         )
 
-    bad_matches = [
-        word
-        for word in SOFT_BAD_KEYWORDS
-        if keyword_in_text(word, text_lower)
-    ]
+    bad_matches = [word for word in SOFT_BAD_KEYWORDS if keyword_in_text(word, text_lower)]
 
     if bad_matches:
         return FilterResult(
@@ -244,11 +310,7 @@ def learning_bonus(title: str, description: str, good_bad_keywords) -> int:
     text = f"{title or ''} {description or ''}".lower()
     good_rows, bad_rows = good_bad_keywords
 
-    matched_keywords = {
-        word
-        for word in GOOD_KEYWORDS
-        if keyword_in_text(word, text)
-    }
+    matched_keywords = {word for word in GOOD_KEYWORDS if keyword_in_text(word, text)}
 
     if not matched_keywords:
         return 0

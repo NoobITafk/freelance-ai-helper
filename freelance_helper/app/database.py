@@ -62,10 +62,13 @@ def init_db() -> None:
             ON projects(created_at)
         """)
 
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR IGNORE INTO settings (key, value)
             VALUES ('min_score', ?)
-        """, (DEFAULT_MIN_SCORE,))
+        """,
+            (DEFAULT_MIN_SCORE,),
+        )
 
 
 def ensure_column(
@@ -74,10 +77,7 @@ def ensure_column(
     column_name: str,
     column_type: str,
 ) -> None:
-    columns = {
-        row["name"]
-        for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()
-    }
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()}
 
     if column_name not in columns:
         conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
@@ -96,7 +96,8 @@ def save_project(
     reason: str = "",
 ) -> None:
     with get_connection() as conn:
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO projects (
                 project_id,
                 title,
@@ -121,19 +122,21 @@ def save_project(
                 status = excluded.status,
                 score = excluded.score,
                 reason = excluded.reason
-        """, (
-            str(project_id),
-            title or "Без назви",
-            description or "",
-            str(budget),
-            str(bids_count),
-            url or "",
-            analysis or "",
-            status,
-            score,
-            reason or "",
-            datetime.now().isoformat(timespec="seconds"),
-        ))
+        """,
+            (
+                str(project_id),
+                title or "Без назви",
+                description or "",
+                str(budget),
+                str(bids_count),
+                url or "",
+                analysis or "",
+                status,
+                score,
+                reason or "",
+                datetime.now().isoformat(timespec="seconds"),
+            ),
+        )
 
 
 def is_seen(project_id: str) -> bool:
@@ -170,9 +173,7 @@ def set_project_rating(project_id: str, rating: str) -> None:
 
 def get_stats() -> dict:
     with get_connection() as conn:
-        total = conn.execute(
-            "SELECT COUNT(*) FROM projects"
-        ).fetchone()[0]
+        total = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
 
         rows = conn.execute("""
             SELECT user_rating, COUNT(*) AS count
@@ -180,10 +181,7 @@ def get_stats() -> dict:
             GROUP BY user_rating
         """).fetchall()
 
-        ratings = {
-            row["user_rating"]: row["count"]
-            for row in rows
-        }
+        ratings = {row["user_rating"]: row["count"] for row in rows}
 
         return {
             "total": total,
@@ -210,21 +208,27 @@ def get_setting(key: str, default=None):
 
 def set_setting(key: str, value: str) -> None:
     with get_connection() as conn:
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO settings (key, value)
             VALUES (?, ?)
             ON CONFLICT(key) DO UPDATE SET value = excluded.value
-        """, (key, str(value)))
+        """,
+            (key, str(value)),
+        )
 
 
 def get_recent_projects(limit: int = 5) -> list[dict]:
     with get_connection() as conn:
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT *
             FROM projects
             ORDER BY created_at DESC
             LIMIT ?
-        """, (limit,)).fetchall()
+        """,
+            (limit,),
+        ).fetchall()
 
         return [dict(row) for row in rows]
 
@@ -253,14 +257,8 @@ def get_good_bad_keywords() -> tuple[list[tuple[str, str]], list[tuple[str, str]
             WHERE user_rating IN ('bad', 'not_mine')
         """).fetchall()
 
-        good = [
-            (row["title"], row["description"])
-            for row in good_rows
-        ]
+        good = [(row["title"], row["description"]) for row in good_rows]
 
-        bad = [
-            (row["title"], row["description"])
-            for row in bad_rows
-        ]
+        bad = [(row["title"], row["description"]) for row in bad_rows]
 
         return good, bad

@@ -5,3 +5,6 @@ __pycache__/
 data/*.db
 logs/*.log
 logs/ai_raw.log
+.DS_Store
+.idea/
+.vscode/

@@ -6,7 +6,6 @@ import requests
 
 from .config import OLLAMA_MODEL, OLLAMA_URL, USER_PROFILE
 
-
 ANALYSIS_NUM_PREDICT = 350
 TEXT_NUM_PREDICT = 500
 AI_RAW_LOG_PATH = Path("logs/ai_raw.log")

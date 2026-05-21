@@ -3,7 +3,6 @@ import requests
 from .config import FREELANCEHUNT_TOKEN
 from .logger import logger
 
-
 API_URL = "https://api.freelancehunt.com/v2/projects"
 
 
