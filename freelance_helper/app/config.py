@@ -40,7 +40,4 @@ USER_PROFILE = os.getenv(
         "для junior-рівня і не радити брати задачі, де потрібен сильний senior."
     ),
 )
-FREELANCEHUNT_TOKEN = (
-    os.getenv("FREELANCEHUNT_TOKEN")
-    or os.getenv("FREELANCEHUNT_API_TOKEN")
-)
+FREELANCEHUNT_TOKEN = os.getenv("FREELANCEHUNT_TOKEN")

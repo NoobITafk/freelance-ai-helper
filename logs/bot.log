@@ -4385,3 +4385,192 @@ telegram.error.Conflict: Conflict: terminated by other getUpdates request; make 
 2026-05-21 16:13:25,622 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
 2026-05-21 16:13:35,672 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
 2026-05-21 16:13:45,730 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:13:55,777 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:14:04,144 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:14:04,146 | INFO | telegram.ext.Application | Application is stopping. This might take a moment.
+2026-05-21 16:14:04,146 | INFO | apscheduler.scheduler | Scheduler has been shut down
+2026-05-21 16:14:04,157 | INFO | telegram.ext.Application | Application.stop() complete
+2026-05-21 16:14:07,027 | INFO | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-21 16:14:07,027 | INFO | freelance_helper | Auto search scheduled on startup | interval=180 seconds
+2026-05-21 16:14:07,028 | INFO | freelance_helper | Bot started
+2026-05-21 16:14:07,189 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getMe "HTTP/1.1 200 OK"
+2026-05-21 16:14:07,230 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/deleteWebhook "HTTP/1.1 200 OK"
+2026-05-21 16:14:07,233 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
+2026-05-21 16:14:07,233 | INFO | apscheduler.scheduler | Scheduler started
+2026-05-21 16:14:07,233 | INFO | telegram.ext.Application | Application started
+2026-05-21 16:14:17,036 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 13:17:17 UTC)" (scheduled at 2026-05-21 13:14:17.026148+00:00)
+2026-05-21 16:14:17,037 | INFO | freelance_helper | Auto check started
+2026-05-21 16:14:17,262 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 16:14:17,265 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 16:14:17,279 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 13:17:17 UTC)" executed successfully
+2026-05-21 16:14:17,387 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:14:27,438 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:14:37,488 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:14:47,536 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:14:57,587 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:15:07,636 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:15:17,328 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 409 Conflict"
+2026-05-21 16:15:17,330 | ERROR | telegram.ext.Application | No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_utils/networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_utils/networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 672, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 4865, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 704, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 370, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 733, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-05-21 16:15:23,046 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 409 Conflict"
+2026-05-21 16:15:23,048 | ERROR | telegram.ext.Application | No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_utils/networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_utils/networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 672, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 4865, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 704, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/ext/_extbot.py", line 370, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/_bot.py", line 733, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "/home/arch/freelance-ai-helper/venv/lib/python3.14/site-packages/telegram/request/_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-05-21 16:15:34,611 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:15:44,659 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:15:54,716 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:16:04,844 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:16:14,978 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:16:25,036 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:16:35,088 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:16:45,140 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:16:55,189 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:17:05,239 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:17:15,294 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:17:17,029 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 13:20:17 UTC)" (scheduled at 2026-05-21 13:17:17.026148+00:00)
+2026-05-21 16:17:17,029 | INFO | freelance_helper | Auto check started
+2026-05-21 16:17:17,236 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 16:17:17,238 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 16:17:17,250 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 13:20:17 UTC)" executed successfully
+2026-05-21 16:17:25,430 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:17:35,568 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:17:45,630 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:17:55,741 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:18:05,880 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:18:16,016 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:18:26,069 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:18:36,122 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:18:46,174 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:18:56,236 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:19:06,287 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:19:16,336 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:19:26,391 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:19:36,447 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:19:46,496 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:19:56,550 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:20:06,597 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:20:16,644 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:20:17,028 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 13:23:17 UTC)" (scheduled at 2026-05-21 13:20:17.026148+00:00)
+2026-05-21 16:20:17,028 | INFO | freelance_helper | Auto check started
+2026-05-21 16:20:17,223 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 16:20:26,268 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/sendMessage "HTTP/1.1 200 OK"
+2026-05-21 16:20:26,270 | INFO | freelance_helper | Sent project: Translator Needed for Document Translation Project | score=48 | ai=True
+2026-05-21 16:20:26,691 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:20:31,169 | INFO | freelance_helper | Filtered by score: Remote Data Analyst Needed for Short-Term Project | score=33 | min_score=45 | reason=skipped: score 33/100 нижче MIN_SCORE 45/100
+2026-05-21 16:20:31,171 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 16:20:31,177 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 13:23:17 UTC)" executed successfully
+2026-05-21 16:20:36,777 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:20:46,826 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:20:56,876 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:21:06,922 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:21:16,969 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:21:27,020 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:21:37,068 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:21:47,119 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getUpdates "HTTP/1.1 200 OK"
+2026-05-21 16:21:52,863 | INFO | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-21 16:21:52,863 | INFO | freelance_helper | Auto search scheduled on startup | interval=180 seconds
+2026-05-21 16:21:52,863 | INFO | freelance_helper | Bot started
+2026-05-21 16:21:53,028 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/getMe "HTTP/1.1 200 OK"
+2026-05-21 16:21:53,075 | INFO | httpx | HTTP Request: POST https://api.telegram.org/bot8766838073:AAHdXs2MSi2M1-RXAnTQmoMnXP20m0Eyuf8/deleteWebhook "HTTP/1.1 200 OK"
+2026-05-21 16:21:53,077 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
+2026-05-21 16:21:53,078 | INFO | apscheduler.scheduler | Scheduler started
+2026-05-21 16:21:53,078 | INFO | telegram.ext.Application | Application started

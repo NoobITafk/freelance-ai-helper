@@ -82,7 +82,6 @@ freelance_helper/
    - `❌ Поганий`;
    - `💬 Ставка`;
    - `❓ Уточнення`;
-   - `🔁 Нова ставка`;
    - `⏭ Пропустити`.
 
 ---
@@ -136,11 +135,7 @@ PowerShell:
 pip install -r requirements.txt
 ```
 
-Якщо використовується автоперевірка через `job_queue`, встанови також:
-
-```bash
-pip install "python-telegram-bot[job-queue]"
-```
+У `requirements.txt` уже вказано `python-telegram-bot[job-queue]` для автоперевірки.
 
 ---
 
@@ -180,7 +175,7 @@ ollama pull qwen2.5:3b
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_telegram_chat_id
 
-FREELANCEHUNT_TOKEN=your_freelancehunt_api_token
+FREELANCEHUNT_TOKEN=your_freelancehunt_token
 
 OLLAMA_URL=http://localhost:11434/api/generate
 OLLAMA_MODEL=qwen2.5:3b
@@ -243,22 +238,22 @@ python -m freelance_helper.app.main
 |---|---|
 | `/start` | запуск бота і показ chat_id |
 | `/help` | список команд |
-| `/health` | стан Telegram, Freelancehunt API, бази й автопошуку |
-| `/check` | перевірити проєкти вручну |
-| `/auto_on` | увімкнути автопошук |
-| `/auto_off` | вимкнути автопошук |
-| `/stats` | показати статистику |
-| `/last` | показати останні знайдені sent/skipped проєкти |
+| `/health` | діагностика: токени, SQLite, Freelancehunt API, Ollama, AI, MIN_SCORE |
+| `/check` | перевірити проєкти вручну + статистика (отримано / оброблено / надіслано / відкинуто) |
+| `/auto_on` | увімкнути автопошук у поточному чаті |
+| `/auto_off` | вимкнути автопошук у поточному чаті |
+| `/stats` | статистика оцінок і налаштувань |
 | `/settings` | показати мінімальний score |
 | `/settings 35` | змінити мінімальний score |
-| `/threshold 35` | швидко змінити мінімальний score |
+| `/threshold 35` | те саме, що `/settings 35` |
 | `/profile` | показати профіль виконавця для AI |
 | `/profile_set текст` | змінити профіль виконавця |
-| `/ai_on` | увімкнути AI-аналіз |
-| `/ai_off` | вимкнути AI-аналіз і лишити fallback |
-| `/test_ai` | перевірити підключення до Ollama і тестовий AI-аналіз |
-| `/recent` | те саме, що `/last` |
-| `/why project_id` | показати збережений аналіз проєкту |
+| `/ai_on` | увімкнути AI (`AI_ANALYSIS_ENABLED=true` у settings) |
+| `/ai_off` | вимкнути AI (`AI_ANALYSIS_ENABLED=false`, fallback rules) |
+| `/test_ai` | тест Ollama на прикладі проєкту |
+| `/recent` | останні проєкти з бази (sent/skipped) |
+| `/last` | alias для `/recent` |
+| `/why project_id` | збережений аналіз проєкту за ID |
 
 ---
 
@@ -331,12 +326,13 @@ tail -f logs/bot.log
 
 ## GitHub
 
-Після змін:
+Після змін додавай у коміт лише потрібні файли (без `.env`, `data/`, `logs/`, `venv/`):
 
 ```bash
 git status
-git add .
-git commit -m "Update project"
+git add README.md requirements.txt .env.example
+git add freelance_helper/app/config.py freelance_helper/app/bot/handlers.py
+git commit -m "Оновлення документації та налаштувань"
 git push
 ```
 

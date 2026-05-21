@@ -94,7 +94,10 @@ async def analyze_project_with_timeout(
     description: str,
     numeric_bids_count: int | None,
 ) -> tuple[dict, bool, str]:
-    ai_enabled = setting_bool(get_setting("ai_enabled"), AI_ANALYSIS_ENABLED)
+    ai_setting = get_setting("AI_ANALYSIS_ENABLED")
+    if ai_setting is None:
+        ai_setting = get_setting("ai_enabled")
+    ai_enabled = setting_bool(ai_setting, AI_ANALYSIS_ENABLED)
 
     if not ai_enabled:
         return (

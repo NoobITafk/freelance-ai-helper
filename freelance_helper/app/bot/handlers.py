@@ -77,27 +77,35 @@ def make_check_debug_stats() -> dict:
     }
 
 
-def format_check_debug_stats(stats: dict, received_count: int) -> str:
-    api_errors = "\n".join(f"- {error}" for error in stats["api_errors"]) or "- немає"
-    ai_errors = "\n".join(f"- {error}" for error in stats["ai_errors"][:5]) or "- немає"
+def format_check_debug_stats(
+    stats: dict,
+    received_count: int,
+    processed_count: int,
+) -> str:
+    rejected = (
+        stats["already_seen"]
+        + stats["basic_rejected"]
+        + stats["low_score_skipped"]
+    )
 
-    return f"""
-📊 Статистика /check
+    lines = [
+        "📊 Результат /check",
+        "",
+        f"Отримано з Freelancehunt: {received_count}",
+        f"Оброблено: {processed_count}",
+        f"Надіслано в Telegram: {stats['sent']}",
+        f"Відкинуто: {rejected}",
+    ]
 
-Отримано з Freelancehunt: {received_count}
-Вже були в базі (пропущено): {stats["already_seen"]}
-Відкинуто базовими keyword/rules-фільтрами: {stats["basic_rejected"]}
-Передано в AI: {stats["ai_analyzed"]}
-Оброблено через fallback rules: {stats["fallback_used"]}
-Пропущено через низький score: {stats["low_score_skipped"]}
-Надіслано в Telegram: {stats["sent"]}
+    if stats["api_errors"]:
+        api_short = "; ".join(stats["api_errors"][:3])[:300]
+        lines.append(f"Помилки API: {api_short}")
 
-Помилки API:
-{api_errors}
+    if stats["ai_errors"]:
+        ai_short = "; ".join(stats["ai_errors"][:3])[:300]
+        lines.append(f"Помилки AI: {ai_short}")
 
-Помилки AI:
-{ai_errors}
-""".strip()
+    return "\n".join(lines)
 
 
 def project_short_description(project: dict, limit: int = 200) -> str:
@@ -125,8 +133,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /auto_on — увімкнути автопошук
 /auto_off — вимкнути автопошук
 /stats — статистика
-/health — стан Telegram/API/бази/автопошуку
-/last — останні знайдені проєкти
+/health — діагностика бота, API, бази, AI
+/last — те саме, що /recent
+/recent — останні проєкти з бази
 /settings — показати мінімальний score
 /settings 35 — змінити мінімальний score
 /threshold 35 — те саме, коротше
@@ -135,19 +144,14 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /ai_on — увімкнути AI-аналіз
 /ai_off — вимкнути AI-аналіз
 /test_ai — перевірити Ollama/AI
-/recent — останні знайдені проєкти
 /why project_id — показати збережений аналіз
 
-📌 Кнопки:
-🔥 Дуже підходить — найкращий тип задач
-✅ Добрий — хороший проєкт
-🤔 Можливо — потенційно цікавий проєкт
-🚫 Не моє — не твій напрям
-❌ Поганий — поганий проєкт
-💬 Ставка — генерація відповіді
-❓ Уточнення — питання клієнту
-🔁 Нова ставка — перегенерувати відповідь
-⏭ Пропустити — пропустити проєкт
+📌 Кнопки під проєктом:
+✅ Добрий
+❌ Поганий
+💬 Ставка
+❓ Уточнення
+⏭ Пропустити
 """
     await update.message.reply_text(text)
 
@@ -192,7 +196,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         debug_stats["api_errors"].append(str(error))
         set_last_check_stats(0, 0, str(error))
         await update.message.reply_text(f"Помилка Freelancehunt API:\n{error}")
-        await update.message.reply_text(format_check_debug_stats(debug_stats, 0))
+        await update.message.reply_text(format_check_debug_stats(debug_stats, 0, 0))
         return
 
     sent_count = 0
@@ -225,7 +229,9 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Нових відповідних проєктів поки немає.")
 
     set_last_check_stats(len(projects), sent_count)
-    await update.message.reply_text(format_check_debug_stats(debug_stats, len(projects))[:4000])
+    await update.message.reply_text(
+        format_check_debug_stats(debug_stats, len(projects), processed_count)[:4000]
+    )
 
     logger.info(
         "Manual check finished | sent=%s | processed=%s",
@@ -321,10 +327,10 @@ async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     database_ok, database_reason = check_database()
-    runtime_ai_enabled = setting_bool_from_env(
-        get_setting("ai_enabled"),
-        AI_ANALYSIS_ENABLED,
-    )
+    ai_setting = get_setting("AI_ANALYSIS_ENABLED")
+    if ai_setting is None:
+        ai_setting = get_setting("ai_enabled")
+    runtime_ai_enabled = setting_bool_from_env(ai_setting, AI_ANALYSIS_ENABLED)
     min_score = get_setting("min_score", "45")
 
     try:
@@ -344,7 +350,7 @@ async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Bot: OK
 TELEGRAM_BOT_TOKEN: {"є" if TELEGRAM_BOT_TOKEN else "немає"}
 TELEGRAM_CHAT_ID: {"є" if TELEGRAM_CHAT_ID else "немає"}
-FREELANCEHUNT_API_TOKEN: {"є" if FREELANCEHUNT_TOKEN else "немає"}
+FREELANCEHUNT_TOKEN: {"є" if FREELANCEHUNT_TOKEN else "немає"}
 SQLite database: {"OK" if database_ok else "ERROR"} ({database_reason})
 Freelancehunt API: {api_status} ({api_reason})
 AI enabled: {"так" if runtime_ai_enabled else "ні"} (env={AI_ANALYSIS_ENABLED})
@@ -368,7 +374,7 @@ def setting_bool_from_env(value, default: bool) -> bool:
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     stats = get_stats()
     min_score = get_setting("min_score", "45")
-    ai_enabled = get_setting("ai_enabled", str(AI_ANALYSIS_ENABLED)).lower()
+    ai_enabled = get_setting("AI_ANALYSIS_ENABLED", str(AI_ANALYSIS_ENABLED)).lower()
 
     text = f"""
 📊 Статистика
@@ -441,13 +447,15 @@ async def profile_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def ai_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    set_setting("ai_enabled", "true")
-    await update.message.reply_text("✅ AI-аналіз увімкнено.")
+    set_setting("AI_ANALYSIS_ENABLED", "true")
+    await update.message.reply_text("✅ AI-аналіз увімкнено (AI_ANALYSIS_ENABLED=true).")
 
 
 async def ai_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    set_setting("ai_enabled", "false")
-    await update.message.reply_text("⏹ AI-аналіз вимкнено. Бот працюватиме через fallback.")
+    set_setting("AI_ANALYSIS_ENABLED", "false")
+    await update.message.reply_text(
+        "⏹ AI-аналіз вимкнено (AI_ANALYSIS_ENABLED=false). Використовується fallback rules."
+    )
 
 
 async def recent_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
