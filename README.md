@@ -116,8 +116,16 @@ source venv/bin/activate
 
 #### Windows
 
+Command Prompt:
+
 ```bash
 venv\Scripts\activate
+```
+
+PowerShell:
+
+```powershell
+.\venv\Scripts\Activate.ps1
 ```
 
 ---
@@ -248,6 +256,7 @@ python -m freelance_helper.app.main
 | `/profile_set текст` | змінити профіль виконавця |
 | `/ai_on` | увімкнути AI-аналіз |
 | `/ai_off` | вимкнути AI-аналіз і лишити fallback |
+| `/test_ai` | перевірити підключення до Ollama і тестовий AI-аналіз |
 | `/recent` | те саме, що `/last` |
 | `/why project_id` | показати збережений аналіз проєкту |
 

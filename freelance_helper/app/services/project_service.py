@@ -98,11 +98,11 @@ def setting_bool(value, default: bool) -> bool:
     return str(value).lower() in {"1", "true", "yes", "on", "так"}
 
 
-async def analyze_project_with_timeout(project_text: str) -> tuple[dict, bool]:
+async def analyze_project_with_timeout(project_text: str) -> tuple[dict, bool, str]:
     ai_enabled = setting_bool(get_setting("ai_enabled"), AI_ANALYSIS_ENABLED)
 
     if not ai_enabled:
-        return fallback_analysis("AI-аналіз вимкнено в налаштуваннях."), False
+        return fallback_analysis("AI-аналіз вимкнено в налаштуваннях."), False, ""
 
     user_profile = get_setting("user_profile", USER_PROFILE)
 
@@ -111,11 +111,11 @@ async def analyze_project_with_timeout(project_text: str) -> tuple[dict, bool]:
             asyncio.to_thread(analyze_project_json, project_text, user_profile),
             timeout=AI_TIMEOUT_SECONDS,
         )
-        return normalize_analysis(raw_analysis), True
+        return normalize_analysis(raw_analysis), True, ""
 
     except Exception as error:
         logger.exception("AI analysis failed")
-        return fallback_analysis(f"AI-аналіз не спрацював: {error}"), False
+        return fallback_analysis(f"AI-аналіз не спрацював: {error}"), False, str(error)
 
 
 def should_send_project(analysis_data: dict, score: int, min_score: int, ai_used: bool) -> bool:
@@ -167,8 +167,9 @@ def save_project_status(
     )
 
 
-async def process_and_send_project(send_func, project: dict) -> bool:
-    project_id = str(project.get("id"))
+async def process_and_send_project(send_func, project: dict, debug_stats: dict | None = None) -> bool:
+    raw_project_id = project.get("id")
+    project_id = str(raw_project_id) if raw_project_id is not None else ""
     attributes = project.get("attributes", {})
 
     title = attributes.get("name", "Без назви")
@@ -183,6 +184,8 @@ async def process_and_send_project(send_func, project: dict) -> bool:
     url = get_project_url(project, attributes)
 
     if not project_id:
+        if debug_stats is not None:
+            debug_stats["basic_rejected"] += 1
         return False
 
     if is_seen(project_id):
@@ -191,6 +194,8 @@ async def process_and_send_project(send_func, project: dict) -> bool:
     filter_result = classify_project(title, description)
 
     if filter_result.category == "bad":
+        if debug_stats is not None:
+            debug_stats["basic_rejected"] += 1
         reason = f"skipped: {filter_result.reason}"
         save_project_status(
             project_id,
@@ -206,6 +211,8 @@ async def process_and_send_project(send_func, project: dict) -> bool:
         return False
 
     if filter_result.category == "maybe" and not ANALYZE_MAYBE_PROJECTS:
+        if debug_stats is not None:
+            debug_stats["basic_rejected"] += 1
         reason = f"skipped: maybe-проєкти вимкнені ({filter_result.reason})"
         save_project_status(
             project_id,
@@ -222,6 +229,8 @@ async def process_and_send_project(send_func, project: dict) -> bool:
 
     numeric_bids_count = parse_bids_count(bids_count)
     if numeric_bids_count is not None and numeric_bids_count > MAX_BIDS_COUNT:
+        if debug_stats is not None:
+            debug_stats["basic_rejected"] += 1
         reason = f"skipped: bids_count {numeric_bids_count} більше MAX_BIDS_COUNT {MAX_BIDS_COUNT}"
         save_project_status(
             project_id,
@@ -242,7 +251,13 @@ async def process_and_send_project(send_func, project: dict) -> bool:
         budget=budget,
         bids_count=bids_count,
     )
-    analysis_data, ai_used = await analyze_project_with_timeout(project_text)
+    if debug_stats is not None and setting_bool(get_setting("ai_enabled"), AI_ANALYSIS_ENABLED):
+        debug_stats["ai_analyzed"] += 1
+
+    analysis_data, ai_used, ai_error = await analyze_project_with_timeout(project_text)
+
+    if ai_error and debug_stats is not None:
+        debug_stats["ai_errors"].append(ai_error)
     score = calculate_score(analysis_data)
     score += learning_bonus(title, description, get_good_bad_keywords())
     score = max(0, min(100, score))
@@ -262,6 +277,8 @@ async def process_and_send_project(send_func, project: dict) -> bool:
     )
 
     if not should_send_project(analysis_data, score, min_score, ai_used):
+        if debug_stats is not None:
+            debug_stats["low_score_skipped"] += 1
         reason = f"skipped: score {score}/100 нижче MIN_SCORE {min_score}/100"
 
         if analysis_data.get("fit") == "no":
@@ -349,6 +366,9 @@ async def process_and_send_project(send_func, project: dict) -> bool:
         message[:4000],
         reply_markup=project_keyboard(project_id),
     )
+
+    if debug_stats is not None:
+        debug_stats["sent"] += 1
 
     logger.info("Sent project: %s | score=%s | ai=%s", title, score, ai_used)
     return True

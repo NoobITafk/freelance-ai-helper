@@ -16,8 +16,10 @@ from ..config import (
     AI_ANALYSIS_ENABLED,
     AUTO_CHECK_FIRST_RUN_SECONDS,
     AUTO_CHECK_INTERVAL_SECONDS,
+    FREELANCEHUNT_TOKEN,
     OLLAMA_MODEL,
     OLLAMA_URL,
+    TELEGRAM_BOT_TOKEN,
     USER_PROFILE,
 )
 from ..freelancehunt_api import get_projects
@@ -60,6 +62,38 @@ def set_last_check_stats(
     set_setting("last_check_error", error)
 
 
+def make_check_debug_stats() -> dict:
+    return {
+        "basic_rejected": 0,
+        "ai_analyzed": 0,
+        "sent": 0,
+        "low_score_skipped": 0,
+        "api_errors": [],
+        "ai_errors": [],
+    }
+
+
+def format_check_debug_stats(stats: dict, received_count: int) -> str:
+    api_errors = "\n".join(f"- {error}" for error in stats["api_errors"]) or "- немає"
+    ai_errors = "\n".join(f"- {error}" for error in stats["ai_errors"][:5]) or "- немає"
+
+    return f"""
+📊 Debug /check
+
+Отримано з Freelancehunt: {received_count}
+Відкинуто базовими правилами: {stats["basic_rejected"]}
+Пішло в AI: {stats["ai_analyzed"]}
+Відправлено в Telegram: {stats["sent"]}
+Пропущено через низький score: {stats["low_score_skipped"]}
+
+Помилки API:
+{api_errors}
+
+Помилки AI:
+{ai_errors}
+""".strip()
+
+
 def project_short_description(project: dict, limit: int = 200) -> str:
     description = project.get("description") or ""
     description = " ".join(description.split())
@@ -94,6 +128,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /profile_set текст — змінити профіль
 /ai_on — увімкнути AI-аналіз
 /ai_off — вимкнути AI-аналіз
+/test_ai — перевірити Ollama/AI
 /recent — останні знайдені проєкти
 /why project_id — показати збережений аналіз
 
@@ -141,14 +176,17 @@ async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Шукаю нові проєкти...")
     logger.info("Manual check started")
+    debug_stats = make_check_debug_stats()
 
     try:
         projects = get_projects()
         logger.info("Fetched projects: %s", len(projects))
     except Exception as error:
         logger.exception("Freelancehunt API error")
+        debug_stats["api_errors"].append(str(error))
         set_last_check_stats(0, 0, str(error))
         await update.message.reply_text(f"Помилка Freelancehunt API:\n{error}")
+        await update.message.reply_text(format_check_debug_stats(debug_stats, 0))
         return
 
     sent_count = 0
@@ -162,6 +200,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
             was_sent = await process_and_send_project(
                 update.message.reply_text,
                 project,
+                debug_stats=debug_stats,
             )
             processed_count += 1
 
@@ -180,6 +219,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Нових відповідних проєктів поки немає.")
 
     set_last_check_stats(len(projects), sent_count)
+    await update.message.reply_text(format_check_debug_stats(debug_stats, len(projects))[:4000])
 
     logger.info(
         "Manual check finished | sent=%s | processed=%s",
@@ -275,9 +315,11 @@ async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    auto_status = "ON" if is_auto_search_on(context, chat_id) else "OFF"
+    auto_scheduled = is_auto_search_on(context, chat_id)
+    auto_status = "ON" if auto_scheduled else "OFF"
 
     database_ok, database_reason = check_database()
+    runtime_ai_enabled = get_setting("ai_enabled", str(AI_ANALYSIS_ENABLED)).lower()
 
     try:
         projects = get_projects()
@@ -296,10 +338,17 @@ async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = f"""
 🩺 Health
 
-Telegram: OK
+Bot: OK
+Telegram bot token: {"є" if TELEGRAM_BOT_TOKEN else "немає"}
+Freelancehunt token: {"є" if FREELANCEHUNT_TOKEN else "немає"}
 Freelancehunt API: {api_status} ({api_reason})
 Database: {"OK" if database_ok else "ERROR"} ({database_reason})
-Auto search: {auto_status}
+Auto search scheduled: {auto_status}
+AUTO_CHECK_INTERVAL_SECONDS: {AUTO_CHECK_INTERVAL_SECONDS}
+AI_ANALYSIS_ENABLED: {AI_ANALYSIS_ENABLED}
+AI runtime setting: {runtime_ai_enabled}
+OLLAMA_URL: {OLLAMA_URL}
+OLLAMA_MODEL: {OLLAMA_MODEL}
 Last check: {last_check}
 Projects received: {projects_received}
 Projects sent: {projects_sent}
