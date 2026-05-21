@@ -2,6 +2,7 @@ import asyncio
 
 from ..ai_analyzer import (
     analyze_project_json,
+    check_ollama_available,
     format_analysis,
     calculate_score,
     normalize_analysis,
@@ -19,7 +20,11 @@ from ..database import (
     get_setting,
     get_good_bad_keywords,
 )
-from ..rules import classify_project, learning_bonus
+from ..rules import (
+    build_rules_fallback_analysis,
+    classify_project,
+    learning_bonus,
+)
 from ..bot.keyboards import project_keyboard
 from ..logger import logger
 
@@ -72,23 +77,7 @@ def build_project_text(
 """.strip()
 
 
-def fallback_analysis(reason: str) -> dict:
-    return {
-        "fit": "partial",
-        "summary": "Проєкт пройшов базовий keyword-фільтр, але AI-аналіз не виконався.",
-        "difficulty": 4,
-        "risk": 5,
-        "success_chance": 65,
-        "competition": "unknown",
-        "budget_ok": "unknown",
-        "should_apply": True,
-        "reason": reason,
-        "questions": [
-            "Який точний обсяг роботи?",
-            "Який формат результату очікується?",
-            "Які терміни виконання?",
-        ],
-    }
+FALLBACK_NOTICE = "AI unavailable, used fallback rules"
 
 
 def setting_bool(value, default: bool) -> bool:
@@ -98,11 +87,31 @@ def setting_bool(value, default: bool) -> bool:
     return str(value).lower() in {"1", "true", "yes", "on", "так"}
 
 
-async def analyze_project_with_timeout(project_text: str) -> tuple[dict, bool, str]:
+async def analyze_project_with_timeout(
+    project_text: str,
+    filter_result,
+    title: str,
+    description: str,
+    numeric_bids_count: int | None,
+) -> tuple[dict, bool, str]:
     ai_enabled = setting_bool(get_setting("ai_enabled"), AI_ANALYSIS_ENABLED)
 
     if not ai_enabled:
-        return fallback_analysis("AI-аналіз вимкнено в налаштуваннях."), False, ""
+        return (
+            build_rules_fallback_analysis(filter_result, title, description, numeric_bids_count),
+            False,
+            "",
+        )
+
+    ollama_ok, ollama_reason = await asyncio.to_thread(check_ollama_available)
+
+    if not ollama_ok:
+        logger.warning("Ollama unavailable: %s", ollama_reason)
+        return (
+            build_rules_fallback_analysis(filter_result, title, description, numeric_bids_count),
+            False,
+            f"Ollama недоступна: {ollama_reason}",
+        )
 
     user_profile = get_setting("user_profile", USER_PROFILE)
 
@@ -115,21 +124,84 @@ async def analyze_project_with_timeout(project_text: str) -> tuple[dict, bool, s
 
     except Exception as error:
         logger.exception("AI analysis failed")
-        return fallback_analysis(f"AI-аналіз не спрацював: {error}"), False, str(error)
+        return (
+            build_rules_fallback_analysis(filter_result, title, description, numeric_bids_count),
+            False,
+            str(error),
+        )
 
 
 def should_send_project(analysis_data: dict, score: int, min_score: int, ai_used: bool) -> bool:
-    if not ai_used:
-        return True
-
     if score >= min_score:
         return True
+
+    if not ai_used:
+        return False
 
     fit = analysis_data.get("fit")
     should_apply = analysis_data.get("should_apply")
     is_borderline = score >= min_score - BORDERLINE_SCORE_MARGIN
 
     return fit in {"yes", "partial"} and should_apply and is_borderline
+
+
+def format_competition_note(analysis_data: dict, numeric_bids_count: int | None) -> str:
+    competition = str(analysis_data.get("competition", "unknown")).lower()
+
+    if competition == "high":
+        return "⚠️ Висока конкуренція"
+
+    if numeric_bids_count is not None and numeric_bids_count >= 25:
+        return "⚠️ Висока конкуренція (багато ставок)"
+
+    return ""
+
+
+def format_project_message(
+    title: str,
+    budget,
+    bids_count,
+    url: str,
+    score: int,
+    analysis_data: dict,
+    filter_result,
+    ai_used: bool,
+    numeric_bids_count: int | None,
+    description: str,
+) -> str:
+    competition_note = format_competition_note(analysis_data, numeric_bids_count)
+    why_fit = analysis_data.get("reason") or filter_result.reason
+    risk = analysis_data.get("risk", "?")
+    summary = analysis_data.get("summary", "")
+
+    lines = [
+        "🆕 Новий IT-проєкт",
+        "",
+        f"📌 Назва: {title}",
+        f"💰 Бюджет: {budget}",
+        f"👥 Ставок: {bids_count}",
+        f"🔗 {url}",
+        "",
+        f"🎯 Score: {score}/100",
+    ]
+
+    if not ai_used:
+        lines.append(FALLBACK_NOTICE)
+
+    if competition_note:
+        lines.append(competition_note)
+
+    lines.extend([
+        "",
+        f"✅ Чому підходить: {why_fit}",
+        f"⚠️ Ризики: {risk}/10 — {summary[:300]}",
+    ])
+
+    short_description = " ".join((description or "").split())
+    if short_description:
+        lines.extend(["", f"📝 Опис: {short_description[:800]}"])
+
+    return "\n".join(lines)
 
 
 def format_score_reason(filter_category: str, filter_reason: str, score: int, min_score: int) -> str:
@@ -189,6 +261,8 @@ async def process_and_send_project(send_func, project: dict, debug_stats: dict |
         return False
 
     if is_seen(project_id):
+        if debug_stats is not None:
+            debug_stats["already_seen"] += 1
         return False
 
     filter_result = classify_project(title, description)
@@ -251,14 +325,28 @@ async def process_and_send_project(send_func, project: dict, debug_stats: dict |
         budget=budget,
         bids_count=bids_count,
     )
-    if debug_stats is not None and setting_bool(get_setting("ai_enabled"), AI_ANALYSIS_ENABLED):
-        debug_stats["ai_analyzed"] += 1
+    analysis_data, ai_used, ai_error = await analyze_project_with_timeout(
+        project_text,
+        filter_result,
+        title,
+        description,
+        numeric_bids_count,
+    )
 
-    analysis_data, ai_used, ai_error = await analyze_project_with_timeout(project_text)
+    if debug_stats is not None:
+        if ai_used:
+            debug_stats["ai_analyzed"] += 1
+        else:
+            debug_stats["fallback_used"] += 1
 
     if ai_error and debug_stats is not None:
         debug_stats["ai_errors"].append(ai_error)
-    score = calculate_score(analysis_data)
+
+    if ai_used:
+        score = calculate_score(analysis_data)
+    else:
+        score = int(analysis_data.get("success_chance", 0))
+
     score += learning_bonus(title, description, get_good_bad_keywords())
     score = max(0, min(100, score))
     min_score = safe_setting_int(get_setting("min_score", "45"), 45)
@@ -275,6 +363,8 @@ async def process_and_send_project(send_func, project: dict, debug_stats: dict |
         f"{score_reason}\n\n"
         f"{analysis}"
     )
+    if not ai_used:
+        analysis_for_db = f"{FALLBACK_NOTICE}\n\n{analysis_for_db}"
 
     if not should_send_project(analysis_data, score, min_score, ai_used):
         if debug_stats is not None:
@@ -323,44 +413,21 @@ async def process_and_send_project(send_func, project: dict, debug_stats: dict |
         analysis=analysis_for_db,
     )
 
-    useful = """
-- Python / Telegram Bot API
-- робота з API
-- бази даних / SQLite / PostgreSQL
-- парсинг даних
-- HTML / CSS / JavaScript
-- GitHub для показу коду
-""".strip()
+    message = format_project_message(
+        title=title,
+        budget=budget,
+        bids_count=bids_count,
+        url=url,
+        score=score,
+        analysis_data=analysis_data,
+        filter_result=filter_result,
+        ai_used=ai_used,
+        numeric_bids_count=numeric_bids_count,
+        description=description,
+    )
 
-    message = f"""
-🆕 Новий IT-проєкт
-
-🎯 Score:
-{score}/100
-
-📌 Назва:
-{title}
-
-💰 Бюджет:
-{budget}
-
-👥 Ставок:
-{bids_count}
-
-📝 Опис:
-{description[:1200]}
-
-🛠 Що може знадобитись:
-{useful}
-
-🤖 AI-аналіз:
-{analysis}
-
-{score_reason}
-
-🔗 Посилання:
-{url}
-""".strip()
+    if ai_used:
+        message = f"{message}\n\n🤖 AI-аналіз:\n{analysis}\n\n{score_reason}"
 
     await send_func(
         message[:4000],

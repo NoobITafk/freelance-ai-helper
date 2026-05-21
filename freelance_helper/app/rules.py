@@ -99,6 +99,87 @@ def basic_filter(title: str, description: str) -> bool:
     return classify_project(title, description).category != "bad"
 
 
+def count_good_keyword_matches(title: str, description: str) -> list[str]:
+    text_lower = f"{title or ''} {description or ''}".lower()
+    return [word for word in GOOD_KEYWORDS if word.lower() in text_lower]
+
+
+def estimate_competition(numeric_bids_count: int | None) -> str:
+    if numeric_bids_count is None:
+        return "unknown"
+
+    if numeric_bids_count >= 25:
+        return "high"
+
+    if numeric_bids_count >= 10:
+        return "medium"
+
+    return "low"
+
+
+def calculate_rules_score(
+    filter_result: FilterResult,
+    good_matches: list[str],
+    numeric_bids_count: int | None,
+) -> int:
+    if filter_result.category == "good":
+        score = 48 + min(27, len(good_matches) * 4)
+    else:
+        score = 36
+
+    competition = estimate_competition(numeric_bids_count)
+
+    if competition == "high":
+        score -= 18
+    elif competition == "medium":
+        score -= 8
+    elif competition == "low":
+        score += 6
+
+    return max(0, min(100, score))
+
+
+def build_rules_fallback_analysis(
+    filter_result: FilterResult,
+    title: str,
+    description: str,
+    numeric_bids_count: int | None,
+) -> dict:
+    good_matches = count_good_keyword_matches(title, description)
+    competition = estimate_competition(numeric_bids_count)
+    score = calculate_rules_score(filter_result, good_matches, numeric_bids_count)
+
+    if filter_result.category == "good":
+        fit = "yes"
+        should_apply = score >= 40
+        summary = f"Rules: IT-ключові слова ({', '.join(good_matches[:5])})"
+        risk = 4
+        difficulty = 5
+    else:
+        fit = "partial"
+        should_apply = score >= 40
+        summary = "Rules: немає явних IT-слів, але немає стоп-слів"
+        risk = 6
+        difficulty = 6
+
+    return {
+        "fit": fit,
+        "summary": summary,
+        "difficulty": difficulty,
+        "risk": risk,
+        "success_chance": score,
+        "competition": competition,
+        "budget_ok": "unknown",
+        "should_apply": should_apply,
+        "reason": filter_result.reason,
+        "questions": [
+            "Який точний обсяг роботи?",
+            "Який формат результату очікується?",
+            "Які терміни виконання?",
+        ],
+    }
+
+
 def learning_bonus(title: str, description: str, good_bad_keywords) -> int:
     text = f"{title or ''} {description or ''}".lower()
     good_rows, bad_rows = good_bad_keywords

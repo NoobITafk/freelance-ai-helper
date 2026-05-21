@@ -6,6 +6,7 @@ from telegram.ext import ContextTypes
 
 from ..ai_analyzer import (
     analyze_project_json,
+    check_ollama_available,
     format_analysis,
     calculate_score,
     generate_bid,
@@ -20,6 +21,7 @@ from ..config import (
     OLLAMA_MODEL,
     OLLAMA_URL,
     TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
     USER_PROFILE,
 )
 from ..freelancehunt_api import get_projects
@@ -65,7 +67,9 @@ def set_last_check_stats(
 def make_check_debug_stats() -> dict:
     return {
         "basic_rejected": 0,
+        "already_seen": 0,
         "ai_analyzed": 0,
+        "fallback_used": 0,
         "sent": 0,
         "low_score_skipped": 0,
         "api_errors": [],
@@ -78,13 +82,15 @@ def format_check_debug_stats(stats: dict, received_count: int) -> str:
     ai_errors = "\n".join(f"- {error}" for error in stats["ai_errors"][:5]) or "- немає"
 
     return f"""
-📊 Debug /check
+📊 Статистика /check
 
 Отримано з Freelancehunt: {received_count}
-Відкинуто базовими правилами: {stats["basic_rejected"]}
-Пішло в AI: {stats["ai_analyzed"]}
-Відправлено в Telegram: {stats["sent"]}
+Вже були в базі (пропущено): {stats["already_seen"]}
+Відкинуто базовими keyword/rules-фільтрами: {stats["basic_rejected"]}
+Передано в AI: {stats["ai_analyzed"]}
+Оброблено через fallback rules: {stats["fallback_used"]}
 Пропущено через низький score: {stats["low_score_skipped"]}
+Надіслано в Telegram: {stats["sent"]}
 
 Помилки API:
 {api_errors}
@@ -314,12 +320,12 @@ async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    auto_scheduled = is_auto_search_on(context, chat_id)
-    auto_status = "ON" if auto_scheduled else "OFF"
-
     database_ok, database_reason = check_database()
-    runtime_ai_enabled = get_setting("ai_enabled", str(AI_ANALYSIS_ENABLED)).lower()
+    runtime_ai_enabled = setting_bool_from_env(
+        get_setting("ai_enabled"),
+        AI_ANALYSIS_ENABLED,
+    )
+    min_score = get_setting("min_score", "45")
 
     try:
         projects = get_projects()
@@ -330,32 +336,33 @@ async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         api_status = "ERROR"
         api_reason = str(error)
 
-    last_check = get_setting("last_check_at", "ще не було")
-    projects_received = get_setting("last_projects_received", "0")
-    projects_sent = get_setting("last_projects_sent", "0")
-    last_error = get_setting("last_check_error", "")
+    ollama_ok, ollama_reason = check_ollama_available()
 
     text = f"""
 🩺 Health
 
 Bot: OK
-Telegram bot token: {"є" if TELEGRAM_BOT_TOKEN else "немає"}
-Freelancehunt token: {"є" if FREELANCEHUNT_TOKEN else "немає"}
+TELEGRAM_BOT_TOKEN: {"є" if TELEGRAM_BOT_TOKEN else "немає"}
+TELEGRAM_CHAT_ID: {"є" if TELEGRAM_CHAT_ID else "немає"}
+FREELANCEHUNT_API_TOKEN: {"є" if FREELANCEHUNT_TOKEN else "немає"}
+SQLite database: {"OK" if database_ok else "ERROR"} ({database_reason})
 Freelancehunt API: {api_status} ({api_reason})
-Database: {"OK" if database_ok else "ERROR"} ({database_reason})
-Auto search scheduled: {auto_status}
-AUTO_CHECK_INTERVAL_SECONDS: {AUTO_CHECK_INTERVAL_SECONDS}
-AI_ANALYSIS_ENABLED: {AI_ANALYSIS_ENABLED}
-AI runtime setting: {runtime_ai_enabled}
+AI enabled: {"так" if runtime_ai_enabled else "ні"} (env={AI_ANALYSIS_ENABLED})
 OLLAMA_URL: {OLLAMA_URL}
 OLLAMA_MODEL: {OLLAMA_MODEL}
-Last check: {last_check}
-Projects received: {projects_received}
-Projects sent: {projects_sent}
-Last error: {last_error or "немає"}
+Ollama available: {"так" if ollama_ok else "ні"} ({ollama_reason})
+AUTO_CHECK_INTERVAL_SECONDS: {AUTO_CHECK_INTERVAL_SECONDS}
+MIN_SCORE: {min_score}
 """.strip()
 
     await update.message.reply_text(text[:4000])
+
+
+def setting_bool_from_env(value, default: bool) -> bool:
+    if value is None:
+        return default
+
+    return str(value).lower() in {"1", "true", "yes", "on", "так"}
 
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -12,6 +12,21 @@ TEXT_NUM_PREDICT = 500
 AI_RAW_LOG_PATH = Path("logs/ai_raw.log")
 
 
+def check_ollama_available(timeout: float = 5) -> tuple[bool, str]:
+    base_url = OLLAMA_URL.rsplit("/api/", 1)[0]
+    tags_url = f"{base_url}/api/tags"
+
+    try:
+        response = requests.get(tags_url, timeout=timeout)
+    except requests.RequestException as error:
+        return False, str(error)
+
+    if response.ok:
+        return True, "OK"
+
+    return False, f"HTTP {response.status_code}"
+
+
 def ask_ollama(
     prompt: str,
     temperature: float = 0.3,
