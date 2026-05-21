@@ -22,7 +22,8 @@ HARD_BAD_KEYWORDS = [
 SOFT_BAD_KEYWORDS = [
     "figma", "photoshop", "illustrator", "дизайн", "design", "logo",
     "banner", "банер",
-    "копірайт", "копірайтинг", "рерайт", "переклад", "seo", "smm",
+    "копірайт", "копірайтинг", "рерайт", "переклад", "перекладач",
+    "translation", "translator", "seo", "smm",
     "просування", "таргет",
     "реферат", "курсова", "дипломна",
     "instagram", "tiktok",
@@ -53,6 +54,15 @@ class FilterResult:
     reason: str
 
 
+def keyword_in_text(word: str, text_lower: str) -> bool:
+    keyword = word.lower()
+
+    if len(keyword) <= 3:
+        return re.search(rf"\b{re.escape(keyword)}\b", text_lower) is not None
+
+    return keyword in text_lower
+
+
 def classify_project(title: str, description: str) -> FilterResult:
     text = f"{title or ''} {description or ''}"
     text_lower = text.lower()
@@ -68,7 +78,7 @@ def classify_project(title: str, description: str) -> FilterResult:
     good_matches = [
         word
         for word in GOOD_KEYWORDS
-        if word.lower() in text_lower
+        if keyword_in_text(word, text_lower)
     ]
 
     if good_matches:
@@ -80,7 +90,7 @@ def classify_project(title: str, description: str) -> FilterResult:
     bad_matches = [
         word
         for word in SOFT_BAD_KEYWORDS
-        if word.lower() in text_lower
+        if keyword_in_text(word, text_lower)
     ]
 
     if bad_matches:
@@ -101,7 +111,7 @@ def basic_filter(title: str, description: str) -> bool:
 
 def count_good_keyword_matches(title: str, description: str) -> list[str]:
     text_lower = f"{title or ''} {description or ''}".lower()
-    return [word for word in GOOD_KEYWORDS if word.lower() in text_lower]
+    return [word for word in GOOD_KEYWORDS if keyword_in_text(word, text_lower)]
 
 
 def estimate_competition(numeric_bids_count: int | None) -> str:
@@ -187,7 +197,7 @@ def learning_bonus(title: str, description: str, good_bad_keywords) -> int:
     matched_keywords = {
         word
         for word in GOOD_KEYWORDS
-        if word in text
+        if keyword_in_text(word, text)
     }
 
     if not matched_keywords:

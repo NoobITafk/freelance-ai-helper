@@ -1,7 +1,17 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+# Корінь репозиторію: freelance_helper/app/config.py -> .. -> ..
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+for env_path in (PROJECT_ROOT / ".env", PROJECT_ROOT / "freelance_helper" / ".env"):
+    if env_path.is_file():
+        load_dotenv(env_path)
+        break
+else:
+    load_dotenv()
 
 
 def env_bool(name: str, default: bool) -> bool:
@@ -40,4 +50,4 @@ USER_PROFILE = os.getenv(
         "для junior-рівня і не радити брати задачі, де потрібен сильний senior."
     ),
 )
-FREELANCEHUNT_TOKEN = os.getenv("FREELANCEHUNT_TOKEN")
+FREELANCEHUNT_TOKEN = os.getenv("FREELANCEHUNT_TOKEN") or os.getenv("FREELANCEHUNT_API_TOKEN")
