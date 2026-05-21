@@ -74,6 +74,7 @@ HARD_BAD_KEYWORDS = [
 ]
 
 SOFT_BAD_KEYWORDS = [
+    "seo",
     "seo strategy",
     "seo стратег",
     "seo-стратег",
@@ -105,6 +106,18 @@ SOFT_BAD_KEYWORDS = [
     "design",
 ]
 
+WEAK_GOOD_KEYWORDS = {
+    "wordpress",
+    "excel",
+    "html",
+    "css",
+    "bootstrap",
+    "landing",
+    "лендінг",
+    "form",
+    "форма",
+}
+
 
 @dataclass(frozen=True)
 class FilterResult:
@@ -133,15 +146,23 @@ def classify_project(title: str, description: str) -> FilterResult:
             reason=f"Стоп-слово: {', '.join(hard_bad[:3])}",
         )
 
+    bad_matches = [word for word in SOFT_BAD_KEYWORDS if keyword_in_text(word, text_lower)]
     good_matches = [word for word in GOOD_KEYWORDS if keyword_in_text(word, text_lower)]
+    strong_good_matches = [
+        word for word in good_matches if word.lower() not in WEAK_GOOD_KEYWORDS
+    ]
+
+    if bad_matches and not strong_good_matches:
+        return FilterResult(
+            category="bad",
+            reason=f"Не IT keywords: {', '.join(bad_matches[:5])}",
+        )
 
     if good_matches:
         return FilterResult(
             category="good",
             reason=f"IT keywords: {', '.join(good_matches[:5])}",
         )
-
-    bad_matches = [word for word in SOFT_BAD_KEYWORDS if keyword_in_text(word, text_lower)]
 
     if bad_matches:
         return FilterResult(

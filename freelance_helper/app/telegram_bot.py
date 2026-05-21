@@ -1,3 +1,8 @@
+import atexit
+import errno
+import os
+from pathlib import Path
+
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler
 
 from .bot.handlers import (
@@ -31,12 +36,53 @@ from .database import init_db
 from .logger import logger, setup_logger
 
 
+LOCK_PATH = Path(__file__).resolve().parents[2] / "data" / "bot.lock"
+_lock_file = None
+
+
+def acquire_single_instance_lock() -> None:
+    global _lock_file
+
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        fd = os.open(LOCK_PATH, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except OSError as error:
+        if error.errno != errno.EEXIST:
+            raise
+
+        raise RuntimeError(
+            f"Бот уже запущений або залишився lock-файл: {LOCK_PATH}. "
+            "Якщо бот точно зупинений, видали цей файл і запусти ще раз."
+        ) from error
+
+    _lock_file = os.fdopen(fd, "w", encoding="utf-8")
+    _lock_file.write(str(os.getpid()))
+    _lock_file.flush()
+    atexit.register(release_single_instance_lock)
+
+
+def release_single_instance_lock() -> None:
+    global _lock_file
+
+    if _lock_file is None:
+        return
+
+    try:
+        _lock_file.close()
+        LOCK_PATH.unlink(missing_ok=True)
+    finally:
+        _lock_file = None
+
+
 def run_bot() -> None:
     setup_logger()
     init_db()
 
     if not TELEGRAM_BOT_TOKEN:
         raise ValueError("TELEGRAM_BOT_TOKEN не знайдено в .env")
+
+    acquire_single_instance_lock()
 
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 

@@ -9,6 +9,7 @@ from .config import OLLAMA_MODEL, OLLAMA_URL, USER_PROFILE
 ANALYSIS_NUM_PREDICT = 350
 TEXT_NUM_PREDICT = 500
 AI_RAW_LOG_PATH = Path("logs/ai_raw.log")
+BID_VARIANTS = ("short", "technical", "cautious")
 
 
 def check_ollama_available(timeout: float = 5) -> tuple[bool, str]:
@@ -260,71 +261,220 @@ def calculate_score(data: dict) -> int:
     return max(0, min(100, score))
 
 
+def project_type(project: dict) -> str:
+    text = f"{project.get('title', '')} {project.get('description', '')}".lower()
+
+    if any(word in text for word in ["telegram", "телеграм", "bot", "бот"]):
+        return "telegram_bot"
+
+    if "wordpress" in text or "вордпрес" in text:
+        return "wordpress"
+
+    if any(word in text for word in ["парсинг", "parser", "parsing", "scraping", "scrape"]):
+        return "parsing"
+
+    return "general"
+
+
+def project_tags_text(project: dict) -> str:
+    tags = project.get("tags") or project.get("categories") or project.get("skills") or []
+
+    if isinstance(tags, str):
+        return tags
+
+    if isinstance(tags, list):
+        values = []
+        for tag in tags:
+            if isinstance(tag, dict):
+                values.append(str(tag.get("name") or tag.get("title") or tag.get("id") or "").strip())
+            else:
+                values.append(str(tag).strip())
+
+        return ", ".join(value for value in values if value)
+
+    return ""
+
+
+def project_context(project: dict) -> str:
+    description = str(project.get("description") or "").strip()
+    is_short_description = len(description) < 220
+
+    lines = [
+        f"title: {project.get('title') or 'Не вказано'}",
+        f"description: {description or 'Опис відсутній'}",
+        f"budget: {project.get('budget') or 'Не вказано'}",
+        f"bids_count: {project.get('bids_count') or 'Невідомо'}",
+        f"tags/categories: {project_tags_text(project) or 'Не вказано'}",
+        f"project_url: {project.get('url') or 'Не вказано'}",
+        f"score: {project.get('score') if project.get('score') is not None else 'Невідомо'}",
+        f"why_fit: {project.get('reason') or 'Не вказано'}",
+        f"risks: {project.get('analysis') or 'Не вказано'}",
+    ]
+
+    if is_short_description:
+        lines.append(
+            "Опис короткий, тому ставка має бути обережною і з уточнюючими питаннями."
+        )
+
+    return "\n".join(lines)
+
+
+def fallback_bid(project: dict, variant: str = "short") -> str:
+    kind = project_type(project)
+
+    if kind == "telegram_bot":
+        return (
+            "Добрий день. Можу допомогти з реалізацією Telegram-бота на Python. "
+            "Перед точною оцінкою потрібно уточнити основні сценарії роботи бота, "
+            "чи потрібна база даних, який AI/API-сервіс планується використовувати "
+            "та де бот має бути розгорнутий. Після цього можна буде визначити "
+            "оптимальний стек, терміни й вартість."
+        )
+
+    if kind == "wordpress":
+        return (
+            "Добрий день. Можу допомогти з правками або налаштуванням WordPress-сайту. "
+            "Перед оцінкою потрібно побачити список правок, доступи до адмінки або "
+            "хостингу, тему сайту та вимоги до адаптивності. Після уточнення обсягу "
+            "можна буде точніше визначити терміни й вартість."
+        )
+
+    if kind == "parsing":
+        return (
+            "Добрий день. Можу допомогти з парсингом даних і підготовкою результату "
+            "у зручному форматі. Перед оцінкою потрібно уточнити джерело даних, поля "
+            "для збору, формат результату, частоту запуску та чи є авторизація або "
+            "захист. Після цього можна буде підібрати підхід, терміни й вартість."
+        )
+
+    return (
+        "Добрий день. Можу допомогти з виконанням цього технічного завдання. "
+        "Попередньо потрібно уточнити очікуваний результат, доступи, формат готової "
+        "роботи та обмеження по термінах. Після відповідей можна буде точніше "
+        "визначити стек, терміни й вартість."
+    )
+
+
+def fallback_questions(project: dict) -> str:
+    kind = project_type(project)
+
+    question_sets = {
+        "telegram_bot": [
+            "які команди або сценарії має виконувати бот?",
+            "чи потрібна база даних для користувачів, історії або налаштувань?",
+            "чи потрібні адмін-команди або окрема адмін-панель?",
+            "який AI/API-сервіс потрібно використовувати, якщо він потрібен?",
+            "де бот має бути розгорнутий?",
+        ],
+        "wordpress": [
+            "чи є доступ до адмінки WordPress і хостингу?",
+            "тема вже готова чи використовується кастомна?",
+            "який точний список правок потрібно внести?",
+            "чи потрібна адаптивність для мобільних пристроїв?",
+            "чи є макет або приклади бажаного результату?",
+        ],
+        "parsing": [
+            "з якого джерела потрібно збирати дані?",
+            "які саме поля потрібно отримати?",
+            "у якому форматі потрібен результат?",
+            "як часто має запускатися парсинг?",
+            "чи є авторизація, CAPTCHA або інший захист?",
+        ],
+        "general": [
+            "який кінцевий результат потрібно отримати?",
+            "які доступи або матеріали вже є?",
+            "які обмеження по термінах?",
+            "у якому форматі потрібно передати готову роботу?",
+        ],
+    }
+    questions = question_sets[kind]
+    numbered = "\n".join(f"{index}. {question}" for index, question in enumerate(questions, 1))
+
+    return (
+        "Перед оцінкою потрібно уточнити:\n\n"
+        f"{numbered}\n\n"
+        "Після відповідей можна буде точніше визначити стек, терміни й вартість."
+    )
+
+
 def generate_bid(project: dict, user_profile: str | None = None, variant: str = "short") -> str:
-    profile = user_profile or USER_PROFILE
     variant_instruction = {
-        "short": "Зроби коротку ставку.",
-        "confident": "Зроби трохи впевненішу ставку, але без перебільшень.",
-    }.get(variant, "Зроби коротку ставку.")
+        "short": "Коротка ставка: найважливіше, без зайвих деталей.",
+        "technical": "Більш технічна ставка: коротко поясни стек або етапи реалізації.",
+        "cautious": "Обережна ставка: менше обіцянок, більше уточнюючих питань.",
+    }.get(variant, "Коротка ставка: найважливіше, без зайвих деталей.")
 
     prompt = f"""
-Напиши коротку ставку клієнту на Freelancehunt.
+Напиши ставку клієнту на Freelancehunt.
 
-Профіль виконавця:
-{profile}
+Контекст проєкту:
+{project_context(project)}
 
-Дані проєкту:
-Назва: {project.get("title")}
-Бюджет: {project.get("budget")}
-Кількість ставок: {project.get("bids_count")}
-Опис:
-{project.get("description")}
+Варіант:
+{variant_instruction}
 
-Стиль (обов'язково):
-- {variant_instruction}
-- українською мовою;
-- 4-7 речень;
-- почни з привітання на кшталт: "Добрий день. Можу допомогти з цим завданням.";
-- згадай, що ти студент 2 курсу інженерії програмного забезпечення;
-- можеш працювати з Python, Telegram, API, HTML/CSS, парсингом, простими інтеграціями;
-- коротко покажи, що задача зрозуміла, і запропонуй 2-3 кроки виконання;
-- додай 1-2 уточнювальні питання перед стартом;
-- без брехні про досвід (не пиши "5 років досвіду", "гарантую результат", "зроблю ідеально");
-- не вигадуй кейси та клієнтів;
-- не згадуй, що текст написаний AI;
-- заверши готовністю взятися за невелику технічну задачу.
+Вимоги до ставки:
+- відповідай мовою проєкту, не змішуй мови;
+- 800-1200 символів максимум;
+- тон впевнений, нейтральний, без перебільшень;
+- не згадуй, що виконавець студент, навчається, новачок;
+- не згадуй AI/vibe coding як спосіб виконання;
+- не вигадуй досвід, клієнтів або факти;
+- не пиши "маю 5 років досвіду", "гарантую результат", "робив десятки таких проєктів";
+- використовуй формулювання на кшталт "Можу допомогти", "Попередньо бачу реалізацію через...", "Перед точною оцінкою потрібно уточнити...";
+- якщо опис короткий, дай більше питань і менше обіцянок.
 
-Поверни тільки готовий текст ставки.
+Структура:
+1. Привітання.
+2. Що саме можна зробити по цьому проєкту.
+3. Попередній стек або підхід.
+4. 2-5 уточнюючих питань, якщо ТЗ нечітке.
+5. Фраза, що точні терміни/вартість можна сказати після уточнення.
+
+Поверни тільки текст ставки без заголовків і markdown.
 """
 
-    return ask_ollama(
-        prompt=prompt,
-        temperature=0.5,
-        num_predict=TEXT_NUM_PREDICT,
-    )
+    try:
+        return ask_ollama(
+            prompt=prompt,
+            temperature=0.55 if variant != "cautious" else 0.45,
+            num_predict=TEXT_NUM_PREDICT,
+        )
+    except requests.RequestException:
+        return fallback_bid(project, variant=variant)
 
 
 def generate_questions(project: dict) -> str:
     prompt = f"""
-Склади 3-5 коротких питань клієнту.
+Склади уточнюючі питання клієнту. Не пиши ставку.
 
-Дані проєкту:
-Назва: {project.get("title")}
-Бюджет: {project.get("budget")}
-Опис:
-{project.get("description")}
+Контекст проєкту:
+{project_context(project)}
 
-Питання мають уточнити:
-- обсяг роботи;
-- формат результату;
-- терміни;
-- технічні ризики.
+Формат відповіді:
+Перед оцінкою потрібно уточнити:
 
-Поверни тільки список питань українською.
+1. ...
+2. ...
+3. ...
+4. ...
+
+Після відповідей можна буде точніше визначити стек, терміни й вартість.
+
+Вимоги:
+- відповідай мовою проєкту, не змішуй мови;
+- питання мають залежати від типу проєкту;
+- для Telegram-бота уточни сценарії/команди, базу даних, адмін-функції, AI/API-сервіс, деплой;
+- для WordPress уточни доступи, тему, список правок, адаптивність, макет;
+- для парсингу уточни джерело, поля, формат результату, частоту запуску, авторизацію/захист;
+- не додавай пропозицію виконання робіт, тільки питання у вказаному форматі.
 """
 
-    return ask_ollama(
-        prompt=prompt,
-        temperature=0.4,
-        num_predict=300,
-    )
+    try:
+        return ask_ollama(
+            prompt=prompt,
+            temperature=0.35,
+            num_predict=350,
+        )
+    except requests.RequestException:
+        return fallback_questions(project)

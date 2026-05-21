@@ -1,3 +1,4 @@
+import asyncio
 import time
 from datetime import datetime
 
@@ -5,6 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from ..ai_analyzer import (
+    BID_VARIANTS,
     analyze_project_json,
     check_ollama_available,
     format_analysis,
@@ -13,8 +15,10 @@ from ..ai_analyzer import (
     generate_questions,
     normalize_analysis,
 )
+from .keyboards import bid_keyboard, questions_keyboard
 from ..config import (
     AI_ANALYSIS_ENABLED,
+    AI_TIMEOUT_SECONDS,
     AUTO_CHECK_FIRST_RUN_SECONDS,
     AUTO_CHECK_INTERVAL_SECONDS,
     FREELANCEHUNT_TOKEN,
@@ -39,6 +43,17 @@ from ..services.project_service import process_and_send_project
 from ..logger import logger
 
 LAST_PROJECTS_LIMIT = 10
+
+
+async def reply_text(update: Update, text: str, **kwargs) -> bool:
+    message = update.effective_message
+
+    if not message:
+        logger.warning("Cannot reply: update has no effective_message")
+        return False
+
+    await message.reply_text(text, **kwargs)
+    return True
 
 
 def is_auto_search_on(context: ContextTypes.DEFAULT_TYPE, chat_id: int) -> bool:
@@ -134,8 +149,12 @@ def project_short_description(project: dict, limit: int = 200) -> str:
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_chat:
+        logger.warning("Cannot start: update has no effective_chat")
+        return
+
     chat_id = update.effective_chat.id
-    await update.message.reply_text(f"Бот працює ✅\nТвій chat_id: {chat_id}")
+    await reply_text(update, f"Бот працює ✅\nТвій chat_id: {chat_id}")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -166,7 +185,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 📝 Ставка | ❓ Уточнення
 🔁 Нова ставка | ⏭ Пропустити
 """
-    await update.message.reply_text(text)
+    await reply_text(update, text)
 
 
 async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -177,25 +196,39 @@ async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Термін: 1 день.
 """
 
-    await update.message.reply_text(f"Тестую AI...\nМодель: {OLLAMA_MODEL}\nURL: {OLLAMA_URL}")
+    await reply_text(update, f"Тестую AI...\nМодель: {OLLAMA_MODEL}\nURL: {OLLAMA_URL}")
 
     try:
         started_at = time.monotonic()
         user_profile = get_setting("user_profile", USER_PROFILE)
-        analysis_data = normalize_analysis(analyze_project_json(test_project, user_profile))
+        raw_analysis = await asyncio.wait_for(
+            asyncio.to_thread(analyze_project_json, test_project, user_profile),
+            timeout=AI_TIMEOUT_SECONDS,
+        )
+        analysis_data = normalize_analysis(raw_analysis)
         score = calculate_score(analysis_data)
         analysis = format_analysis(analysis_data)
         elapsed = time.monotonic() - started_at
+    except asyncio.TimeoutError:
+        logger.exception("AI test timed out")
+        await reply_text(update, f"AI-тест не пройшов: timeout {AI_TIMEOUT_SECONDS} сек.")
+        return
     except Exception as error:
         logger.exception("AI test failed")
-        await update.message.reply_text(f"AI-тест не пройшов:\n{error}")
+        await reply_text(update, f"AI-тест не пройшов:\n{error}")
         return
 
-    await update.message.reply_text(f"Score: {score}/100\nЧас: {elapsed:.1f} сек\n\n{analysis}")
+    await reply_text(update, f"Score: {score}/100\nЧас: {elapsed:.1f} сек\n\n{analysis}")
 
 
 async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Шукаю нові проєкти...")
+    message = update.effective_message
+
+    if not message:
+        logger.warning("Cannot run /check: update has no effective_message")
+        return
+
+    await message.reply_text("Шукаю нові проєкти...")
     logger.info("Manual check started")
     debug_stats = make_check_debug_stats()
 
@@ -207,14 +240,14 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
         debug_stats["api_ok"] = False
         debug_stats["api_errors"].append(str(error))
         set_last_check_stats(0, 0, str(error))
-        await update.message.reply_text(f"Помилка Freelancehunt API:\n{error}")
-        await update.message.reply_text(format_check_debug_stats(debug_stats, 0, 0))
+        await message.reply_text(f"Помилка Freelancehunt API:\n{error}")
+        await message.reply_text(format_check_debug_stats(debug_stats, 0, 0))
         return
 
     if not projects:
-        await update.message.reply_text("Отримано 0 проєктів з Freelancehunt.")
+        await message.reply_text("Отримано 0 проєктів з Freelancehunt.")
         set_last_check_stats(0, 0)
-        await update.message.reply_text(format_check_debug_stats(debug_stats, 0, 0))
+        await message.reply_text(format_check_debug_stats(debug_stats, 0, 0))
         return
 
     sent_count = 0
@@ -226,7 +259,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         try:
             was_sent = await process_and_send_project(
-                update.message.reply_text,
+                message.reply_text,
                 project,
                 debug_stats=debug_stats,
             )
@@ -236,7 +269,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.exception("Project processing error")
             debug_stats["ai_ok"] = False
             debug_stats["ai_errors"].append(str(error)[:200])
-            await update.message.reply_text(f"Помилка обробки проєкту:\n{error}")
+            await message.reply_text(f"Помилка обробки проєкту:\n{error}")
             continue
 
         if was_sent:
@@ -246,10 +279,10 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
             break
 
     if sent_count == 0:
-        await update.message.reply_text("Нових відповідних проєктів поки немає.")
+        await message.reply_text("Нових відповідних проєктів поки немає.")
 
     set_last_check_stats(len(projects), sent_count)
-    await update.message.reply_text(
+    await message.reply_text(
         format_check_debug_stats(debug_stats, len(projects), processed_count)[:4000]
     )
 
@@ -313,11 +346,19 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_chat:
+        logger.warning("Cannot enable auto check: update has no effective_chat")
+        return
+
+    if not context.job_queue:
+        await reply_text(update, "Job queue недоступний. Перевстанови python-telegram-bot[job-queue].")
+        return
+
     chat_id = update.effective_chat.id
     current_jobs = context.job_queue.get_jobs_by_name(str(chat_id))
 
     if current_jobs:
-        await update.message.reply_text("Автоперевірка вже увімкнена ✅")
+        await reply_text(update, "Автоперевірка вже увімкнена ✅")
         return
 
     context.job_queue.run_repeating(
@@ -329,12 +370,21 @@ async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     logger.info("Auto check enabled for chat_id=%s", chat_id)
-    await update.message.reply_text(
+    await reply_text(
+        update,
         f"Автоперевірку увімкнено ✅\nІнтервал: {AUTO_CHECK_INTERVAL_SECONDS} сек."
     )
 
 
 async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_chat:
+        logger.warning("Cannot disable auto check: update has no effective_chat")
+        return
+
+    if not context.job_queue:
+        await reply_text(update, "Job queue недоступний.")
+        return
+
     chat_id = update.effective_chat.id
     current_jobs = context.job_queue.get_jobs_by_name(str(chat_id))
 
@@ -342,7 +392,7 @@ async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
         job.schedule_removal()
 
     logger.info("Auto check disabled for chat_id=%s", chat_id)
-    await update.message.reply_text("Автоперевірку вимкнено ⏹")
+    await reply_text(update, "Автоперевірку вимкнено ⏹")
 
 
 async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -387,7 +437,7 @@ AUTO_CHECK_INTERVAL_SECONDS: {AUTO_CHECK_INTERVAL_SECONDS}
 MIN_SCORE: {min_score}
 """.strip()
 
-    await update.message.reply_text(text[:4000])
+    await reply_text(update, text[:4000])
 
 
 def setting_bool_from_env(value, default: bool) -> bool:
@@ -419,13 +469,14 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🤖 AI-аналіз: {ai_enabled}
 """
 
-    await update.message.reply_text(text)
+    await reply_text(update, text)
 
 
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         min_score = get_setting("min_score", str(MIN_SCORE))
-        await update.message.reply_text(
+        await reply_text(
+            update,
             f"Поточний мінімальний score: {min_score}\n\n" f"Щоб змінити:\n/settings 35"
         )
         return
@@ -433,19 +484,19 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     value = context.args[0]
 
     if not value.isdigit():
-        await update.message.reply_text("Score має бути числом. Наприклад: /settings 35")
+        await reply_text(update, "Score має бути числом. Наприклад: /settings 35")
         return
 
     score = int(value)
 
     if score < 0 or score > 100:
-        await update.message.reply_text("Score має бути від 0 до 100.")
+        await reply_text(update, "Score має бути від 0 до 100.")
         return
 
     set_setting("min_score", str(score))
     logger.info("Min score changed to %s", score)
 
-    await update.message.reply_text(f"✅ Мінімальний score змінено на {score}")
+    await reply_text(update, f"✅ Мінімальний score змінено на {score}")
 
 
 async def threshold_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -454,31 +505,33 @@ async def threshold_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = get_setting("user_profile", USER_PROFILE)
-    await update.message.reply_text(f"👤 Поточний профіль:\n\n{profile}")
+    await reply_text(update, f"👤 Поточний профіль:\n\n{profile}")
 
 
 async def profile_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = " ".join(context.args).strip()
 
     if len(profile) < 20:
-        await update.message.reply_text(
+        await reply_text(
+            update,
             "Профіль занадто короткий. Напиши хоча б 20 символів після /profile_set."
         )
         return
 
     set_setting("user_profile", profile)
     logger.info("User profile changed")
-    await update.message.reply_text("✅ Профіль оновлено.")
+    await reply_text(update, "✅ Профіль оновлено.")
 
 
 async def ai_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
     set_setting("AI_ANALYSIS_ENABLED", "true")
-    await update.message.reply_text("✅ AI-аналіз увімкнено (AI_ANALYSIS_ENABLED=true).")
+    await reply_text(update, "✅ AI-аналіз увімкнено (AI_ANALYSIS_ENABLED=true).")
 
 
 async def ai_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
     set_setting("AI_ANALYSIS_ENABLED", "false")
-    await update.message.reply_text(
+    await reply_text(
+        update,
         "⏹ AI-аналіз вимкнено (AI_ANALYSIS_ENABLED=false). Використовується fallback rules."
     )
 
@@ -487,7 +540,7 @@ async def recent_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     projects = get_recent_projects(limit=LAST_PROJECTS_LIMIT)
 
     if not projects:
-        await update.message.reply_text("Поки немає збережених проєктів.")
+        await reply_text(update, "Поки немає збережених проєктів.")
         return
 
     lines = ["🕘 Останні знайдені проєкти:"]
@@ -509,7 +562,7 @@ async def recent_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{project.get('url') or ''}"
         )
 
-    await update.message.reply_text("\n".join(lines)[:4000])
+    await reply_text(update, "\n".join(lines)[:4000])
 
 
 async def last_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -518,14 +571,14 @@ async def last_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def why_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Вкажи ID проєкту. Наприклад: /why 123456")
+        await reply_text(update, "Вкажи ID проєкту. Наприклад: /why 123456")
         return
 
     project_id = context.args[0]
     project = get_project(project_id)
 
     if not project:
-        await update.message.reply_text("Проєкт не знайдено в базі.")
+        await reply_text(update, "Проєкт не знайдено в базі.")
         return
 
     text = f"""
@@ -536,7 +589,7 @@ async def why_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🔗 {project.get("url") or ""}
 """.strip()
 
-    await update.message.reply_text(text[:4000])
+    await reply_text(update, text[:4000])
 
 
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -550,11 +603,20 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         pass
 
+    if ":" not in query.data:
+        logger.warning("Invalid callback data: %s", query.data)
+        return
+
     action, project_id = query.data.split(":", 1)
     project = get_project(project_id)
+    message = query.message
+
+    if not message:
+        logger.warning("Cannot handle callback: query has no message")
+        return
 
     if not project:
-        await query.message.reply_text("Проєкт не знайдено в базі.")
+        await message.reply_text("Проєкт не знайдено в базі.")
         return
 
     if action in {"great", "good", "maybe", "bad", "not_mine", "skip"}:
@@ -569,34 +631,62 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "not_mine": "🚫 Збережено: не твоє.",
             "skip": "⏭ Проєкт пропущено.",
         }
-        await query.message.reply_text(labels[action])
+        await message.reply_text(labels[action])
 
     elif action in ["bid", "rebid"]:
-        await query.message.reply_text("Генерую відповідь клієнту...")
+        await message.reply_text("Генерую відповідь клієнту...")
 
         try:
-            user_profile = get_setting("user_profile", USER_PROFILE)
-            short_bid = generate_bid(project, user_profile=user_profile, variant="short")
-            confident_bid = generate_bid(project, user_profile=user_profile, variant="confident")
+            variant = "short"
+
+            if action == "rebid":
+                bid_variants = context.user_data.setdefault("bid_variants", {})
+                current_index = bid_variants.get(project_id, 0)
+                variant = BID_VARIANTS[(current_index + 1) % len(BID_VARIANTS)]
+                bid_variants[project_id] = current_index + 1
+            else:
+                context.user_data.setdefault("bid_variants", {})[project_id] = 0
+
+            bid_text = await asyncio.wait_for(
+                asyncio.to_thread(
+                    generate_bid,
+                    project,
+                    variant=variant,
+                ),
+                timeout=AI_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            logger.exception("Bid generation timed out")
+            await message.reply_text(f"Помилка генерації ставки: timeout {AI_TIMEOUT_SECONDS} сек.")
+            return
         except Exception as error:
             logger.exception("Bid generation error")
-            await query.message.reply_text(f"Помилка генерації ставки:\n{error}")
+            await message.reply_text(f"Помилка генерації ставки:\n{error}")
             return
 
-        await query.message.reply_text(
-            f"📝 Коротка відповідь клієнту:\n\n{short_bid}\n\n"
-            f"💪 Впевненіший варіант:\n\n{confident_bid}\n\n"
-            f"🔗 {project.get('url')}"
+        await message.reply_text(
+            f"📝 Варіант ставки:\n\n{bid_text}",
+            reply_markup=bid_keyboard(project_id),
         )
 
     elif action == "questions":
-        await query.message.reply_text("Генерую питання клієнту...")
+        await message.reply_text("Генерую питання клієнту...")
 
         try:
-            questions = generate_questions(project)
+            questions = await asyncio.wait_for(
+                asyncio.to_thread(generate_questions, project),
+                timeout=AI_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            logger.exception("Questions generation timed out")
+            await message.reply_text(f"Помилка генерації питань: timeout {AI_TIMEOUT_SECONDS} сек.")
+            return
         except Exception as error:
             logger.exception("Questions generation error")
-            await query.message.reply_text(f"Помилка генерації питань:\n{error}")
+            await message.reply_text(f"Помилка генерації питань:\n{error}")
             return
 
-        await query.message.reply_text(f"❓ Що уточнити:\n\n{questions}\n\n🔗 {project.get('url')}")
+        await message.reply_text(
+            f"❓ Що уточнити:\n\n{questions}",
+            reply_markup=questions_keyboard(project_id),
+        )
