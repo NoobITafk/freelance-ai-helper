@@ -319,18 +319,33 @@ def project_text(project: dict) -> str:
     return f"{project.get('title', '')} {project.get('description', '')}".lower()
 
 
+def contains_keyword(text: str, keyword: str) -> bool:
+    if " " in keyword:
+        return keyword in text
+
+    return re.search(rf"(?<!\w){re.escape(keyword)}(?!\w)", text) is not None
+
+
+def has_technical_keyword(text: str) -> bool:
+    return any(contains_keyword(text, word) for word in TECHNICAL_KEYWORDS)
+
+
 def non_technical_reason(project: dict) -> tuple[str, str] | None:
     text = project_text(project)
 
-    if "seo" in text and not any(
-        word in text for word in ["api", "html", "css", "код", "code", "розроб", "programming"]
+    if "seo" in text and any(
+        phrase in text for phrase in ["без зміни коду", "без коду", "без програмування"]
     ):
         return "SEO без програмування", "SEO/SMM-маркетинг"
 
-    has_technical_keyword = any(word in text for word in TECHNICAL_KEYWORDS)
+    if "seo" in text and not any(
+        contains_keyword(text, word)
+        for word in ["api", "html", "css", "код", "code", "розробка", "programming"]
+    ):
+        return "SEO без програмування", "SEO/SMM-маркетинг"
 
     for keyword, reason in NON_TECHNICAL_KEYWORDS.items():
-        if keyword in text and not has_technical_keyword:
+        if keyword in text and not has_technical_keyword(text):
             return reason
 
     return None
@@ -338,9 +353,7 @@ def non_technical_reason(project: dict) -> tuple[str, str] | None:
 
 def is_technical_project(project: dict) -> bool:
     text = project_text(project)
-    return non_technical_reason(project) is None and any(
-        word in text for word in TECHNICAL_KEYWORDS
-    )
+    return non_technical_reason(project) is None and has_technical_keyword(text)
 
 
 def project_type(project: dict) -> str:
@@ -420,83 +433,115 @@ def project_context(project: dict) -> str:
 
 def fallback_bid(project: dict, variant: str = "short") -> str:
     kind = project_type(project)
+    title = str(project.get("title") or "цим завданням").strip()
 
     if kind == "non_technical":
         return unsuitable_project_text(project)
 
     if kind == "telegram_bot":
-        return (
-            "Добрий день. Можу допомогти з реалізацією Telegram-бота на Python. "
-            "Перед точною оцінкою потрібно уточнити основні сценарії роботи бота, "
-            "чи потрібна база даних, який AI/API-сервіс планується використовувати "
-            "та де бот має бути розгорнутий. Після цього можна буде визначити "
-            "оптимальний стек, терміни й вартість."
-        )
+        task = "реалізацією Telegram-бота на Python"
+        stack = "python-telegram-bot або aiogram, за потреби SQLite, логування та деплой"
+        questions = [
+            "які команди або сценарії має виконувати бот?",
+            "чи потрібна база даних?",
+            "чи потрібні адмін-команди та логування?",
+            "де бот має бути розгорнутий?",
+        ]
 
-    if kind == "wordpress":
-        return (
-            "Добрий день. Можу допомогти з правками або налаштуванням WordPress-сайту. "
-            "Перед оцінкою потрібно побачити список правок, доступи до адмінки або "
-            "хостингу, тему сайту та вимоги до адаптивності. Після уточнення обсягу "
-            "можна буде точніше визначити терміни й вартість."
-        )
+    elif kind == "wordpress":
+        task = "правками або налаштуванням WordPress-сайту"
+        stack = "адмінку WordPress, тему сайту, CSS/HTML-правки та перевірку адаптивності"
+        questions = [
+            "чи є доступ до адмінки та хостингу?",
+            "який точний список правок потрібно внести?",
+            "тема готова чи кастомна?",
+            "чи є макет або приклад бажаного результату?",
+        ]
 
-    if kind == "parsing":
-        return (
-            "Добрий день. Можу допомогти з парсингом даних і підготовкою результату "
-            "у зручному форматі. Перед оцінкою потрібно уточнити джерело даних, поля "
-            "для збору, формат результату, частоту запуску та чи є авторизація або "
-            "захист. Після цього можна буде підібрати підхід, терміни й вартість."
-        )
+    elif kind == "parsing":
+        task = "парсингом даних і підготовкою результату у потрібному форматі"
+        stack = "Python, requests/BeautifulSoup або Playwright, залежно від сайту та захисту"
+        questions = [
+            "з якого джерела потрібно збирати дані?",
+            "які поля потрібно отримати?",
+            "у якому форматі потрібен результат?",
+            "чи є авторизація, CAPTCHA або інший захист?",
+        ]
 
-    if kind == "html_css":
-        return (
-            "Добрий день. Можу допомогти з версткою HTML/CSS або правками інтерфейсу. "
-            "Попередньо потрібно уточнити макет, кількість сторінок, адаптивні "
-            "брейкпоінти, форми та можливу інтеграцію з CMS. Після цього можна буде "
-            "точніше оцінити стек, терміни й вартість."
-        )
+    elif kind == "html_css":
+        task = "HTML/CSS-версткою або правками інтерфейсу"
+        stack = "семантичний HTML, CSS/адаптив, за потреби JavaScript для простих взаємодій"
+        questions = [
+            "чи є Figma або інший макет?",
+            "скільки сторінок потрібно зробити?",
+            "які брейкпоінти адаптиву потрібні?",
+            "чи потрібні форми або інтеграція з CMS?",
+        ]
 
-    if kind == "api":
-        return (
-            "Добрий день. Можу допомогти з інтеграцією API або невеликою backend-задачею. "
-            "Перед оцінкою потрібно уточнити документацію API, потрібні сценарії, "
-            "формат даних, доступи до тестового середовища та вимоги до логування. "
-            "Після цього можна буде точніше визначити терміни й вартість."
-        )
+    elif kind == "api":
+        task = "інтеграцією API або невеликою backend-задачею"
+        stack = "Python, requests/httpx або FastAPI, залежно від потрібного сценарію"
+        questions = [
+            "чи є документація API?",
+            "які саме сценарії потрібно реалізувати?",
+            "який формат даних очікується?",
+            "чи потрібне логування помилок?",
+        ]
 
-    if kind == "excel":
-        return (
-            "Добрий день. Можу допомогти з автоматизацією Google Sheets або Excel. "
-            "Перед оцінкою потрібно уточнити структуру таблиць, джерело даних, "
-            "потрібні формули або скрипти, формат результату та частоту оновлення. "
-            "Після цього можна буде точніше визначити терміни й вартість."
-        )
+    elif kind == "excel":
+        task = "автоматизацією Google Sheets або Excel"
+        stack = "формули, Apps Script або Python-скрипт, залежно від джерела даних"
+        questions = [
+            "яка структура вхідних таблиць?",
+            "який результат має бути на виході?",
+            "дані потрібно оновлювати вручну чи автоматично?",
+            "чи є приклад готового звіту?",
+        ]
+
+    else:
+        task = f"виконанням завдання: {title}"
+        stack = "простий технічний підхід після уточнення вимог, доступів і формату результату"
+        questions = [
+            "який кінцевий результат потрібно отримати?",
+            "які матеріали або доступи вже є?",
+            "у якому форматі потрібно передати готову роботу?",
+        ]
+
+    if variant == "technical":
+        intro = f"Добрий день. Можу допомогти з {task}."
+        approach = f"Технічно бачу реалізацію через {stack}."
+    elif variant == "cautious":
+        intro = f"Добрий день. Можу допомогти з {task}, але перед оцінкою варто уточнити обсяг."
+        approach = f"Попередній підхід: {stack}. Якщо ТЗ коротке, краще спочатку зафіксувати сценарії та очікуваний результат."
+    else:
+        intro = f"Добрий день. Можу допомогти з {task}."
+        approach = f"Попередньо бачу реалізацію через {stack}."
+
+    questions_text = "\n".join(
+        f"{index}. {question}" for index, question in enumerate(questions, 1)
+    )
 
     return (
-        "Добрий день. Можу допомогти з виконанням цього технічного завдання. "
-        "Попередньо потрібно уточнити очікуваний результат, доступи, формат готової "
-        "роботи та обмеження по термінах. Після відповідей можна буде точніше "
-        "визначити стек, терміни й вартість."
+        f"{intro}\n\n"
+        f"{approach}\n\n"
+        "Перед точною оцінкою потрібно уточнити:\n"
+        f"{questions_text}\n\n"
+        "Після уточнення зможу точніше оцінити терміни й вартість."
     )
 
 
 def fallback_questions(project: dict) -> str:
     kind = project_type(project)
+    non_technical = non_technical_reason(project)
 
     question_sets = {
-        "non_technical": [
-            "який точний формат результату потрібен?",
-            "які розміри, матеріали або технічні вимоги до друку?",
-            "чи є вихідні файли або приклади бажаного результату?",
-            "у яких форматах потрібно передати готові файли?",
-        ],
         "telegram_bot": [
             "які команди або сценарії має виконувати бот?",
             "чи потрібна база даних для користувачів, історії або налаштувань?",
             "чи потрібні адмін-команди або окрема адмін-панель?",
             "який AI/API-сервіс потрібно використовувати, якщо він потрібен?",
             "де бот має бути розгорнутий?",
+            "чи потрібне логування помилок або дій користувачів?",
         ],
         "wordpress": [
             "чи є доступ до адмінки WordPress і хостингу?",
@@ -539,7 +584,41 @@ def fallback_questions(project: dict) -> str:
             "у якому форматі потрібно передати готову роботу?",
         ],
     }
-    questions = question_sets.get(kind, question_sets["general"])
+
+    if kind == "non_technical" and non_technical:
+        sphere, _skills = non_technical
+
+        if "переклади" in sphere:
+            questions = [
+                "який обсяг тексту потрібно перекласти?",
+                "з якої мови на яку потрібен переклад?",
+                "чи потрібна адаптація стилю або лише дослівний переклад?",
+                "у якому форматі потрібно передати результат?",
+            ]
+        elif "SEO" in sphere:
+            questions = [
+                "чи потрібна тільки SEO-стратегія, чи також технічні правки на сайті?",
+                "чи є список сторінок і ключових запитів?",
+                "чи потрібна робота з мета-тегами, контентом або структурою сайту?",
+                "чи передбачені зміни в коді або тільки маркетингова оптимізація?",
+            ]
+        elif any(word in sphere for word in ["логотип", "векторизація", "поліграфія", "ілюстрації"]):
+            questions = [
+                "який точний формат результату потрібен?",
+                "які розміри, матеріали або технічні вимоги до друку?",
+                "чи є вихідні файли або приклади бажаного результату?",
+                "у яких форматах потрібно передати готові файли?",
+            ]
+        else:
+            questions = [
+                "який кінцевий результат потрібно отримати?",
+                "які матеріали або приклади вже є?",
+                "у якому форматі потрібно передати готову роботу?",
+                "які терміни та обмеження важливі?",
+            ]
+    else:
+        questions = question_sets.get(kind, question_sets["general"])
+
     numbered = "\n".join(f"{index}. {question}" for index, question in enumerate(questions, 1))
 
     return (
