@@ -10491,3 +10491,840 @@ telegram.error.TimedOut: Timed out
 2026-05-21 20:50:42,223 | INFO | freelance_helper | Sent project: Создать аккаунт и верифицировать компанию на сайте Work.ua/Rabota.ua | score=91 | ai=True | fallback=none
 2026-05-21 20:50:42,228 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
 2026-05-21 20:50:42,246 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:53:33 UTC)" executed successfully
+2026-05-21 20:53:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:56:33 UTC)" (scheduled at 2026-05-21 17:53:33.922422+00:00)
+2026-05-21 20:53:33,932 | INFO | freelance_helper | Auto check started
+2026-05-21 20:53:34,143 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:53:34,144 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:53:39,351 | INFO | freelance_helper | Sent project: Створення постеру за рефференсом | score=92 | ai=True | fallback=none
+2026-05-21 20:53:39,355 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 20:53:39,367 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:56:33 UTC)" executed successfully
+2026-05-21 20:56:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:59:33 UTC)" (scheduled at 2026-05-21 17:56:33.922422+00:00)
+2026-05-21 20:56:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 20:56:34,141 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:56:34,142 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:56:38,738 | INFO | freelance_helper | Sent project: Ворк юа | score=69 | ai=True | fallback=none
+2026-05-21 20:56:38,741 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 20:56:38,753 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 17:59:33 UTC)" executed successfully
+2026-05-21 20:59:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:02:33 UTC)" (scheduled at 2026-05-21 17:59:33.922422+00:00)
+2026-05-21 20:59:33,930 | INFO | freelance_helper | Auto check started
+2026-05-21 20:59:34,161 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 20:59:34,162 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 20:59:39,305 | INFO | freelance_helper | Filtered by score: Потрібна допомога з аутентифікацією акаунту у Payoneer | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 20:59:43,945 | INFO | freelance_helper | Filtered by score: Оформить текст молитвы в стих | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 20:59:43,948 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 20:59:43,956 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:02:33 UTC)" executed successfully
+2026-05-21 21:02:33,927 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:05:33 UTC)" (scheduled at 2026-05-21 18:02:33.922422+00:00)
+2026-05-21 21:02:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 21:02:34,261 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:02:34,262 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:02:34,266 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:02:34,280 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:05:33 UTC)" executed successfully
+2026-05-21 21:05:33,926 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:08:33 UTC)" (scheduled at 2026-05-21 18:05:33.922422+00:00)
+2026-05-21 21:05:33,927 | INFO | freelance_helper | Auto check started
+2026-05-21 21:05:34,132 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:05:34,133 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:05:34,141 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:05:34,155 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:08:33 UTC)" executed successfully
+2026-05-21 21:08:33,925 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:11:33 UTC)" (scheduled at 2026-05-21 18:08:33.922422+00:00)
+2026-05-21 21:08:33,926 | INFO | freelance_helper | Auto check started
+2026-05-21 21:08:34,130 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:08:34,130 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:08:34,134 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:08:34,147 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:11:33 UTC)" executed successfully
+2026-05-21 21:11:33,932 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:14:33 UTC)" (scheduled at 2026-05-21 18:11:33.922422+00:00)
+2026-05-21 21:11:33,933 | INFO | freelance_helper | Auto check started
+2026-05-21 21:11:34,149 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:11:34,150 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:11:34,154 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:11:34,166 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:14:33 UTC)" executed successfully
+2026-05-21 21:14:33,929 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:17:33 UTC)" (scheduled at 2026-05-21 18:14:33.922422+00:00)
+2026-05-21 21:14:33,930 | INFO | freelance_helper | Auto check started
+2026-05-21 21:14:34,276 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:14:34,277 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:14:34,290 | INFO | freelance_helper | Filtered by keywords: Доработать ERP систему | skipped: Стоп-слово: erp
+2026-05-21 21:14:34,296 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:14:34,302 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:17:33 UTC)" executed successfully
+2026-05-21 21:17:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:20:33 UTC)" (scheduled at 2026-05-21 18:17:33.922422+00:00)
+2026-05-21 21:17:33,929 | INFO | freelance_helper | Auto check started
+2026-05-21 21:17:34,150 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:17:34,152 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:17:45,527 | INFO | freelance_helper | Filtered by score: Озвучить текст мужской голос | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 21:17:45,532 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:17:45,537 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:20:33 UTC)" executed successfully
+2026-05-21 21:20:33,927 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:23:33 UTC)" (scheduled at 2026-05-21 18:20:33.922422+00:00)
+2026-05-21 21:20:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 21:20:34,172 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:20:34,172 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:20:34,176 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:20:34,189 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:23:33 UTC)" executed successfully
+2026-05-21 21:23:33,926 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:26:33 UTC)" (scheduled at 2026-05-21 18:23:33.922422+00:00)
+2026-05-21 21:23:33,935 | INFO | freelance_helper | Auto check started
+2026-05-21 21:23:34,155 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:23:34,157 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:23:43,969 | INFO | freelance_helper | Filtered by score: Unity Developer | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 21:23:43,972 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:23:43,977 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:26:33 UTC)" executed successfully
+2026-05-21 21:26:33,923 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:29:33 UTC)" (scheduled at 2026-05-21 18:26:33.922422+00:00)
+2026-05-21 21:26:33,924 | INFO | freelance_helper | Auto check started
+2026-05-21 21:26:34,261 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:26:34,262 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:26:34,265 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:26:34,277 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:29:33 UTC)" executed successfully
+2026-05-21 21:29:33,932 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:32:33 UTC)" (scheduled at 2026-05-21 18:29:33.922422+00:00)
+2026-05-21 21:29:33,940 | INFO | freelance_helper | Auto check started
+2026-05-21 21:29:34,185 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:29:34,186 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:29:34,190 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:29:34,203 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:32:33 UTC)" executed successfully
+2026-05-21 21:32:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:35:33 UTC)" (scheduled at 2026-05-21 18:32:33.922422+00:00)
+2026-05-21 21:32:33,930 | INFO | freelance_helper | Auto check started
+2026-05-21 21:32:34,172 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:32:34,173 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:32:34,176 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:32:34,188 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:35:33 UTC)" executed successfully
+2026-05-21 21:35:33,923 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:38:33 UTC)" (scheduled at 2026-05-21 18:35:33.922422+00:00)
+2026-05-21 21:35:33,923 | INFO | freelance_helper | Auto check started
+2026-05-21 21:35:34,163 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:35:34,163 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:35:34,165 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:35:34,176 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:38:33 UTC)" executed successfully
+2026-05-21 21:38:33,932 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:41:33 UTC)" (scheduled at 2026-05-21 18:38:33.922422+00:00)
+2026-05-21 21:38:33,933 | INFO | freelance_helper | Auto check started
+2026-05-21 21:38:34,302 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:38:34,302 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:38:44,868 | INFO | freelance_helper | Sent project: Ворк юа | score=69 | ai=True | fallback=none
+2026-05-21 21:38:44,874 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 21:38:44,889 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:41:33 UTC)" executed successfully
+2026-05-21 21:41:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:44:33 UTC)" (scheduled at 2026-05-21 18:41:33.922422+00:00)
+2026-05-21 21:41:33,936 | INFO | freelance_helper | Auto check started
+2026-05-21 21:41:34,159 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:41:34,160 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:41:34,163 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:41:34,170 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:44:33 UTC)" executed successfully
+2026-05-21 21:44:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:47:33 UTC)" (scheduled at 2026-05-21 18:44:33.922422+00:00)
+2026-05-21 21:44:33,936 | INFO | freelance_helper | Auto check started
+2026-05-21 21:44:34,184 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:44:34,185 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:44:34,189 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:44:34,194 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:47:33 UTC)" executed successfully
+2026-05-21 21:47:33,927 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:50:33 UTC)" (scheduled at 2026-05-21 18:47:33.922422+00:00)
+2026-05-21 21:47:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 21:47:34,287 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:47:34,288 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:47:34,290 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:47:34,301 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:50:33 UTC)" executed successfully
+2026-05-21 21:50:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:53:33 UTC)" (scheduled at 2026-05-21 18:50:33.922422+00:00)
+2026-05-21 21:50:33,924 | INFO | freelance_helper | Auto check started
+2026-05-21 21:50:34,294 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:50:34,294 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:50:34,296 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:50:34,306 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:53:33 UTC)" executed successfully
+2026-05-21 21:53:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:56:33 UTC)" (scheduled at 2026-05-21 18:53:33.922422+00:00)
+2026-05-21 21:53:33,925 | INFO | freelance_helper | Auto check started
+2026-05-21 21:53:34,182 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:53:34,183 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:53:34,185 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:53:34,197 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:56:33 UTC)" executed successfully
+2026-05-21 21:56:33,923 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:59:33 UTC)" (scheduled at 2026-05-21 18:56:33.922422+00:00)
+2026-05-21 21:56:33,924 | INFO | freelance_helper | Auto check started
+2026-05-21 21:56:34,148 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:56:34,148 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:56:34,150 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:56:34,162 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 18:59:33 UTC)" executed successfully
+2026-05-21 21:59:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:02:33 UTC)" (scheduled at 2026-05-21 18:59:33.922422+00:00)
+2026-05-21 21:59:33,932 | INFO | freelance_helper | Auto check started
+2026-05-21 21:59:34,139 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 21:59:34,139 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 21:59:34,143 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 21:59:34,149 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:02:33 UTC)" executed successfully
+2026-05-21 22:02:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:05:33 UTC)" (scheduled at 2026-05-21 19:02:33.922422+00:00)
+2026-05-21 22:02:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 22:02:34,278 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:02:34,279 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:02:34,292 | INFO | freelance_helper | Filtered by keywords: Моушн-дизайнер / Визуализатор для YouTube-шоу (Final Cut Pro) | skipped: Не IT keywords: дизайн
+2026-05-21 22:02:43,775 | INFO | freelance_helper | Filtered by score: Разработка AI-приложения для генерации фото одежды (FlutterFlow + AI API) | score=22 | min_score=45 | reason=skipped: score 22/100 нижче MIN_SCORE 45/100
+2026-05-21 22:02:43,779 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:02:43,784 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:05:33 UTC)" executed successfully
+2026-05-21 22:05:33,929 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:08:33 UTC)" (scheduled at 2026-05-21 19:05:33.922422+00:00)
+2026-05-21 22:05:33,929 | INFO | freelance_helper | Auto check started
+2026-05-21 22:05:34,171 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:05:34,172 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:05:34,174 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:05:34,177 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:08:33 UTC)" executed successfully
+2026-05-21 22:08:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:11:33 UTC)" (scheduled at 2026-05-21 19:08:33.922422+00:00)
+2026-05-21 22:08:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 22:08:34,158 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:08:34,159 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:08:34,161 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:08:34,172 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:11:33 UTC)" executed successfully
+2026-05-21 22:11:33,927 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:14:33 UTC)" (scheduled at 2026-05-21 19:11:33.922422+00:00)
+2026-05-21 22:11:33,927 | INFO | freelance_helper | Auto check started
+2026-05-21 22:11:34,142 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:11:34,142 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:11:34,144 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:11:34,154 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:14:33 UTC)" executed successfully
+2026-05-21 22:14:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:17:33 UTC)" (scheduled at 2026-05-21 19:14:33.922422+00:00)
+2026-05-21 22:14:33,925 | INFO | freelance_helper | Auto check started
+2026-05-21 22:14:34,285 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:14:34,285 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:14:34,296 | INFO | freelance_helper | Filtered by keywords: Анімація шпалер персонажа 2д photoshop , after effects | skipped: Не IT keywords: photoshop
+2026-05-21 22:14:34,298 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:14:34,302 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:17:33 UTC)" executed successfully
+2026-05-21 22:17:33,933 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:20:33 UTC)" (scheduled at 2026-05-21 19:17:33.922422+00:00)
+2026-05-21 22:17:33,933 | INFO | freelance_helper | Auto check started
+2026-05-21 22:17:34,136 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:17:34,137 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:17:42,870 | INFO | freelance_helper | Sent project: Ворк юа (work) | score=69 | ai=True | fallback=none
+2026-05-21 22:17:42,873 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 22:17:42,886 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:20:33 UTC)" executed successfully
+2026-05-21 22:20:33,932 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:23:33 UTC)" (scheduled at 2026-05-21 19:20:33.922422+00:00)
+2026-05-21 22:20:33,933 | INFO | freelance_helper | Auto check started
+2026-05-21 22:20:34,154 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:20:34,154 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:20:34,157 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:20:34,171 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:23:33 UTC)" executed successfully
+2026-05-21 22:23:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:26:33 UTC)" (scheduled at 2026-05-21 19:23:33.922422+00:00)
+2026-05-21 22:23:33,932 | INFO | freelance_helper | Auto check started
+2026-05-21 22:23:34,162 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:23:34,162 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:23:42,566 | INFO | freelance_helper | Filtered by score: Куплю аккаунт | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 22:23:42,568 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:23:42,571 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:26:33 UTC)" executed successfully
+2026-05-21 22:26:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:29:33 UTC)" (scheduled at 2026-05-21 19:26:33.922422+00:00)
+2026-05-21 22:26:33,930 | INFO | freelance_helper | Auto check started
+2026-05-21 22:26:34,258 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:26:34,258 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:26:37,789 | INFO | freelance_helper | Sent project: Ворк Юа | score=80 | ai=True | fallback=none
+2026-05-21 22:26:37,794 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 22:26:37,807 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:29:33 UTC)" executed successfully
+2026-05-21 22:29:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:32:33 UTC)" (scheduled at 2026-05-21 19:29:33.922422+00:00)
+2026-05-21 22:29:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 22:29:34,143 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:29:34,143 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:29:39,227 | INFO | freelance_helper | Sent project: Сео спеціаліст + налаштування Google Ads | score=76 | ai=True | fallback=none
+2026-05-21 22:29:39,230 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 22:29:39,241 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:32:33 UTC)" executed successfully
+2026-05-21 22:32:33,927 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:35:33 UTC)" (scheduled at 2026-05-21 19:32:33.922422+00:00)
+2026-05-21 22:32:33,927 | INFO | freelance_helper | Auto check started
+2026-05-21 22:32:34,261 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:32:34,261 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:32:34,264 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:32:34,278 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:35:33 UTC)" executed successfully
+2026-05-21 22:35:33,926 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:38:33 UTC)" (scheduled at 2026-05-21 19:35:33.922422+00:00)
+2026-05-21 22:35:33,927 | INFO | freelance_helper | Auto check started
+2026-05-21 22:35:34,125 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:35:34,125 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:35:34,129 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:35:34,141 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:38:33 UTC)" executed successfully
+2026-05-21 22:38:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:41:33 UTC)" (scheduled at 2026-05-21 19:38:33.922422+00:00)
+2026-05-21 22:38:33,925 | INFO | freelance_helper | Auto check started
+2026-05-21 22:38:34,279 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:38:34,280 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:38:34,283 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:38:34,294 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:41:33 UTC)" executed successfully
+2026-05-21 22:41:33,933 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:44:33 UTC)" (scheduled at 2026-05-21 19:41:33.922422+00:00)
+2026-05-21 22:41:33,933 | INFO | freelance_helper | Auto check started
+2026-05-21 22:41:34,146 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:41:34,146 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:41:34,149 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:41:34,160 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:44:33 UTC)" executed successfully
+2026-05-21 22:44:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:47:33 UTC)" (scheduled at 2026-05-21 19:44:33.922422+00:00)
+2026-05-21 22:44:33,930 | INFO | freelance_helper | Auto check started
+2026-05-21 22:44:34,171 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:44:34,172 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:44:43,148 | INFO | freelance_helper | Filtered by score: Возьму в аренду аккаунт | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 22:44:43,151 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:44:43,155 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:47:33 UTC)" executed successfully
+2026-05-21 22:47:33,929 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:50:33 UTC)" (scheduled at 2026-05-21 19:47:33.922422+00:00)
+2026-05-21 22:47:33,929 | INFO | freelance_helper | Auto check started
+2026-05-21 22:47:34,142 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:47:34,143 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:47:34,145 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:47:34,156 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:50:33 UTC)" executed successfully
+2026-05-21 22:50:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:53:33 UTC)" (scheduled at 2026-05-21 19:50:33.922422+00:00)
+2026-05-21 22:50:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 22:50:34,299 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:50:34,300 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:50:34,302 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:50:34,313 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:53:33 UTC)" executed successfully
+2026-05-21 22:53:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:56:33 UTC)" (scheduled at 2026-05-21 19:53:33.922422+00:00)
+2026-05-21 22:53:33,924 | INFO | freelance_helper | Auto check started
+2026-05-21 22:53:34,139 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:53:34,140 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:53:34,144 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:53:34,160 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:56:33 UTC)" executed successfully
+2026-05-21 22:56:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:59:33 UTC)" (scheduled at 2026-05-21 19:56:33.922422+00:00)
+2026-05-21 22:56:33,924 | INFO | freelance_helper | Auto check started
+2026-05-21 22:56:34,123 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:56:34,124 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:56:34,127 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:56:34,138 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 19:59:33 UTC)" executed successfully
+2026-05-21 22:59:33,923 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:02:33 UTC)" (scheduled at 2026-05-21 19:59:33.922422+00:00)
+2026-05-21 22:59:33,924 | INFO | freelance_helper | Auto check started
+2026-05-21 22:59:34,120 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 22:59:34,121 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 22:59:34,123 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 22:59:34,133 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:02:33 UTC)" executed successfully
+2026-05-21 23:02:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:05:33 UTC)" (scheduled at 2026-05-21 20:02:33.922422+00:00)
+2026-05-21 23:02:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 23:02:34,278 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:02:34,278 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:02:34,280 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:02:34,292 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:05:33 UTC)" executed successfully
+2026-05-21 23:05:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:08:33 UTC)" (scheduled at 2026-05-21 20:05:33.922422+00:00)
+2026-05-21 23:05:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 23:05:34,145 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:05:34,146 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:05:34,148 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:05:34,160 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:08:33 UTC)" executed successfully
+2026-05-21 23:08:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:11:33 UTC)" (scheduled at 2026-05-21 20:08:33.922422+00:00)
+2026-05-21 23:08:33,929 | INFO | freelance_helper | Auto check started
+2026-05-21 23:08:34,154 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:08:34,155 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:08:34,157 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:08:34,167 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:11:33 UTC)" executed successfully
+2026-05-21 23:11:33,927 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:14:33 UTC)" (scheduled at 2026-05-21 20:11:33.922422+00:00)
+2026-05-21 23:11:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 23:11:34,157 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:11:34,157 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:11:34,159 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:11:34,170 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:14:33 UTC)" executed successfully
+2026-05-21 23:14:33,927 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:17:33 UTC)" (scheduled at 2026-05-21 20:14:33.922422+00:00)
+2026-05-21 23:14:33,927 | INFO | freelance_helper | Auto check started
+2026-05-21 23:14:34,266 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:14:34,267 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:14:34,270 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:14:34,283 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:17:33 UTC)" executed successfully
+2026-05-21 23:17:33,923 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:20:33 UTC)" (scheduled at 2026-05-21 20:17:33.922422+00:00)
+2026-05-21 23:17:33,923 | INFO | freelance_helper | Auto check started
+2026-05-21 23:17:34,153 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:17:34,153 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:17:34,155 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:17:34,166 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:20:33 UTC)" executed successfully
+2026-05-21 23:20:33,933 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:23:33 UTC)" (scheduled at 2026-05-21 20:20:33.922422+00:00)
+2026-05-21 23:20:33,933 | INFO | freelance_helper | Auto check started
+2026-05-21 23:20:34,161 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:20:34,161 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:20:43,367 | INFO | freelance_helper | Sent project: Data Entry and Copy Paste For Beginners | score=91 | ai=True | fallback=none
+2026-05-21 23:20:43,370 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 23:20:43,383 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:23:33 UTC)" executed successfully
+2026-05-21 23:23:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:26:33 UTC)" (scheduled at 2026-05-21 20:23:33.922422+00:00)
+2026-05-21 23:23:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 23:23:34,129 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:23:34,129 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:23:34,132 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:23:34,147 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:26:33 UTC)" executed successfully
+2026-05-21 23:26:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:29:33 UTC)" (scheduled at 2026-05-21 20:26:33.922422+00:00)
+2026-05-21 23:26:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 23:26:34,280 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:26:34,280 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:26:34,292 | INFO | freelance_helper | Filtered by keywords: Фермер (створення інстаграм акаунтів) | skipped: Не IT keywords: логотип, instagram
+2026-05-21 23:26:34,296 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:26:34,300 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:29:33 UTC)" executed successfully
+2026-05-21 23:29:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:32:33 UTC)" (scheduled at 2026-05-21 20:29:33.922422+00:00)
+2026-05-21 23:29:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 23:29:34,152 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:29:34,152 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:29:34,154 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:29:34,165 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:32:33 UTC)" executed successfully
+2026-05-21 23:32:33,926 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:35:33 UTC)" (scheduled at 2026-05-21 20:32:33.922422+00:00)
+2026-05-21 23:32:33,927 | INFO | freelance_helper | Auto check started
+2026-05-21 23:32:34,165 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:32:34,165 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:32:43,163 | INFO | freelance_helper | Sent project: Лабораторні роботи з фінансового обліку в діловоді | score=38 | ai=True | fallback=none
+2026-05-21 23:32:43,167 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-21 23:32:43,181 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:35:33 UTC)" executed successfully
+2026-05-21 23:35:33,925 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:38:33 UTC)" (scheduled at 2026-05-21 20:35:33.922422+00:00)
+2026-05-21 23:35:33,925 | INFO | freelance_helper | Auto check started
+2026-05-21 23:35:34,145 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:35:34,145 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:35:39,415 | INFO | freelance_helper | Filtered by score: Редизайн и изменение главной страницы на WordPress | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-21 23:35:39,417 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:35:39,422 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:38:33 UTC)" executed successfully
+2026-05-21 23:38:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:41:33 UTC)" (scheduled at 2026-05-21 20:38:33.922422+00:00)
+2026-05-21 23:38:33,925 | INFO | freelance_helper | Auto check started
+2026-05-21 23:38:34,236 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:38:34,237 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:38:34,239 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:38:34,249 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:41:33 UTC)" executed successfully
+2026-05-21 23:41:33,933 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:44:33 UTC)" (scheduled at 2026-05-21 20:41:33.922422+00:00)
+2026-05-21 23:41:33,934 | INFO | freelance_helper | Auto check started
+2026-05-21 23:41:34,172 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:41:34,173 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:41:34,175 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:41:34,187 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:44:33 UTC)" executed successfully
+2026-05-21 23:44:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:47:33 UTC)" (scheduled at 2026-05-21 20:44:33.922422+00:00)
+2026-05-21 23:44:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 23:44:34,164 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:44:34,164 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:44:34,166 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:44:34,177 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:47:33 UTC)" executed successfully
+2026-05-21 23:47:33,929 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:50:33 UTC)" (scheduled at 2026-05-21 20:47:33.922422+00:00)
+2026-05-21 23:47:33,930 | INFO | freelance_helper | Auto check started
+2026-05-21 23:47:34,148 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:47:34,148 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:47:34,160 | INFO | freelance_helper | Filtered by keywords: Створити сайт компанії | skipped: Не IT keywords: дизайн
+2026-05-21 23:47:34,162 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:47:34,165 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:50:33 UTC)" executed successfully
+2026-05-21 23:50:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:53:33 UTC)" (scheduled at 2026-05-21 20:50:33.922422+00:00)
+2026-05-21 23:50:33,928 | INFO | freelance_helper | Auto check started
+2026-05-21 23:50:34,279 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:50:34,280 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:50:34,282 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:50:34,293 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:53:33 UTC)" executed successfully
+2026-05-21 23:53:33,926 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:56:33 UTC)" (scheduled at 2026-05-21 20:53:33.922422+00:00)
+2026-05-21 23:53:33,927 | INFO | freelance_helper | Auto check started
+2026-05-21 23:53:34,164 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:53:34,165 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:53:34,169 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:53:34,181 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:56:33 UTC)" executed successfully
+2026-05-21 23:56:33,925 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:59:33 UTC)" (scheduled at 2026-05-21 20:56:33.922422+00:00)
+2026-05-21 23:56:33,926 | INFO | freelance_helper | Auto check started
+2026-05-21 23:56:34,147 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:56:34,148 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:56:34,150 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:56:34,154 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 20:59:33 UTC)" executed successfully
+2026-05-21 23:59:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:02:33 UTC)" (scheduled at 2026-05-21 20:59:33.922422+00:00)
+2026-05-21 23:59:33,931 | INFO | freelance_helper | Auto check started
+2026-05-21 23:59:34,124 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-21 23:59:34,125 | INFO | freelance_helper | Fetched projects: 10
+2026-05-21 23:59:34,127 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-21 23:59:34,138 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:02:33 UTC)" executed successfully
+2026-05-22 00:02:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:05:33 UTC)" (scheduled at 2026-05-21 21:02:33.922422+00:00)
+2026-05-22 00:02:33,930 | INFO | freelance_helper | Auto check started
+2026-05-22 00:02:34,267 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:02:34,268 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:02:34,270 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:02:34,281 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:05:33 UTC)" executed successfully
+2026-05-22 00:05:33,926 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:08:33 UTC)" (scheduled at 2026-05-21 21:05:33.922422+00:00)
+2026-05-22 00:05:33,926 | INFO | freelance_helper | Auto check started
+2026-05-22 00:05:34,129 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:05:34,130 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:05:34,132 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:05:34,142 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:08:33 UTC)" executed successfully
+2026-05-22 00:08:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:11:33 UTC)" (scheduled at 2026-05-21 21:08:33.922422+00:00)
+2026-05-22 00:08:33,928 | INFO | freelance_helper | Auto check started
+2026-05-22 00:08:34,423 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:08:34,424 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:08:34,427 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:08:34,439 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:11:33 UTC)" executed successfully
+2026-05-22 00:11:33,926 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:14:33 UTC)" (scheduled at 2026-05-21 21:11:33.922422+00:00)
+2026-05-22 00:11:33,927 | INFO | freelance_helper | Auto check started
+2026-05-22 00:11:34,209 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:11:34,210 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:11:42,039 | INFO | freelance_helper | Sent project: Converting PDF to WordDoc | score=66 | ai=True | fallback=none
+2026-05-22 00:11:42,042 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-22 00:11:42,056 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:14:33 UTC)" executed successfully
+2026-05-22 00:14:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:17:33 UTC)" (scheduled at 2026-05-21 21:14:33.922422+00:00)
+2026-05-22 00:14:33,925 | INFO | freelance_helper | Auto check started
+2026-05-22 00:14:34,329 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:14:34,330 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:14:34,332 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:14:34,346 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:17:33 UTC)" executed successfully
+2026-05-22 00:17:33,932 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:20:33 UTC)" (scheduled at 2026-05-21 21:17:33.922422+00:00)
+2026-05-22 00:17:33,933 | INFO | freelance_helper | Auto check started
+2026-05-22 00:17:34,131 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:17:34,132 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:17:34,133 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:17:34,144 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:20:33 UTC)" executed successfully
+2026-05-22 00:20:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:23:33 UTC)" (scheduled at 2026-05-21 21:20:33.922422+00:00)
+2026-05-22 00:20:33,931 | INFO | freelance_helper | Auto check started
+2026-05-22 00:20:34,143 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:20:34,144 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:20:34,146 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:20:34,157 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:23:33 UTC)" executed successfully
+2026-05-22 00:23:33,929 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:26:33 UTC)" (scheduled at 2026-05-21 21:23:33.922422+00:00)
+2026-05-22 00:23:33,930 | INFO | freelance_helper | Auto check started
+2026-05-22 00:23:34,129 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:23:34,129 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:23:34,133 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:23:34,145 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:26:33 UTC)" executed successfully
+2026-05-22 00:26:33,928 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:29:33 UTC)" (scheduled at 2026-05-21 21:26:33.922422+00:00)
+2026-05-22 00:26:33,928 | INFO | freelance_helper | Auto check started
+2026-05-22 00:26:34,262 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:26:34,262 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:26:34,274 | INFO | freelance_helper | Filtered by keywords: Create a logo | skipped: Не IT keywords: logo, vector
+2026-05-22 00:26:34,278 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:26:34,283 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:29:33 UTC)" executed successfully
+2026-05-22 00:29:33,925 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:32:33 UTC)" (scheduled at 2026-05-21 21:29:33.922422+00:00)
+2026-05-22 00:29:33,926 | INFO | freelance_helper | Auto check started
+2026-05-22 00:29:34,134 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:29:34,134 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:29:44,008 | INFO | freelance_helper | Filtered by score: AI-специалиста для генерации фотосессий женской одежды | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 00:29:44,010 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:29:44,014 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:32:33 UTC)" executed successfully
+2026-05-22 00:32:33,924 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:35:33 UTC)" (scheduled at 2026-05-21 21:32:33.922422+00:00)
+2026-05-22 00:32:33,925 | INFO | freelance_helper | Auto check started
+2026-05-22 00:32:34,155 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:32:34,155 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:32:34,158 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:32:34,170 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:35:33 UTC)" executed successfully
+2026-05-22 00:35:33,932 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:38:33 UTC)" (scheduled at 2026-05-21 21:35:33.922422+00:00)
+2026-05-22 00:35:33,932 | INFO | freelance_helper | Auto check started
+2026-05-22 00:35:34,158 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:35:34,159 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:35:34,163 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:35:34,175 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:38:33 UTC)" executed successfully
+2026-05-22 00:38:33,930 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:41:33 UTC)" (scheduled at 2026-05-21 21:38:33.922422+00:00)
+2026-05-22 00:38:33,931 | INFO | freelance_helper | Auto check started
+2026-05-22 00:38:34,234 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:38:34,235 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:38:34,237 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:38:34,249 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:41:33 UTC)" executed successfully
+2026-05-22 00:41:33,925 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:44:33 UTC)" (scheduled at 2026-05-21 21:41:33.922422+00:00)
+2026-05-22 00:41:33,926 | INFO | freelance_helper | Auto check started
+2026-05-22 00:41:34,143 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:41:34,144 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:41:34,146 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:41:34,159 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:44:33 UTC)" executed successfully
+2026-05-22 00:44:33,923 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:47:33 UTC)" (scheduled at 2026-05-21 21:44:33.922422+00:00)
+2026-05-22 00:44:33,924 | INFO | freelance_helper | Auto check started
+2026-05-22 00:44:34,138 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:44:34,139 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:44:34,142 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:44:34,153 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:47:33 UTC)" executed successfully
+2026-05-22 00:47:33,932 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:50:33 UTC)" (scheduled at 2026-05-21 21:47:33.922422+00:00)
+2026-05-22 00:47:33,932 | INFO | freelance_helper | Auto check started
+2026-05-22 00:47:34,164 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:47:34,165 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:47:34,167 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:47:34,178 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:50:33 UTC)" executed successfully
+2026-05-22 00:50:33,931 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:53:33 UTC)" (scheduled at 2026-05-21 21:50:33.922422+00:00)
+2026-05-22 00:50:33,932 | INFO | freelance_helper | Auto check started
+2026-05-22 00:50:34,284 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 00:50:34,284 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 00:50:34,286 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 00:50:34,298 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-21 21:53:33 UTC)" executed successfully
+2026-05-22 15:44:32,739 | INFO | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-22 15:44:32,739 | INFO | freelance_helper | Auto search scheduled on startup | interval=180 seconds
+2026-05-22 15:44:32,740 | INFO | freelance_helper | Bot started | run: python -m freelance_helper.app.main
+2026-05-22 15:44:32,740 | INFO | freelance_helper | Auto search scheduled for TELEGRAM_CHAT_ID=6212873712
+2026-05-22 15:44:32,942 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
+2026-05-22 15:44:32,943 | INFO | apscheduler.scheduler | Scheduler started
+2026-05-22 15:44:32,943 | INFO | telegram.ext.Application | Application started
+2026-05-22 15:44:42,750 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:47:42 UTC)" (scheduled at 2026-05-22 12:44:42.738784+00:00)
+2026-05-22 15:44:42,750 | INFO | freelance_helper | Auto check started
+2026-05-22 15:44:43,071 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 15:44:43,072 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 15:44:55,020 | INFO | freelance_helper | Sent project: Доопрацювати чинний інтернет магазин | score=71 | ai=True | fallback=none
+2026-05-22 15:45:05,772 | INFO | freelance_helper | Sent project: Назва проєкту: Верстка Landing Page (1 сторінка, 7 секцій) на Framer або Webflow з готового макету | score=71 | ai=True | fallback=none
+2026-05-22 15:45:05,777 | INFO | freelance_helper | Filtered by keywords: Встановити САPI на товарний сайт woocommerce | skipped: Не IT keywords: таргет
+2026-05-22 15:45:12,643 | INFO | freelance_helper | Sent project: Створити English Test у Typeform(або у іншій зручній платформі) | score=65 | ai=True | fallback=none
+2026-05-22 15:45:12,643 | INFO | freelance_helper | Auto check finished | sent=3 | processed=4
+2026-05-22 15:45:12,656 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:47:42 UTC)" executed successfully
+2026-05-22 15:47:42,748 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:50:42 UTC)" (scheduled at 2026-05-22 12:47:42.738784+00:00)
+2026-05-22 15:47:42,749 | INFO | freelance_helper | Auto check started
+2026-05-22 15:47:42,997 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 15:47:42,998 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 15:47:50,153 | INFO | freelance_helper | Sent project: Wordpress eсть архив сайта нужно почистить от вирусов и восстановить его | score=97 | ai=True | fallback=none
+2026-05-22 15:47:56,880 | INFO | freelance_helper | Filtered by score: Установка и настройка астериск на впс ос дебиан | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 15:48:05,803 | INFO | freelance_helper | Sent project: Просунути новий лендос по послугам в сео і ШІ | score=72 | ai=True | fallback=none
+2026-05-22 15:48:05,809 | INFO | freelance_helper | Filtered by keywords: AI-система моніторингу та аналітики тендерів Prozorro + Telegram Bot | skipped: Стоп-слово: crm
+2026-05-22 15:48:05,813 | INFO | freelance_helper | Filtered by keywords: Банеры - картинки | skipped: Не IT keywords: банер
+2026-05-22 15:48:13,277 | INFO | freelance_helper | Sent project: Генерація фото у ШІ | score=47 | ai=True | fallback=none
+2026-05-22 15:48:13,277 | INFO | freelance_helper | Auto check finished | sent=3 | processed=10
+2026-05-22 15:48:13,292 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:50:42 UTC)" executed successfully
+2026-05-22 15:50:42,745 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:53:42 UTC)" (scheduled at 2026-05-22 12:50:42.738784+00:00)
+2026-05-22 15:50:42,745 | INFO | freelance_helper | Auto check started
+2026-05-22 15:50:42,959 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 15:50:42,960 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 15:50:42,962 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 15:50:42,974 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:53:42 UTC)" executed successfully
+2026-05-22 15:53:42,743 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:56:42 UTC)" (scheduled at 2026-05-22 12:53:42.738784+00:00)
+2026-05-22 15:53:42,743 | INFO | freelance_helper | Auto check started
+2026-05-22 15:53:42,957 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 15:53:42,958 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 15:53:42,970 | INFO | freelance_helper | Filtered by keywords: Ілюстрації для книги «20 000 льє під водою» | skipped: Не IT keywords: ілюстрації
+2026-05-22 15:54:02,533 | INFO | freelance_helper | Filtered by score: AstroDx | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 15:54:02,535 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 15:54:02,538 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:56:42 UTC)" executed successfully
+2026-05-22 15:56:42,741 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:59:42 UTC)" (scheduled at 2026-05-22 12:56:42.738784+00:00)
+2026-05-22 15:56:42,741 | INFO | freelance_helper | Auto check started
+2026-05-22 15:56:43,176 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 15:56:43,176 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 15:56:43,178 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 15:56:43,190 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 12:59:42 UTC)" executed successfully
+2026-05-22 15:59:42,749 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:02:42 UTC)" (scheduled at 2026-05-22 12:59:42.738784+00:00)
+2026-05-22 15:59:42,749 | INFO | freelance_helper | Auto check started
+2026-05-22 15:59:42,966 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 15:59:42,966 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 15:59:42,970 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 15:59:42,981 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:02:42 UTC)" executed successfully
+2026-05-22 16:02:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:05:42 UTC)" (scheduled at 2026-05-22 13:02:42.738784+00:00)
+2026-05-22 16:02:42,747 | INFO | freelance_helper | Auto check started
+2026-05-22 16:02:42,961 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:02:42,961 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:02:42,974 | INFO | freelance_helper | Filtered by keywords: Визуализации дверей | skipped: Не IT keywords: дизайн
+2026-05-22 16:02:42,977 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:02:42,980 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:05:42 UTC)" executed successfully
+2026-05-22 16:05:42,745 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:08:42 UTC)" (scheduled at 2026-05-22 13:05:42.738784+00:00)
+2026-05-22 16:05:42,745 | INFO | freelance_helper | Auto check started
+2026-05-22 16:05:42,965 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:05:42,966 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:05:52,840 | INFO | freelance_helper | Sent project: Знайдись спеціаліст на розбан гугл мерчантів | score=66 | ai=True | fallback=none
+2026-05-22 16:05:52,844 | INFO | freelance_helper | Filtered by keywords: Переклад тексту | skipped: Не IT keywords: переклад, перекладач
+2026-05-22 16:05:52,845 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-22 16:05:52,850 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:08:42 UTC)" executed successfully
+2026-05-22 16:08:42,744 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:11:42 UTC)" (scheduled at 2026-05-22 13:08:42.738784+00:00)
+2026-05-22 16:08:42,745 | INFO | freelance_helper | Auto check started
+2026-05-22 16:08:43,098 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:08:43,100 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:08:43,105 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:08:43,121 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:11:42 UTC)" executed successfully
+2026-05-22 16:11:42,742 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:14:42 UTC)" (scheduled at 2026-05-22 13:11:42.738784+00:00)
+2026-05-22 16:11:42,743 | INFO | freelance_helper | Auto check started
+2026-05-22 16:11:43,109 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:11:43,110 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:11:43,123 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:11:43,128 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:14:42 UTC)" executed successfully
+2026-05-22 16:14:42,746 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:17:42 UTC)" (scheduled at 2026-05-22 13:14:42.738784+00:00)
+2026-05-22 16:14:42,747 | INFO | freelance_helper | Auto check started
+2026-05-22 16:14:42,957 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:14:42,958 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:14:42,966 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:14:42,986 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:17:42 UTC)" executed successfully
+2026-05-22 16:17:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:20:42 UTC)" (scheduled at 2026-05-22 13:17:42.738784+00:00)
+2026-05-22 16:17:42,747 | INFO | freelance_helper | Auto check started
+2026-05-22 16:17:42,979 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:17:42,980 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:17:42,986 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:17:42,999 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:20:42 UTC)" executed successfully
+2026-05-22 16:20:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:23:42 UTC)" (scheduled at 2026-05-22 13:20:42.738784+00:00)
+2026-05-22 16:20:42,747 | INFO | freelance_helper | Auto check started
+2026-05-22 16:20:43,088 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:20:43,089 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:20:43,092 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:20:43,104 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:23:42 UTC)" executed successfully
+2026-05-22 16:23:42,745 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:26:42 UTC)" (scheduled at 2026-05-22 13:23:42.738784+00:00)
+2026-05-22 16:23:42,746 | INFO | freelance_helper | Auto check started
+2026-05-22 16:23:43,011 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:23:43,012 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:23:58,412 | INFO | freelance_helper | Sent project: Потрібна допомога з публікацією англомовної статті у Wikipedia для IT / Embedded Engineering компані | score=49 | ai=True | fallback=none
+2026-05-22 16:23:58,417 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-22 16:23:58,433 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:26:42 UTC)" executed successfully
+2026-05-22 16:26:42,743 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:29:42 UTC)" (scheduled at 2026-05-22 13:26:42.738784+00:00)
+2026-05-22 16:26:42,743 | INFO | freelance_helper | Auto check started
+2026-05-22 16:26:43,111 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:26:43,112 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:26:43,117 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:26:43,132 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:29:42 UTC)" executed successfully
+2026-05-22 16:29:42,741 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:32:42 UTC)" (scheduled at 2026-05-22 13:29:42.738784+00:00)
+2026-05-22 16:29:42,741 | INFO | freelance_helper | Auto check started
+2026-05-22 16:29:42,974 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:29:42,974 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:29:42,977 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:29:42,989 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:32:42 UTC)" executed successfully
+2026-05-22 16:32:42,749 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:35:42 UTC)" (scheduled at 2026-05-22 13:32:42.738784+00:00)
+2026-05-22 16:32:42,750 | INFO | freelance_helper | Auto check started
+2026-05-22 16:32:43,102 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:32:43,102 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:32:57,192 | INFO | freelance_helper | Filtered by score: Бухгалтер для ФОП | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 16:32:57,196 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:32:57,200 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:35:42 UTC)" executed successfully
+2026-05-22 16:35:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:38:42 UTC)" (scheduled at 2026-05-22 13:35:42.738784+00:00)
+2026-05-22 16:35:42,747 | INFO | freelance_helper | Auto check started
+2026-05-22 16:35:42,970 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:35:42,971 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:35:42,975 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:35:42,988 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:38:42 UTC)" executed successfully
+2026-05-22 16:38:42,745 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:41:42 UTC)" (scheduled at 2026-05-22 13:38:42.738784+00:00)
+2026-05-22 16:38:42,746 | INFO | freelance_helper | Auto check started
+2026-05-22 16:38:42,956 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:38:42,957 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:38:42,960 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:38:42,972 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:41:42 UTC)" executed successfully
+2026-05-22 16:41:42,743 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:44:42 UTC)" (scheduled at 2026-05-22 13:41:42.738784+00:00)
+2026-05-22 16:41:42,743 | INFO | freelance_helper | Auto check started
+2026-05-22 16:41:43,151 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:41:43,152 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:41:43,159 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:41:43,171 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:44:42 UTC)" executed successfully
+2026-05-22 16:44:42,742 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:47:42 UTC)" (scheduled at 2026-05-22 13:44:42.738784+00:00)
+2026-05-22 16:44:42,742 | INFO | freelance_helper | Auto check started
+2026-05-22 16:44:43,148 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:44:43,149 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:44:43,156 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:44:43,169 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:47:42 UTC)" executed successfully
+2026-05-22 16:47:42,748 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:50:42 UTC)" (scheduled at 2026-05-22 13:47:42.738784+00:00)
+2026-05-22 16:47:42,749 | INFO | freelance_helper | Auto check started
+2026-05-22 16:47:42,950 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:47:42,951 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:47:42,953 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:47:42,964 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:50:42 UTC)" executed successfully
+2026-05-22 16:50:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:53:42 UTC)" (scheduled at 2026-05-22 13:50:42.738784+00:00)
+2026-05-22 16:50:42,747 | INFO | freelance_helper | Auto check started
+2026-05-22 16:50:42,959 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:50:42,959 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:50:42,964 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:50:42,977 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:53:42 UTC)" executed successfully
+2026-05-22 16:53:42,745 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:56:42 UTC)" (scheduled at 2026-05-22 13:53:42.738784+00:00)
+2026-05-22 16:53:42,746 | INFO | freelance_helper | Auto check started
+2026-05-22 16:53:42,975 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:53:42,976 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:53:42,987 | INFO | freelance_helper | Filtered by keywords: Looking for chinese speaking dev | skipped: Стоп-слово: blockchain
+2026-05-22 16:53:42,991 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 16:53:42,995 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:56:42 UTC)" executed successfully
+2026-05-22 16:56:42,744 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:59:42 UTC)" (scheduled at 2026-05-22 13:56:42.738784+00:00)
+2026-05-22 16:56:42,744 | INFO | freelance_helper | Auto check started
+2026-05-22 16:56:43,254 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:56:43,254 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:56:57,216 | INFO | freelance_helper | Sent project: Data Entry - Copy Paste Typist Needed | score=53 | ai=True | fallback=none
+2026-05-22 16:56:57,221 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-22 16:56:57,236 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 13:59:42 UTC)" executed successfully
+2026-05-22 16:59:42,742 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:02:42 UTC)" (scheduled at 2026-05-22 13:59:42.738784+00:00)
+2026-05-22 16:59:42,742 | INFO | freelance_helper | Auto check started
+2026-05-22 16:59:42,998 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 16:59:42,999 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 16:59:51,903 | INFO | freelance_helper | Sent project: Юрист з житлово-комунальних питань | score=66 | ai=True | fallback=none
+2026-05-22 16:59:51,909 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-22 16:59:51,922 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:02:42 UTC)" executed successfully
+2026-05-22 17:02:42,740 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:05:42 UTC)" (scheduled at 2026-05-22 14:02:42.738784+00:00)
+2026-05-22 17:02:42,740 | INFO | freelance_helper | Auto check started
+2026-05-22 17:02:42,951 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:02:42,952 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:02:50,354 | INFO | freelance_helper | Filtered by score: Веб-дизайнер для пресейл-мокапів | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 17:02:50,359 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:02:50,367 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:05:42 UTC)" executed successfully
+2026-05-22 17:05:42,748 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:08:42 UTC)" (scheduled at 2026-05-22 14:05:42.738784+00:00)
+2026-05-22 17:05:42,748 | INFO | freelance_helper | Auto check started
+2026-05-22 17:05:42,979 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:05:42,979 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:05:42,990 | INFO | freelance_helper | Filtered by keywords: Перемалювати зображення з змінами | skipped: Не IT keywords: logo, логотип
+2026-05-22 17:05:42,994 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:05:42,998 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:08:42 UTC)" executed successfully
+2026-05-22 17:08:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:11:42 UTC)" (scheduled at 2026-05-22 14:08:42.738784+00:00)
+2026-05-22 17:08:42,747 | INFO | freelance_helper | Auto check started
+2026-05-22 17:08:43,076 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:08:43,077 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:08:43,082 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:08:43,093 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:11:42 UTC)" executed successfully
+2026-05-22 17:11:42,746 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:14:42 UTC)" (scheduled at 2026-05-22 14:11:42.738784+00:00)
+2026-05-22 17:11:42,746 | INFO | freelance_helper | Auto check started
+2026-05-22 17:11:43,201 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:11:43,202 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:11:43,204 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:11:43,214 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:14:42 UTC)" executed successfully
+2026-05-22 17:14:42,743 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:17:42 UTC)" (scheduled at 2026-05-22 14:14:42.738784+00:00)
+2026-05-22 17:14:42,744 | INFO | freelance_helper | Auto check started
+2026-05-22 17:14:42,971 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:14:42,972 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:14:55,320 | INFO | freelance_helper | Filtered by score: Реклама пісні | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 17:14:55,324 | INFO | freelance_helper | Filtered by keywords: Графічний дизайнер на проєктну співпрацю | skipped: Не IT keywords: банер, дизайн, design
+2026-05-22 17:14:55,326 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:14:55,329 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:17:42 UTC)" executed successfully
+2026-05-22 17:17:42,741 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:20:42 UTC)" (scheduled at 2026-05-22 14:17:42.738784+00:00)
+2026-05-22 17:17:42,741 | INFO | freelance_helper | Auto check started
+2026-05-22 17:17:42,978 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:17:42,979 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:17:42,993 | INFO | freelance_helper | Filtered by keywords: Є готова кваліфікаційна робота, потрібні правки по зауваженнях | skipped: Не IT keywords: реферат, курсова
+2026-05-22 17:17:51,372 | INFO | freelance_helper | Filtered by score: Підбір співробітників | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 17:17:51,374 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:17:51,377 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:20:42 UTC)" executed successfully
+2026-05-22 17:20:42,749 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:23:42 UTC)" (scheduled at 2026-05-22 14:20:42.738784+00:00)
+2026-05-22 17:20:42,750 | INFO | freelance_helper | Auto check started
+2026-05-22 17:20:43,078 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:20:43,078 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:20:43,080 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:20:43,091 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:23:42 UTC)" executed successfully
+2026-05-22 17:23:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:26:42 UTC)" (scheduled at 2026-05-22 14:23:42.738784+00:00)
+2026-05-22 17:23:42,748 | INFO | freelance_helper | Auto check started
+2026-05-22 17:23:42,958 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:23:42,959 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:23:42,961 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:23:42,964 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:26:42 UTC)" executed successfully
+2026-05-22 17:26:42,745 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:29:42 UTC)" (scheduled at 2026-05-22 14:26:42.738784+00:00)
+2026-05-22 17:26:42,746 | INFO | freelance_helper | Auto check started
+2026-05-22 17:26:43,269 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:26:43,269 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:26:43,272 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:26:43,279 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:29:42 UTC)" executed successfully
+2026-05-22 17:29:42,743 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:32:42 UTC)" (scheduled at 2026-05-22 14:29:42.738784+00:00)
+2026-05-22 17:29:42,744 | INFO | freelance_helper | Auto check started
+2026-05-22 17:29:42,976 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:29:42,977 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:29:42,979 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:29:42,989 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:32:42 UTC)" executed successfully
+2026-05-22 17:32:42,741 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:35:42 UTC)" (scheduled at 2026-05-22 14:32:42.738784+00:00)
+2026-05-22 17:32:42,742 | INFO | freelance_helper | Auto check started
+2026-05-22 17:32:43,085 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:32:43,086 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:33:08,529 | INFO | freelance_helper | Filtered by score: Створити креслення елементів оздоблення сходів на основі Фанери та Ламелі | score=14 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 14/100
+2026-05-22 17:33:08,531 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:33:08,534 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:35:42 UTC)" executed successfully
+2026-05-22 17:35:42,750 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:38:42 UTC)" (scheduled at 2026-05-22 14:35:42.738784+00:00)
+2026-05-22 17:35:42,750 | INFO | freelance_helper | Auto check started
+2026-05-22 17:35:42,968 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:35:42,969 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:35:54,438 | INFO | freelance_helper | Sent project: PetiteFlacons серввс розпиву парфумів | score=46 | ai=True | fallback=none
+2026-05-22 17:36:03,685 | INFO | freelance_helper | Sent project: Телеграм бот | score=73 | ai=True | fallback=none
+2026-05-22 17:36:03,689 | INFO | freelance_helper | Auto check finished | sent=2 | processed=10
+2026-05-22 17:36:03,702 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:38:42 UTC)" executed successfully
+2026-05-22 17:38:42,748 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:41:42 UTC)" (scheduled at 2026-05-22 14:38:42.738784+00:00)
+2026-05-22 17:38:42,749 | INFO | freelance_helper | Auto check started
+2026-05-22 17:38:42,945 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:38:42,945 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:38:49,939 | INFO | freelance_helper | Filtered by score: Sanbaru | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 17:38:49,941 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:38:49,945 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:41:42 UTC)" executed successfully
+2026-05-22 17:41:42,744 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:44:42 UTC)" (scheduled at 2026-05-22 14:41:42.738784+00:00)
+2026-05-22 17:41:42,744 | INFO | freelance_helper | Auto check started
+2026-05-22 17:41:43,000 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:41:43,001 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:41:54,749 | INFO | freelance_helper | Sent project: Потрібен рекрутер для підбору 3 монтажників | score=52 | ai=True | fallback=none
+2026-05-22 17:41:54,753 | INFO | freelance_helper | Auto check finished | sent=1 | processed=10
+2026-05-22 17:41:54,766 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:44:42 UTC)" executed successfully
+2026-05-22 17:44:42,742 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:47:42 UTC)" (scheduled at 2026-05-22 14:44:42.738784+00:00)
+2026-05-22 17:44:42,743 | INFO | freelance_helper | Auto check started
+2026-05-22 17:44:43,136 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:44:43,136 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:44:43,139 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:44:43,153 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:47:42 UTC)" executed successfully
+2026-05-22 17:47:42,742 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:50:42 UTC)" (scheduled at 2026-05-22 14:47:42.738784+00:00)
+2026-05-22 17:47:42,742 | INFO | freelance_helper | Auto check started
+2026-05-22 17:47:42,953 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:47:42,954 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:47:42,957 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:47:42,968 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:50:42 UTC)" executed successfully
+2026-05-22 17:50:42,749 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:53:42 UTC)" (scheduled at 2026-05-22 14:50:42.738784+00:00)
+2026-05-22 17:50:42,749 | INFO | freelance_helper | Auto check started
+2026-05-22 17:50:42,971 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:50:42,972 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:50:42,976 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:50:42,988 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:53:42 UTC)" executed successfully
+2026-05-22 17:53:42,747 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:56:42 UTC)" (scheduled at 2026-05-22 14:53:42.738784+00:00)
+2026-05-22 17:53:42,748 | INFO | freelance_helper | Auto check started
+2026-05-22 17:53:42,983 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:53:42,983 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:53:53,567 | INFO | freelance_helper | Filtered by score: Створення карти на базі МТА | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 17:53:53,569 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:53:53,572 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:56:42 UTC)" executed successfully
+2026-05-22 17:56:42,742 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:59:42 UTC)" (scheduled at 2026-05-22 14:56:42.738784+00:00)
+2026-05-22 17:56:42,742 | INFO | freelance_helper | Auto check started
+2026-05-22 17:56:43,075 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:56:43,076 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:56:43,078 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:56:43,090 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 14:59:42 UTC)" executed successfully
+2026-05-22 17:59:42,744 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 15:02:42 UTC)" (scheduled at 2026-05-22 14:59:42.738784+00:00)
+2026-05-22 17:59:42,745 | INFO | freelance_helper | Auto check started
+2026-05-22 17:59:42,967 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 17:59:42,968 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 17:59:51,860 | INFO | freelance_helper | Filtered by score: Необходимо написать тексты на английском языке, для копирайтера | score=0 | min_score=45 | reason=skipped: AI вирішив, що проєкт не підходить; score 0/100
+2026-05-22 17:59:51,863 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 17:59:51,867 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 15:02:42 UTC)" executed successfully
+2026-05-22 18:01:25,668 | INFO | telegram.ext.Application | Application is stopping. This might take a moment.
+2026-05-22 18:01:25,669 | INFO | apscheduler.scheduler | Scheduler has been shut down
+2026-05-22 18:01:25,679 | INFO | telegram.ext.Application | Application.stop() complete
+2026-05-22 18:01:27,952 | INFO | apscheduler.scheduler | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-22 18:01:27,953 | INFO | freelance_helper | Auto search scheduled on startup | interval=180 seconds
+2026-05-22 18:01:27,953 | INFO | freelance_helper | Bot started | run: python -m freelance_helper.app.main
+2026-05-22 18:01:27,953 | INFO | freelance_helper | Auto search scheduled for TELEGRAM_CHAT_ID=6212873712
+2026-05-22 18:01:28,150 | INFO | apscheduler.scheduler | Added job "auto_search" to job store "default"
+2026-05-22 18:01:28,151 | INFO | apscheduler.scheduler | Scheduler started
+2026-05-22 18:01:28,151 | INFO | telegram.ext.Application | Application started
+2026-05-22 18:01:37,962 | INFO | apscheduler.executors.default | Running job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 15:04:37 UTC)" (scheduled at 2026-05-22 15:01:37.951772+00:00)
+2026-05-22 18:01:37,963 | INFO | freelance_helper | Auto check started
+2026-05-22 18:01:38,180 | INFO | freelance_helper | Freelancehunt API: received 10 projects
+2026-05-22 18:01:38,180 | INFO | freelance_helper | Fetched projects: 10
+2026-05-22 18:01:38,193 | INFO | freelance_helper | Filtered by keywords: Редагування фото для резюме | skipped: Не IT keywords: photoshop
+2026-05-22 18:01:38,198 | INFO | freelance_helper | Auto check finished | sent=0 | processed=10
+2026-05-22 18:01:38,202 | INFO | apscheduler.executors.default | Job "auto_search (trigger: interval[0:03:00], next run at: 2026-05-22 15:04:37 UTC)" executed successfully
