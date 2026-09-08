@@ -1287,19 +1287,19 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
         portfolio_url = get_portfolio_link_for_kind(kind)
-        portfolio_block = f"\n📁 Relevant portfolio / case: {portfolio_url}" if portfolio_url else ""
+        portfolio_block = f"\nPortfolio / case: {portfolio_url}" if portfolio_url else ""
 
         return (
             f"{hook_en}\n\n"
-            f"📋 Work plan:\n"
+            f"Work plan:\n"
             f"{steps_text}\n\n"
-            f"✨ Deliverables:\n"
+            f"Deliverables:\n"
             f"• {deliverables}\n"
             f"• Fully tested, turnkey result with clear documentation.\n"
             f"• {post_support}{portfolio_block}\n\n"
-            f"💰 Budget: {budget_line}\n"
-            f"⏱ Estimated timeline: {time_estimate}\n"
-            f"🛡 Warranty: 14 days of free post-delivery technical support.\n\n"
+            f"Budget: {budget_line}\n"
+            f"Estimated timeline: {time_estimate}\n"
+            f"Warranty: 14 days of free post-delivery technical support.\n\n"
             f"A few quick questions before we begin:\n"
             f"{q_text}\n\n"
             f"Feel free to message me in chat to discuss the details and get started!"
@@ -1307,7 +1307,7 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
 
     elif variant == "cautious":
         portfolio_url = get_portfolio_link_for_kind(kind)
-        portfolio_block = f"\n• 📁 Portfolio: {portfolio_url}" if portfolio_url else ""
+        portfolio_block = f"\n• Portfolio: {portfolio_url}" if portfolio_url else ""
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
         return (
             f"{hook_en} I have practical experience with similar tasks.\n\n"
@@ -1315,26 +1315,26 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
             f"{q_text}\n\n"
             f"Project highlights:\n"
             f"• {deliverables}{portfolio_block}\n"
-            f"💰 Budget: {budget_line}\n"
-            f"⏱ Timeline: {time_estimate} upon brief alignment\n"
-            f"🛡 Warranty: 14 days of free post-delivery support.\n"
-            f"🚀 Setup: {post_support}\n\n"
+            f"Budget: {budget_line}\n"
+            f"Timeline: {time_estimate} upon brief alignment\n"
+            f"Warranty: 14 days of free post-delivery support.\n"
+            f"Setup: {post_support}\n\n"
             f"Once confirmed, I can immediately start working. Looking forward to your message!"
         )
 
     else:  # "short"
         portfolio_url = get_portfolio_link_for_kind(kind)
-        portfolio_block = f"\n• 📁 Portfolio / case: {portfolio_url}" if portfolio_url else ""
+        portfolio_block = f"\n• Portfolio / case: {portfolio_url}" if portfolio_url else ""
         return (
             f"{hook_en}\n\n"
             f"Why choose me for this task:\n"
             f"• {deliverables}\n"
             f"• Tech stack: {stack}.\n"
             f"• Clean, tested, and reliable turnkey delivery.{portfolio_block}\n\n"
-            f"💰 Budget: {budget_line}\n"
-            f"⏱ Timeline: {time_estimate}\n"
-            f"🛡 Warranty: 14 days of free post-delivery support (always reachable).\n"
-            f"🚀 Setup: {post_support}\n\n"
+            f"Budget: {budget_line}\n"
+            f"Timeline: {time_estimate}\n"
+            f"Warranty: 14 days of free post-delivery support (always reachable).\n"
+            f"Setup: {post_support}\n\n"
             f"Available in chat to discuss details and start right away!"
         )
 
@@ -1345,9 +1345,9 @@ def fallback_questions_en(project: dict) -> str:
     numbered = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
     return (
-        f"❓ Key questions to ask the client ({insights['task_name_en']}):\n\n"
+        f"Key questions to ask the client ({insights['task_name_en']}):\n\n"
         f"{numbered}\n\n"
-        "💡 Tip: Ask these questions in chat or include them in your proposal to demonstrate expertise and define clear specifications."
+        "Tip: Ask these questions in chat or include them in your proposal to demonstrate expertise and define clear specifications."
     )
 
 
@@ -1511,19 +1511,19 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
         portfolio_url = get_portfolio_link_for_kind(kind)
-        portfolio_block = f"\n📁 Приклад роботи / кейс: {portfolio_url}" if portfolio_url else ""
+        portfolio_block = f"\nПриклад роботи / кейс: {portfolio_url}" if portfolio_url else ""
 
         return (
             f"{hook_uk}\n\n"
-            f"📋 Порядок виконання:\n"
+            f"Порядок виконання:\n"
             f"{steps_text}\n\n"
-            f"✨ Що ви отримаєте в результаті:\n"
+            f"Що ви отримаєте в результаті:\n"
             f"• {deliverables}\n"
             f"• Повністю готове та протестоване рішення з простою інструкцією.\n"
             f"• {post_support}{portfolio_block}\n\n"
-            f"💰 Бюджет: {budget_line}\n"
-            f"⏱ Орієнтовний термін: {time_estimate}\n"
-            f"🛡 Гарантія: 14 днів безкоштовної техпідтримки після здачі проєкту.\n\n"
+            f"Бюджет: {budget_line}\n"
+            f"Орієнтовний термін: {time_estimate}\n"
+            f"Гарантія: 14 днів безкоштовної техпідтримки після здачі проєкту.\n\n"
             f"Перед стартом підкажіть лише:\n"
             f"{q_text}\n\n"
             f"Напишіть у чат — обговоримо деталі та одразу розпочну роботу!"
@@ -1531,7 +1531,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
 
     elif variant == "cautious":
         portfolio_url = get_portfolio_link_for_kind(kind)
-        portfolio_block = f"\n• 📁 Портфоліо: {portfolio_url}" if portfolio_url else ""
+        portfolio_block = f"\n• Портфоліо: {portfolio_url}" if portfolio_url else ""
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
         return (
             f"{hook_uk} Маю практичний досвід у таких завданнях.\n\n"
@@ -1539,26 +1539,26 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             f"{q_text}\n\n"
             f"Орієнтири за проєктом:\n"
             f"• {deliverables}{portfolio_block}\n"
-            f"💰 Бюджет: {budget_line}\n"
-            f"⏱ Термін: {time_estimate} після короткого узгодження\n"
-            f"🛡 Гарантія: 14 днів безкоштовного супроводу після передачі проєкту.\n"
-            f"🚀 Налаштування: {post_support}\n\n"
+            f"Бюджет: {budget_line}\n"
+            f"Термін: {time_estimate} після короткого узгодження\n"
+            f"Гарантія: 14 днів безкоштовного супроводу після передачі проєкту.\n"
+            f"Налаштування: {post_support}\n\n"
             f"Після ваших відповідей готовий одразу зафіксувати фінальні деталі та розпочати роботу. На зв'язку!"
         )
 
     else:  # "short"
         portfolio_url = get_portfolio_link_for_kind(kind)
-        portfolio_block = f"\n• 📁 Портфоліо / кейс: {portfolio_url}" if portfolio_url else ""
+        portfolio_block = f"\n• Портфоліо / кейс: {portfolio_url}" if portfolio_url else ""
         return (
             f"{hook_uk}\n\n"
             f"Чому варто довірити задачу мені:\n"
             f"• {deliverables}\n"
             f"• Стек: {stack}.\n"
             f"• Чистий та надійний результат під ключ, усе перевірю перед здачею.{portfolio_block}\n\n"
-            f"💰 Бюджет: {budget_line}\n"
-            f"⏱ Термін: {time_estimate}\n"
-            f"🛡 Гарантія: 14 днів безкоштовної техпідтримки після здачі (я завжди на зв'язку).\n"
-            f"🚀 Налаштування: {post_support}\n\n"
+            f"Бюджет: {budget_line}\n"
+            f"Термін: {time_estimate}\n"
+            f"Гарантія: 14 днів безкоштовної техпідтримки після здачі (я завжди на зв'язку).\n"
+            f"Налаштування: {post_support}\n\n"
             f"Готовий відповісти на запитання в чаті та швидко розпочати роботу!"
         )
 
@@ -1578,9 +1578,9 @@ def fallback_questions(project: dict) -> str:
     numbered = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
     return (
-        f"❓ Що варто уточнити у замовника ({insights['task_name']}):\n\n"
+        f"Що варто уточнити у замовника ({insights['task_name']}):\n\n"
         f"{numbered}\n\n"
-        "💡 Порада: задайте ці питання у чаті або додайте до своєї ставки, щоб показати експертність і зафіксувати точне ТЗ."
+        "Порада: задайте ці питання у чаті або додайте до своєї ставки, щоб показати експертність і зафіксувати точне ТЗ."
     )
 
 
@@ -1649,7 +1649,7 @@ def unsuitable_project_text(project: dict) -> str:
     sphere, skills = reason or ("нетехнічна задача", "профільні нетехнічні інструменти")
 
     return (
-        "⚠️ Проєкт, імовірно, не підходить.\n\n"
+        "Проєкт, імовірно, не підходить.\n\n"
         "Причина:\n"
         f"- задача стосується {sphere};\n"
         "- немає Python, Telegram-ботів, API, парсингу, HTML/CSS, WordPress, "

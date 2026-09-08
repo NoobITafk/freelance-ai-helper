@@ -793,7 +793,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text(
             response_text,
             parse_mode="Markdown",
-            reply_markup=bid_keyboard(project_id),
+            reply_markup=bid_keyboard(project_id, url=project.get("url")),
         )
 
     elif action == "pitch":
@@ -815,7 +815,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text(
             response_text,
             parse_mode="Markdown",
-            reply_markup=bid_keyboard(project_id),
+            reply_markup=bid_keyboard(project_id, url=project.get("url")),
         )
 
     elif action == "questions":
@@ -922,10 +922,21 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except FreelancehuntAPIError as err:
             logger.error("Freelancehunt API error submitting bid: %s", err)
-            await message.reply_text(
-                f"❌ <b>Помилка Freelancehunt API:</b>\n{err}",
-                parse_mode="HTML",
-            )
+            err_text = str(err)
+            if "410" in err_text or "deprecation" in err_text.lower():
+                await message.reply_text(
+                    f"⚠️ <b>Freelancehunt вимкнув публічне створення ставок через API (HTTP 410).</b>\n\n"
+                    f"Біржа вимагає публікації через сайт для захисту від автоспаму.\n\n"
+                    f"👉 Скопіюйте текст ставки вище (1 клік по тексту) та відправте на сторінці проєкту:\n"
+                    f"🔗 <a href=\"{project.get('url')}\">Відкрити замовлення на Freelancehunt</a>",
+                    parse_mode="HTML",
+                    disable_web_page_preview=True,
+                )
+            else:
+                await message.reply_text(
+                    f"❌ <b>Помилка Freelancehunt API:</b>\n{err}",
+                    parse_mode="HTML",
+                )
         except Exception as exc:
             logger.exception("Unexpected error submitting bid: %s", exc)
             await message.reply_text(
