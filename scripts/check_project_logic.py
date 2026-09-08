@@ -11,6 +11,7 @@ from freelance_helper.app.ai_analyzer import (
     detect_project_language,
     fallback_bid,
     fallback_questions,
+    generate_chat_pitch,
     is_technical_project,
     project_type,
 )
@@ -494,6 +495,28 @@ def main() -> int:
     else:
         print("=" * 80)
         print("English bid & questions generation: OK")
+
+    # 7. Chat pitch test
+    total_checks += 1
+    pitch_uk = generate_chat_pitch({
+        "title": "Telegram-бот для заявок",
+        "description": "Потрібен бот на aiogram з базою даних",
+        "budget": "3000 грн",
+    })
+    pitch_en = generate_chat_pitch(en_proj)
+    pitch_ok = (
+        "Telegram" in pitch_uk
+        and "Напишіть у чат" in pitch_uk
+        and "backend" in pitch_en.lower()
+        and "chat" in pitch_en.lower()
+    )
+    if not pitch_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Chat pitch generation: FAIL | uk={pitch_uk} | en={pitch_en}")
+    else:
+        print("=" * 80)
+        print("Chat pitch generation: OK")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

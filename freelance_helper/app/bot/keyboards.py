@@ -9,10 +9,10 @@ def project_keyboard(project_id: str):
         ],
         [
             InlineKeyboardButton("📝 Ставка", callback_data=f"bid:{project_id}"),
-            InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
+            InlineKeyboardButton("💬 Відгук у чат", callback_data=f"pitch:{project_id}"),
         ],
         [
-            InlineKeyboardButton("🔁 Нова ставка", callback_data=f"rebid:{project_id}"),
+            InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
             InlineKeyboardButton("⏭ Пропустити", callback_data=f"skip:{project_id}"),
         ],
     ]
@@ -24,9 +24,10 @@ def bid_keyboard(project_id: str):
     keyboard = [
         [
             InlineKeyboardButton("🔁 Нова ставка", callback_data=f"rebid:{project_id}"),
-            InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
+            InlineKeyboardButton("💬 Відгук у чат", callback_data=f"pitch:{project_id}"),
         ],
         [
+            InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
             InlineKeyboardButton("⏭ Пропустити", callback_data=f"skip:{project_id}"),
         ],
     ]

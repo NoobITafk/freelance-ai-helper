@@ -1451,6 +1451,49 @@ def fallback_questions(project: dict) -> str:
     )
 
 
+def generate_chat_pitch(project: dict) -> str:
+    """Generates an ultra-concise, professional pitch (2-3 sentences) for quick messaging in chat."""
+    kind = project_type(project)
+    insights = extract_project_insights(project)
+    task_name = insights["task_name"]
+    task_en = insights["task_name_en"]
+    lang = insights.get("lang", "uk")
+
+    if lang == "en":
+        pitches_en = {
+            "telegram_bot": f"Hello! I specialize in Telegram bot development and automation. Ready to implement {task_en} with clean code and free 24/7 server deployment. Let's discuss details in chat!",
+            "parsing": f"Hello! I have solid experience with web scraping and data processing. Can collect and format the required data accurately into Excel/Sheets without duplicates. Ready to start right away!",
+            "backend": f"Hello! I specialize in Python backend development (FastAPI/Django) and databases. Ready to build a clean, secure backend for {task_en}. Reach out in chat to discuss!",
+            "api": f"Hello! I can reliably integrate the required API for {task_en} with comprehensive error handling and testing. Let me know when convenient to connect!",
+            "frontend": f"Hello! I can create a pixel-perfect, responsive interface for {task_en} that works smoothly on mobile and desktop. Ready to review the design and start!",
+            "html_css": f"Hello! I can quickly build clean, mobile-friendly HTML/CSS layout for {task_en}. Ready to start as soon as mockups are provided!",
+            "wordpress": f"Hello! I can safely and promptly apply the required WordPress fixes for {task_en} with a backup made prior to work. Ready to begin!",
+            "excel": f"Hello! I can fully automate calculations and reports in Excel/Google Sheets for {task_en} to eliminate manual routine. Let's discuss details!",
+            "ai_integration": f"Hello! I can integrate OpenAI/ChatGPT into {task_en} with customized prompt instructions and reliable API handling. Happy to discuss!",
+        }
+        return pitches_en.get(kind, f"Hello! I reviewed your project and have experience with similar tasks. Ready to take on {task_en} professionally. Let's discuss details in chat!")
+
+    bot_target = f"під ваше завдання"
+    if "розробку Telegram-бота" in task_name:
+        sub = task_name.replace("розробку Telegram-бота", "").strip()
+        bot_target = sub if sub else "під ключ"
+    elif task_name and task_name != "це завдання":
+        bot_target = f"для {task_name}"
+
+    pitches_uk = {
+        "telegram_bot": f"Вітаю! Спеціалізуюся на розробці Telegram-ботів. Готовий надійно створити бота {bot_target} з автозапуском на сервері 24/7. Напишіть у чат — обговоримо деталі та одразу розпочну!",
+        "parsing": f"Вітаю! Маю великий практичний досвід у зборі даних. Налаштую швидкий парсинг з вивантаженням в Excel без пропусків і дублікатів. Готовий розпочати роботу сьогодні!",
+        "backend": f"Вітаю! Розробляю надійну серверну частину на Python з базою даних та валідацією. Готовий взятися за {task_name}. Напишіть у чат — узгодимо деталі!",
+        "api": f"Вітаю! Професійно підключу та налаштую API для {task_name} з правильною обробкою помилок. Готовий відповісти на запитання в чаті та почати!",
+        "frontend": f"Вітаю! Зроблю швидку, якісну верстку для {task_name} з ідеальною адаптивністю під смартфони. Готовий ознайомитися з макетом та взятися за роботу!",
+        "html_css": f"Вітаю! Зроблю чисту та адаптивну HTML/CSS-верстку для {task_name}. Сторінка відкриватиметься швидко на всіх пристроях. Готовий стартувати!",
+        "wordpress": f"Вітаю! Акуратно та безпечно внесу всі необхідні правки у WordPress під {task_name} (з обов'язковим бекапом перед стартом). На зв'язку в чаті!",
+        "excel": f"Вітаю! Повністю автоматизую розрахунки та звітність у Excel/Google Таблицях для {task_name}, щоб прибрати рутину. Обговоримо деталі?",
+        "ai_integration": f"Вітаю! Підключу штучний інтелект (OpenAI/ChatGPT) під ваше завдання з точними інструкціями для відповідей. Напишіть у чат — розпочнемо!",
+    }
+    return pitches_uk.get(kind, f"Вітаю! Ознайомився із завданням, маю практичний досвід у таких проєктах. Готовий якісно виконати {task_name}. Напишіть у чат для обговорення деталей!")
+
+
 def generate_bid(project: dict, user_profile: str | None = None, variant: str = "short") -> str:
     if not is_technical_project(project):
         return unsuitable_project_text(project)

@@ -15,11 +15,13 @@ from ..ai_analyzer import (
     fallback_bid,
     fallback_questions,
     generate_bid,
+    generate_chat_pitch,
     generate_questions,
     is_technical_project,
     normalize_analysis,
     unsuitable_project_text,
 )
+from ..rules import parse_budget_info
 from .keyboards import bid_keyboard, questions_keyboard, unsuitable_project_keyboard
 from ..config import (
     AI_ANALYSIS_ENABLED,
@@ -678,8 +680,52 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         variant_name = variant_labels.get(variant, variant)
         bid_text = generate_bid(project, variant=variant)
 
+        # Financial calculation for fixed budget (Safe Freelancehunt ~9.9% fee)
+        calc_footer = ""
+        amount, currency, _ = parse_budget_info(project.get("budget"))
+        if amount and amount > 0:
+            fee = round(amount * 0.099)
+            net_payout = amount - fee
+            calc_footer = (
+                f"\n\n🧮 Фінансовий розрахунок (Сейф ~9.9%):\n"
+                f"• Бюджет проєкту: {amount:,} {currency}\n"
+                f"• Комісія біржі: -{fee:,} {currency}\n"
+                f"• Чистими на карту: ~{net_payout:,} {currency}"
+            )
+
+        # Preformatted code block enables 1-tap/1-click instant copying in Telegram
+        escaped_bid = bid_text.replace("```", "'''")
+        response_text = (
+            f"📝 Пропозиція до проєкту ({variant_name})\n"
+            f"👇 Натисніть на текст нижче, щоб скопіювати:\n\n"
+            f"```\n{escaped_bid}\n```{calc_footer}"
+        )
+
         await message.reply_text(
-            f"📝 Пропозиція до проєкту ({variant_name}):\n\n{bid_text}",
+            response_text,
+            parse_mode="Markdown",
+            reply_markup=bid_keyboard(project_id),
+        )
+
+    elif action == "pitch":
+        if not is_technical_project(project):
+            await message.reply_text(
+                unsuitable_project_text(project),
+                reply_markup=unsuitable_project_keyboard(project_id),
+            )
+            return
+
+        pitch_text = generate_chat_pitch(project)
+        escaped_pitch = pitch_text.replace("```", "'''")
+        response_text = (
+            f"💬 Короткий відгук у чат (для першого контакту)\n"
+            f"👇 Натисніть на текст нижче, щоб скопіювати:\n\n"
+            f"```\n{escaped_pitch}\n```"
+        )
+
+        await message.reply_text(
+            response_text,
+            parse_mode="Markdown",
             reply_markup=bid_keyboard(project_id),
         )
 
