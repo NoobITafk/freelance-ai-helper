@@ -602,6 +602,15 @@ def preliminary_bid_estimate(project: dict) -> str:
     return estimate
 
 
+def detect_project_language(title: str, description: str) -> str:
+    text = f"{title} {description}"
+    cyrillic_count = len(re.findall(r"[а-яіїєґА-ЯІЇЄҐёЁ]", text))
+    latin_count = len(re.findall(r"[a-zA-Z]", text))
+    if latin_count > 40 and cyrillic_count < 10:
+        return "en"
+    return "uk"
+
+
 def determine_tech_stack(kind: str, tech_list: list[str]) -> str:
     tech_lower = {t.lower() for t in tech_list}
     if kind == "telegram_bot":
@@ -641,6 +650,45 @@ def determine_tech_stack(kind: str, tech_list: list[str]) -> str:
     return "Python та сучасні надійні інструменти"
 
 
+def determine_tech_stack_en(kind: str, tech_list: list[str]) -> str:
+    tech_lower = {t.lower() for t in tech_list}
+    if kind == "telegram_bot":
+        framework = "aiogram 3" if "aiogram" in tech_lower else ("pyTelegramBotAPI" if "pytelegrambotapi" in tech_lower or "telebot" in tech_lower else "aiogram 3")
+        db = "PostgreSQL" if any(t in tech_lower for t in ["postgresql", "postgres"]) else "SQLite"
+        return f"Python ({framework}, {db}, clean menu & buttons)"
+
+    if kind == "parsing":
+        tool = "Playwright/Selenium" if any(t in tech_lower for t in ["playwright", "selenium"]) else "requests / BeautifulSoup"
+        return f"Python ({tool}, export to Excel/CSV)"
+
+    if kind in {"backend", "api"}:
+        framework = "FastAPI" if "fastapi" in tech_lower else ("Django" if "django" in tech_lower else ("Flask" if "flask" in tech_lower else "FastAPI / Django"))
+        db = "PostgreSQL" if any(t in tech_lower for t in ["postgresql", "postgres"]) else ("MySQL" if "mysql" in tech_lower else "PostgreSQL / SQLite")
+        return f"Python ({framework}, {db}, robust validation)"
+
+    if kind == "ai_integration":
+        return "Python, OpenAI API (ChatGPT / GPT-4o), prompt engineering"
+
+    if kind == "frontend":
+        framework = "Next.js / React" if "next.js" in tech_lower or "nextjs" in tech_lower else ("React" if "react" in tech_lower else ("Vue" if "vue" in tech_lower else "React"))
+        return f"{framework}, fully responsive for mobile"
+
+    if kind == "html_css":
+        return "HTML5, CSS3, JavaScript (mobile-friendly & clean code)"
+
+    if kind == "wordpress":
+        return "WordPress, PHP, theme customizations, CSS/JS"
+
+    if kind == "excel":
+        return "Google Sheets / Excel (automated formulas & data cleaning)"
+
+    if tech_list:
+        clean_tech = ", ".join(tech_list[:3])
+        return f"{clean_tech} (clean, well-tested code)"
+
+    return "Python & modern reliable tools"
+
+
 def extract_project_insights(project: dict) -> dict:
     title = str(project.get("title") or "").strip()
     desc = str(project.get("description") or "").strip()
@@ -665,20 +713,52 @@ def extract_project_insights(project: dict) -> dict:
         c_lower = task_name.lower()
         if c_lower.startswith("telegram-бот") or c_lower.startswith("телеграм-бот"):
             task_name = "розробку Telegram-бота" + task_name[12:]
+        elif c_lower.startswith("telegram бот") or c_lower.startswith("телеграм бот"):
+            task_name = "розробку Telegram-бота" + task_name[12:]
         elif c_lower.startswith("бот"):
             task_name = "розробку бота" + task_name[3:]
         elif c_lower.startswith("скрипт"):
             task_name = "розробку скрипта" + task_name[6:]
         elif c_lower.startswith("парсер"):
             task_name = "розробку парсера" + task_name[6:]
+        elif c_lower.startswith("парсинг"):
+            task_name = "парсинг" + task_name[7:]
+        elif c_lower.startswith("розробка"):
+            task_name = "розробку" + task_name[8:]
+        elif c_lower.startswith("створення"):
+            task_name = "створення" + task_name[9:]
+        elif c_lower.startswith("налаштування"):
+            task_name = "налаштування" + task_name[12:]
+        elif c_lower.startswith("автоматизація"):
+            task_name = "автоматизацію" + task_name[13:]
+        elif c_lower.startswith("інтеграція"):
+            task_name = "інтеграцію" + task_name[10:]
+        elif c_lower.startswith("верстка"):
+            task_name = "верстку" + task_name[7:]
         elif c_lower.startswith("лендинг") or c_lower.startswith("лендінг"):
             task_name = "верстку лендингу" + task_name[7:]
+        elif c_lower.startswith("ai-") or c_lower.startswith("ai "):
+            task_name = "AI-" + task_name[3:] if c_lower.startswith("ai-") else "AI " + task_name[3:]
         elif not re.search(r"[а-яіїєґ]", task_name[:5].lower()):
             task_name = f"проєкт «{task_name}»"
         else:
             task_name = task_name[0].lower() + task_name[1:]
     else:
         task_name = "це завдання"
+
+    # English task name extraction
+    lang = detect_project_language(title, desc)
+    task_name_en = title
+    for prefix in [
+        "need a", "need an", "need", "looking for a", "looking for an", "looking for",
+        "wanted", "developer needed for", "developer needed", "urgent:", "job:",
+    ]:
+        if task_name_en.lower().startswith(prefix):
+            task_name_en = task_name_en[len(prefix):].strip()
+            break
+    task_name_en = task_name_en.rstrip(".!:").strip()
+    if not task_name_en:
+        task_name_en = "your project"
 
     # Known sources / websites
     sources = []
@@ -747,6 +827,8 @@ def extract_project_insights(project: dict) -> dict:
         "title": title,
         "desc": desc,
         "task_name": task_name,
+        "task_name_en": task_name_en,
+        "lang": lang,
         "kind": kind,
         "budget": budget,
         "has_fixed_budget": budget != "Не вказано",
@@ -821,33 +903,352 @@ def smart_project_questions(insights: dict) -> list[str]:
     return questions[:3]
 
 
+def smart_project_questions_en(insights: dict) -> list[str]:
+    kind = insights["kind"]
+    sources = insights["sources"]
+    formats = insights["formats"]
+    questions = []
+
+    if kind == "parsing":
+        if not sources:
+            questions.append("Which exact website or data source do you need scraped?")
+        else:
+            questions.append(f"Do you have a specific list of links or categories to scrape from {sources[0]}?")
+        if not formats:
+            questions.append("What output format do you prefer (Excel/CSV or Google Sheets)?")
+        else:
+            questions.append("Is this a one-time data extraction or should it run periodically?")
+        questions.append("Which specific data fields are required (titles, prices, images, contacts, etc.)?")
+
+    elif kind == "telegram_bot":
+        questions.append("What key actions and buttons should users see in the bot menu?")
+        questions.append("Where would you like to receive notifications about new leads (direct message or group)?")
+        questions.append("Do you already have a VPS server for hosting, or would you like me to set it up?")
+
+    elif kind in {"backend", "api"}:
+        questions.append("Do you have documentation or a summary of the required endpoints and data formats?")
+        if not insights.get("has_auth"):
+            questions.append("Does the system require user authentication and role-based access?")
+        questions.append("Where will the backend be hosted (your server/cloud platform)?")
+
+    elif kind in {"frontend", "html_css"}:
+        if "Figma" not in insights["tech"]:
+            questions.append("Do you have a ready design or mockup (Figma, wireframe, or reference website)?")
+        else:
+            questions.append("Is the Figma design finalized and ready for development?")
+        questions.append("Where should contact form submissions be sent (email or Telegram)?")
+
+    elif kind == "excel":
+        questions.append("Could you share a sample of the input data and the expected summary report?")
+        questions.append("Should the data calculation run automatically or via a button/script?")
+
+    elif kind == "wordpress":
+        questions.append("Do you have admin access to WordPress and hosting panel?")
+        questions.append("What is the priority list of fixes/changes to start with?")
+
+    elif kind == "ai_integration":
+        questions.append("What specific tasks should the AI handle (customer support, data analysis, or chat assistance)?")
+        questions.append("Do you have an existing OpenAI API key, or do you need assistance getting one configured?")
+
+    else:
+        questions.append("What is the expected final deliverable for this project?")
+        questions.append("Do you have initial assets, credentials, or API documentation ready?")
+        questions.append("What is your preferred timeline for completion?")
+
+    return questions[:3]
+
+
+def fallback_bid_en(project: dict, variant: str = "short") -> str:
+    kind = project_type(project)
+    insights = extract_project_insights(project)
+    task_name = insights["task_name_en"]
+    budget = insights["budget"]
+    has_fixed = insights["has_fixed_budget"]
+    questions = smart_project_questions_en(insights)
+    stack = determine_tech_stack_en(kind, insights["tech"])
+
+    # Dynamic realistic timeline
+    if kind == "telegram_bot":
+        time_estimate = "3-5 days" if (insights.get("has_payment") or insights.get("has_admin")) else "1-2 days"
+    elif kind in {"backend", "api"}:
+        time_estimate = "3-6 days" if (insights.get("has_auth") or insights.get("has_payment")) else "2-4 days"
+    elif kind == "parsing":
+        time_estimate = "2-4 days" if insights.get("sources") else "1-2 days"
+    elif kind in {"frontend", "html_css"}:
+        time_estimate = "2-4 days" if insights.get("has_auth") else "1-2 days"
+    elif kind == "ai_integration":
+        time_estimate = "2-4 days"
+    elif kind in {"wordpress", "excel"}:
+        time_estimate = "1-2 days"
+    else:
+        time_estimate = "1-3 days"
+
+    src_mention = f" from {insights['sources'][0]}" if insights["sources"] else " from the target website"
+    fmt_mention = f" into {insights['formats'][0]}" if insights["formats"] else " into an organized spreadsheet"
+
+    # Category-specific personalized action hooks
+    hooks_en = {
+        "telegram_bot": f"Hello! I am ready to develop a reliable and fast Telegram bot for {task_name}.",
+        "parsing": f"Hello! I can set up clean and automated data scraping{src_mention} with structured export{fmt_mention}.",
+        "backend": f"Hello! I will build a secure and well-architected backend for {task_name}.",
+        "api": f"Hello! I can reliably integrate and configure the API for {task_name} with proper error handling.",
+        "frontend": f"Hello! I am ready to create a clean, modern, and fully responsive frontend for {task_name}.",
+        "html_css": f"Hello! I will build a lightweight, pixel-perfect layout for {task_name} that opens smoothly on all devices.",
+        "wordpress": f"Hello! I can safely make the required updates and improvements for {task_name}.",
+        "excel": f"Hello! I will automate your data processing and reporting for {task_name}.",
+        "ai_integration": f"Hello! I can build a tailored AI integration for {task_name} with optimized prompts.",
+    }
+    hook_default = f"Hello! I reviewed your project and I am ready to complete {task_name}."
+    hook_en = hooks_en.get(kind, hook_default)
+
+    deliverables_map = {
+        "telegram_bot": (
+            "Develop a responsive Telegram bot: clean menu, interactive buttons, input validation, and secure database storage for leads.",
+            "Free 24/7 deployment setup on your server with automatic restarts.",
+        ),
+        "parsing": (
+            f"Set up reliable, structured data scraping{src_mention} and export{fmt_mention} with clean formatting and no duplicates.",
+            "Deliver the completed data file and a simple 1-click script with instructions.",
+        ),
+        "backend": (
+            "Build a fast, well-structured backend with clean database models, data validation, and error handling.",
+            "Assist with server deployment and thoroughly test every endpoint prior to delivery.",
+        ),
+        "api": (
+            "Integrate the required API service seamlessly with robust error and rate-limit handling.",
+            "Ensure dependable performance and provide clear documentation for easy maintenance.",
+        ),
+        "frontend": (
+            "Implement pixel-perfect, responsive UI matching your design flawlessly on mobile, tablet, and desktop.",
+            "Test across all modern browsers and connect submission forms.",
+        ),
+        "html_css": (
+            "Clean, semantic HTML5/CSS3 layout optimized for fast loading and all screen sizes.",
+            "Verify form functionality and cross-browser responsiveness.",
+        ),
+        "wordpress": (
+            "Apply all requested fixes and theme adjustments safely without breaking existing features.",
+            "Perform a full backup before starting work for complete safety.",
+        ),
+        "excel": (
+            "Automate calculations and data processing to eliminate manual spreadsheet routine.",
+            "Set up foolproof formulas and provide clear step-by-step guidance.",
+        ),
+        "ai_integration": (
+            "Integrate OpenAI/ChatGPT tailored to your specific workflow with optimized system prompts.",
+            "Validate with real prompt testing and assist with deployment.",
+        ),
+    }
+
+    deliverables, post_support = deliverables_map.get(
+        kind,
+        (
+            "Write clean, maintainable code matching your exact specifications and test thoroughly before delivery.",
+            "Remain available after completion for questions or minor adjustments.",
+        ),
+    )
+
+    if has_fixed:
+        budget_line = f"aligned with your budget ({budget})"
+    else:
+        estimates = {
+            "telegram_bot": "$80 - $220 (depending on features and database)",
+            "parsing": "$50 - $160 (depending on volume and target anti-bot protection)",
+            "backend": "$100 - $300 (depending on scope and API endpoints)",
+            "api": "$60 - $180 (depending on integrations required)",
+            "frontend": "$60 - $180 (depending on page count and components)",
+            "html_css": "$40 - $130 (depending on layout complexity)",
+            "wordpress": "$40 - $130 (depending on task list)",
+            "excel": "$40 - $110 (depending on logic complexity)",
+            "ai_integration": "$90 - $250 (depending on use case and pipeline)",
+        }
+        budget_line = estimates.get(kind, "$50 - $160 after clarifying details")
+
+    if variant == "technical":
+        steps_map = {
+            "telegram_bot": [
+                "1. Clarify user flows: bot menus, commands, and notification triggers.",
+                "2. Implement bot logic, database integration, and admin alerts.",
+                "3. Thorough end-to-end testing on mobile and desktop clients.",
+                "4. Free server deployment for 24/7 uninterrupted uptime.",
+            ],
+            "parsing": [
+                f"1. Inspect website structure{src_mention} and confirm column requirements.",
+                "2. Implement scraper with anti-blocking and pagination safeguards.",
+                f"3. Clean and format the collected data{fmt_mention}.",
+                "4. Provide the dataset and easy 1-click execution guide.",
+            ],
+            "backend": [
+                "1. Finalize endpoints specification and database schema.",
+                "2. Develop core API logic with validation and error handling.",
+                "3. Test endpoints under realistic scenarios.",
+                "4. Deploy to server and deliver clear instructions.",
+            ],
+            "api": [
+                "1. Confirm required methods, authentication, and data schemas.",
+                "2. Implement integration with graceful exception handling.",
+                "3. Verify data flow and validate edge cases.",
+                "4. Deliver working code with practical usage examples.",
+            ],
+            "ai_integration": [
+                "1. Configure AI model integration and craft specialized system prompts.",
+                "2. Implement context management and token usage optimization.",
+                "3. Test output accuracy across diverse test cases.",
+                "4. Deliver turnkey solution ready for production.",
+            ],
+            "frontend": [
+                "1. Review design files (Figma) and structure components.",
+                "2. Build responsive layout with smooth mobile behavior.",
+                "3. Wire up interactions and form validations.",
+                "4. Verify across all modern browsers before handoff.",
+            ],
+            "html_css": [
+                "1. Review mockups and prepare semantic HTML structure.",
+                "2. Style with clean, mobile-first responsive CSS.",
+                "3. Configure buttons, animations, and form submissions.",
+                "4. Test cross-device compatibility and page load speed.",
+            ],
+            "wordpress": [
+                "1. Create full backup of files and database for security.",
+                "2. Carefully implement required adjustments in theme/code.",
+                "3. Check responsiveness across desktop and mobile screens.",
+                "4. Verify forms, buttons, and site performance.",
+            ],
+            "excel": [
+                "1. Clarify raw data format and expected output report structure.",
+                "2. Build automated processing, formulas, and data cleanup.",
+                "3. Protect sheet formulas and validate calculations.",
+                "4. Provide a quick walkthrough on how to use the sheet.",
+            ],
+        }
+
+        steps = steps_map.get(
+            kind,
+            [
+                "1. Review technical requirements and confirm deliverables.",
+                "2. Step-by-step implementation with ongoing testing.",
+                "3. Demo completed work and apply any feedback.",
+                "4. Final delivery, setup assistance, and warranty support.",
+            ],
+        )
+
+        steps_text = "\n".join(steps)
+        q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
+
+        return (
+            f"{hook_en}\n\n"
+            f"📋 Work plan:\n"
+            f"{steps_text}\n\n"
+            f"✨ Deliverables:\n"
+            f"• {deliverables}\n"
+            f"• Fully tested, turnkey result with clear documentation.\n"
+            f"• {post_support}\n\n"
+            f"💰 Budget: {budget_line}\n"
+            f"⏱ Estimated timeline: {time_estimate}\n"
+            f"🛡 Warranty: 14 days of free post-delivery technical support.\n\n"
+            f"A few quick questions before we begin:\n"
+            f"{q_text}\n\n"
+            f"Feel free to message me in chat to discuss the details and get started!"
+        )
+
+    elif variant == "cautious":
+        q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
+        return (
+            f"{hook_en} I have practical experience with similar tasks.\n\n"
+            f"To tailor everything precisely to your needs, could you please clarify:\n"
+            f"{q_text}\n\n"
+            f"Project highlights:\n"
+            f"• {deliverables}\n"
+            f"💰 Budget: {budget_line}\n"
+            f"⏱ Timeline: {time_estimate} upon brief alignment\n"
+            f"🛡 Warranty: 14 days of free post-delivery support.\n"
+            f"🚀 Setup: {post_support}\n\n"
+            f"Once confirmed, I can immediately start working. Looking forward to your message!"
+        )
+
+    else:  # "short"
+        return (
+            f"{hook_en}\n\n"
+            f"Why choose me for this task:\n"
+            f"• {deliverables}\n"
+            f"• Tech stack: {stack}.\n"
+            f"• Clean, tested, and reliable turnkey delivery.\n\n"
+            f"💰 Budget: {budget_line}\n"
+            f"⏱ Timeline: {time_estimate}\n"
+            f"🛡 Warranty: 14 days of free post-delivery support (always reachable).\n"
+            f"🚀 Setup: {post_support}\n\n"
+            f"Available in chat to discuss details and start right away!"
+        )
+
+
+def fallback_questions_en(project: dict) -> str:
+    insights = extract_project_insights(project)
+    questions = smart_project_questions_en(insights)
+    numbered = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
+
+    return (
+        f"❓ Key questions to ask the client ({insights['task_name_en']}):\n\n"
+        f"{numbered}\n\n"
+        "💡 Tip: Ask these questions in chat or include them in your proposal to demonstrate expertise and define clear specifications."
+    )
+
+
 def fallback_bid(project: dict, variant: str = "short") -> str:
     kind = project_type(project)
     if kind == "non_technical":
         return unsuitable_project_text(project)
 
     insights = extract_project_insights(project)
+    if insights.get("lang") == "en":
+        return fallback_bid_en(project, variant=variant)
+
     task_name = insights["task_name"]
     budget = insights["budget"]
     has_fixed = insights["has_fixed_budget"]
     questions = smart_project_questions(insights)
     stack = determine_tech_stack(kind, insights["tech"])
 
-    time_map = {
-        "telegram_bot": "1-3 дні",
-        "parsing": "1-2 дні",
-        "backend": "2-4 дні",
-        "api": "1-3 дні",
-        "frontend": "1-3 дні",
-        "html_css": "1-2 дні",
-        "wordpress": "1-2 дні",
-        "excel": "1-2 дні",
-        "ai_integration": "2-4 дні",
-    }
-    time_estimate = time_map.get(kind, "1-3 дні")
+    # Dynamic realistic timeline
+    if kind == "telegram_bot":
+        time_estimate = "3-5 днів" if (insights.get("has_payment") or insights.get("has_admin")) else "1-2 дні"
+    elif kind in {"backend", "api"}:
+        time_estimate = "3-6 днів" if (insights.get("has_auth") or insights.get("has_payment")) else "2-4 дні"
+    elif kind == "parsing":
+        time_estimate = "2-4 дні" if insights.get("sources") else "1-2 дні"
+    elif kind in {"frontend", "html_css"}:
+        time_estimate = "2-4 дні" if insights.get("has_auth") else "1-2 дні"
+    elif kind == "ai_integration":
+        time_estimate = "2-4 дні"
+    elif kind in {"wordpress", "excel"}:
+        time_estimate = "1-2 дні"
+    else:
+        time_estimate = "1-3 дні"
 
     src_mention = f" з сайту {insights['sources'][0]}" if insights["sources"] else " із сайту"
     fmt_mention = f" у {insights['formats'][0]}" if insights["formats"] else " у зручну таблицю"
+
+    # Category-specific personalized action hooks
+    hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота під ваше завдання."
+    if "розробку Telegram-бота" in task_name:
+        sub_task = task_name.replace("розробку Telegram-бота", "").strip()
+        if sub_task:
+            hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота {sub_task}."
+    elif task_name and task_name != "це завдання":
+        hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота для {task_name}."
+
+    hooks_uk = {
+        "telegram_bot": hook_bot,
+        "parsing": f"Вітаю! Налаштую стабільний та швидкий збір даних{src_mention} з вивантаженням{fmt_mention}.",
+        "backend": f"Вітаю! Розроблю чисту серверну частину під {task_name} з валідацією даних та безпечною базою.",
+        "api": f"Вітаю! Надійно підключу та налаштую API для {task_name} з коректною обробкою запитів.",
+        "frontend": f"Вітаю! Зроблю якісну, швидку та адаптивну фронтенд-частину для {task_name}.",
+        "html_css": f"Вітаю! Зроблю чисту, адаптивну верстку для {task_name}, яка ідеально відкривається на смартфонах і комп'ютерах.",
+        "wordpress": f"Вітаю! Акуратно та безпечно внесу всі необхідні правки для {task_name}.",
+        "excel": f"Вітаю! Автоматизую розрахунки та звіти для {task_name}, щоб прибрати ручну рутину.",
+        "ai_integration": f"Вітаю! Підключу та налаштую штучний інтелект для {task_name} під ваші завдання.",
+    }
+    hook_default = f"Вітаю! Ознайомився із завданням — готовий якісно виконати {task_name}."
+    hook_uk = hooks_uk.get(kind, hook_default)
 
     deliverables_map = {
         "telegram_bot": (
@@ -984,7 +1385,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
         return (
-            f"Добрий день! Готовий професійно та під ключ виконати {task_name}.\n\n"
+            f"{hook_uk}\n\n"
             f"📋 Порядок виконання:\n"
             f"{steps_text}\n\n"
             f"✨ Що ви отримаєте в результаті:\n"
@@ -1002,7 +1403,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
     elif variant == "cautious":
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
         return (
-            f"Вітаю! Завдання зрозуміле, маю практичний досвід у таких проєктах і готовий взятися за {task_name}.\n\n"
+            f"{hook_uk} Маю практичний досвід у таких завданнях.\n\n"
             f"Щоб погодити всі деталі та зробити все точно під ваші вимоги, підкажіть, будь ласка:\n"
             f"{q_text}\n\n"
             f"Орієнтири за проєктом:\n"
@@ -1016,7 +1417,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
 
     else:  # "short"
         return (
-            f"Вітаю! Ознайомився із завданням — готовий якісно виконати {task_name}.\n\n"
+            f"{hook_uk}\n\n"
             f"Чому варто довірити задачу мені:\n"
             f"• {deliverables}\n"
             f"• Стек: {stack}.\n"
@@ -1037,6 +1438,9 @@ def fallback_questions(project: dict) -> str:
         return unsuitable_project_text(project)
 
     insights = extract_project_insights(project)
+    if insights.get("lang") == "en":
+        return fallback_questions_en(project)
+
     questions = smart_project_questions(insights)
     numbered = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 

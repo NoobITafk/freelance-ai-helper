@@ -177,7 +177,14 @@ def classify_project(title: str, description: str, extra_text: str = "") -> Filt
     text = f"{title or ''} {description or ''} {extra_text or ''}"
     text_lower = text.lower()
 
-    hard_bad = [word for word in HARD_BAD_KEYWORDS if keyword_in_text(word, text_lower)]
+    hard_bad = []
+    for word in HARD_BAD_KEYWORDS:
+        if word == "crypto":
+            cleaned = re.sub(r"cryptobot|crypto pay|cryptopay|@cryptobot", "", text_lower)
+            if re.search(r"(?<!\w)crypto(?!\w)", cleaned):
+                hard_bad.append(word)
+        elif keyword_in_text(word, text_lower):
+            hard_bad.append(word)
 
     if hard_bad:
         return FilterResult(

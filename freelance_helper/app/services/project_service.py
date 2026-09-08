@@ -433,12 +433,12 @@ async def process_and_send_project(
     tags_text = extract_project_tags(attributes)
     stored_description = description_with_tags(description, tags_text)
     budget = format_budget_display(attributes.get("budget"))
-    bids_count = (
-        attributes.get("bid_count")
-        or attributes.get("bids_count")
-        or attributes.get("bids")
-        or "Невідомо"
-    )
+    raw_bids = attributes.get("bid_count")
+    if raw_bids is None:
+        raw_bids = attributes.get("bids_count")
+    if raw_bids is None:
+        raw_bids = attributes.get("bids")
+    bids_count = raw_bids if raw_bids is not None else "Невідомо"
     url = get_project_url(project, attributes)
 
     if not project_id:

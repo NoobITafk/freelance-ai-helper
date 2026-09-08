@@ -8,6 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from freelance_helper.app.ai_analyzer import (
+    detect_project_language,
     fallback_bid,
     fallback_questions,
     is_technical_project,
@@ -466,6 +467,33 @@ def main() -> int:
     else:
         print("=" * 80)
         print("HTTP Client reuse: OK")
+
+    # 6. English project detection and bid generation test
+    total_checks += 1
+    en_proj = {
+        "title": "Need a FastAPI backend for an e-commerce platform",
+        "description": "Looking for a backend developer to build REST API endpoints with FastAPI and PostgreSQL. Need user auth, product catalog and Stripe integration.",
+        "budget": "8000 грн",
+        "bids_count": 2,
+        "tags": ["FastAPI", "Python", "PostgreSQL", "Backend", "REST API"],
+        "url": "https://freelancehunt.com/project/123",
+    }
+    detected_lang = detect_project_language(en_proj["title"], en_proj["description"])
+    en_bid = fallback_bid(en_proj)
+    en_questions = fallback_questions(en_proj)
+    en_ok = (
+        detected_lang == "en"
+        and "Hello!" in en_bid
+        and "Warranty: 14 days" in en_bid
+        and "Key questions to ask" in en_questions
+    )
+    if not en_ok:
+        failed += 1
+        print("=" * 80)
+        print("English bid & questions generation: FAIL")
+    else:
+        print("=" * 80)
+        print("English bid & questions generation: OK")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")
