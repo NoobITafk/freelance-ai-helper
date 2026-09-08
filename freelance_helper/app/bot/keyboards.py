@@ -20,25 +20,21 @@ def project_keyboard(project_id: str):
     return InlineKeyboardMarkup(keyboard)
 
 
-def bid_keyboard(
-    project_id: str,
-    url: str | None = None,
-    bid_text: str | None = None,
-    is_pitch: bool = False,
-):
+def bid_keyboard(project_id: str, url: str | None = None):
     project_url = url or f"https://freelancehunt.com/project/{project_id}.html"
-    keyboard = []
-
-    row1 = []
-    if bid_text:
-        copy_label = "📋 Скопіювати відгук" if is_pitch else "📋 Скопіювати ставку"
-        row1.append(
-            InlineKeyboardButton(copy_label, copy_text=CopyTextButton(text=bid_text))
-        )
-    row1.append(
-        InlineKeyboardButton("🚀 Опублікувати на Freelancehunt", url=project_url)
-    )
-    keyboard.append(row1)
+    keyboard = [
+        [
+            InlineKeyboardButton("🚀 Зробити ставку", url=project_url),
+        ],
+        [
+            InlineKeyboardButton("🔁 Нова ставка", callback_data=f"rebid:{project_id}"),
+            InlineKeyboardButton("💬 Відгук у чат", callback_data=f"pitch:{project_id}"),
+        ],
+        [
+            InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
+            InlineKeyboardButton("⏭ Пропустити", callback_data=f"skip:{project_id}"),
+        ],
+    ]
 
     return InlineKeyboardMarkup(keyboard)
 
