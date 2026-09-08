@@ -817,11 +817,28 @@ def extract_project_insights(project: dict) -> dict:
         tech.append("Figma")
 
     has_auth = any(k in full_text for k in ["авториз", "auth", "login", "парол", "ролі"])
-    has_admin = any(k in full_text for k in ["адмін", "admin", "кабінет", "панель"])
+    has_admin = any(k in full_text for k in ["адмін", "admin", "панель"])
     has_db = bool(formats and "База даних" in formats) or any(
         k in full_text for k in ["баз", "database", "sqlite", "postgres", "mysql"]
     )
-    has_payment = any(k in full_text for k in ["оплат", "платіж", "payment", "wayforpay", "liqpay", "stripe", "mono"])
+    has_payment = any(k in full_text for k in ["оплат", "платіж", "payment", "wayforpay", "liqpay", "stripe", "mono", "крипт", "crypto"])
+    has_sub = any(k in full_text for k in ["підписк", "подписк", "subscription", "тариф", "доступ в канал", "доступ до каналу", "vip", "paywall"])
+    has_ai = any(k in full_text for k in ["openai", "chatgpt", "gpt", "claude", "gemini", "нейромереж", "нейросеть", "llm", "ai", "midjourney", "ретуш", "обробка фото", "генерац"])
+    has_broadcast = any(k in full_text for k in ["розсилк", "рассылк", "broadcast", "сповіщення користувач", "оповещени"])
+    has_antidetect = any(k in full_text for k in ["cloudflare", "капч", "captcha", "блокуван", "блокировк", "proxy", "проксі", "прокси", "playwright", "selenium"])
+
+    # Specific parsing fields requested
+    parse_fields = []
+    if any(k in full_text for k in ["цін", "цен", "price"]):
+        parse_fields.append("ціни")
+    if any(k in full_text for k in ["фото", "зображен", "картинк", "photo", "image"]):
+        parse_fields.append("фото")
+    if any(k in full_text for k in ["наявн", "налич", "stock", "залишк"]):
+        parse_fields.append("наявність")
+    if any(k in full_text for k in ["контакт", "телефон", "email", "пошт"]):
+        parse_fields.append("контакти")
+    if any(k in full_text for k in ["характеристик", "опис", "description", "артикул", "sku"]):
+        parse_fields.append("характеристики")
 
     return {
         "title": title,
@@ -839,7 +856,174 @@ def extract_project_insights(project: dict) -> dict:
         "has_admin": has_admin,
         "has_db": has_db,
         "has_payment": has_payment,
+        "has_sub": has_sub,
+        "has_ai": has_ai,
+        "has_broadcast": has_broadcast,
+        "has_antidetect": has_antidetect,
+        "parse_fields": parse_fields,
     }
+
+
+def build_project_deliverables(insights: dict) -> tuple[str, str]:
+    """Dynamically builds deliverables and post-support strictly tailored to project requirements."""
+    kind = insights["kind"]
+    sources = insights.get("sources", [])
+    formats = insights.get("formats", [])
+    has_payment = insights.get("has_payment", False)
+    has_sub = insights.get("has_sub", False)
+    has_ai = insights.get("has_ai", False)
+    has_admin = insights.get("has_admin", False)
+    has_broadcast = insights.get("has_broadcast", False)
+    has_antidetect = insights.get("has_antidetect", False)
+    parse_fields = insights.get("parse_fields", [])
+    src_mention = f" з {sources[0]}" if sources else " із цільового сайту"
+    fmt_mention = f" у {formats[0]}" if formats else " у структуровану таблицю"
+
+    if kind == "telegram_bot":
+        features = []
+        if has_ai:
+            features.append("інтеграція штучного інтелекту (обробка запитів/зображень)")
+        if has_payment:
+            features.append("безпечний прийом оплати та облік замовлень")
+        if has_sub:
+            features.append("система платних підписок з авто-видачею та контролем доступу")
+        if has_admin or has_broadcast:
+            features.append("панель адміністратора з розсилкою та статистикою")
+        
+        if features:
+            feat_text = ", ".join(features)
+            deliverable = f"Створю швидкого Telegram-бота з повним функціоналом під ваше ТЗ: {feat_text}, валідація дій та збереження даних."
+        else:
+            deliverable = "Створю зручного та швидкого бота: зрозуміле меню, кнопки, валідація відповідей та збереження контактів/заявок."
+        post_support = "Безкоштовно налаштую автозапуск на сервері, щоб бот працював 24/7 і не вимикався."
+        return deliverable, post_support
+
+    if kind == "parsing":
+        fields_str = f" ({', '.join(parse_fields[:3])})" if parse_fields else ""
+        if has_antidetect:
+            deliverable = f"Налаштую надійний парсинг{src_mention} в обхід блокувань та захисту, збережу всі необхідні поля{fields_str}{fmt_mention} без дублікатів."
+        else:
+            deliverable = f"Налаштую акуратний збір усіх потрібних даних{src_mention}{fields_str} та вивантаження{fmt_mention} без дублікатів і пропусків."
+        post_support = "Надам готовий файл та простий скрипт з інструкцією для запуску в 1 клік (за потреби налаштую автооновлення)."
+        return deliverable, post_support
+
+    if kind in {"backend", "api"}:
+        features = []
+        if insights.get("has_auth"):
+            features.append("безпечна авторизація та поділ прав доступу")
+        if has_payment:
+            features.append("підключення платіжного шлюзу з перевіркою вебхуків")
+        if insights.get("has_db"):
+            features.append("оптимізована структура бази даних")
+        feat_str = f" ({', '.join(features)})" if features else ""
+        deliverable = f"Реалізую швидку та надійну серверну частину{feat_str} з валідацією запитів та захистом від збоїв."
+        post_support = "Допоможу з налаштуванням сервера та перевірю роботу кожного запиту перед здачею."
+        return deliverable, post_support
+
+    if kind == "ai_integration":
+        deliverable = "Підключу штучний інтелект (OpenAI/ChatGPT/Claude) під ваші конкретні задачі з ретельно налаштованими промптами для точності відповідей."
+        post_support = "Перевірю роботу на різних сценаріях і допоможу запустити рішення під ключ."
+        return deliverable, post_support
+
+    if kind == "frontend":
+        deliverable = "Зроблю якісну, швидку верстку точно за макетом з плавною адаптивністю під телефони, планшети та ноутбуки."
+        post_support = "Перевірю відображення в усіх браузерах та підключу форми заявки."
+        return deliverable, post_support
+
+    if kind == "html_css":
+        deliverable = "Зроблю акуратну, швидку та валідну верстку, яка ідеально відкривається на смартфонах і комп'ютерах."
+        post_support = "Перевірю швидкість завантаження сторінки та коректність роботи інтерактивних елементів."
+        return deliverable, post_support
+
+    if kind == "wordpress":
+        deliverable = "Акуратно внесу всі необхідні правки на сайті, не зачіпаючи інший працюючий функціонал та адаптив."
+        post_support = "Перед початком обов'язково зроблю повну резервну копію (бекап) сайту для безпеки."
+        return deliverable, post_support
+
+    if kind == "excel":
+        deliverable = "Повністю автоматизую обробку даних та підготовку підсумкового звіту без ручної рутини."
+        post_support = "Налаштую формули та надам просту покрокову інструкцію, як користуватися таблицею."
+        return deliverable, post_support
+
+    deliverable = "Напишу чистий, структурований код згідно з вашими вимогами та протестую перед здачею."
+    post_support = "Залишаюся на зв'язку після здачі для відповідей на запитання або дрібних правок."
+    return deliverable, post_support
+
+
+def build_project_deliverables_en(insights: dict) -> tuple[str, str]:
+    """Dynamically builds English deliverables tailored to project requirements."""
+    kind = insights["kind"]
+    sources = insights.get("sources", [])
+    formats = insights.get("formats", [])
+    has_payment = insights.get("has_payment", False)
+    has_sub = insights.get("has_sub", False)
+    has_ai = insights.get("has_ai", False)
+    has_admin = insights.get("has_admin", False)
+    has_broadcast = insights.get("has_broadcast", False)
+    has_antidetect = insights.get("has_antidetect", False)
+    src_mention = f" from {sources[0]}" if sources else " from target site"
+    fmt_mention = f" into {formats[0]}" if formats else " into a structured spreadsheet"
+
+    if kind == "telegram_bot":
+        features = []
+        if has_ai:
+            features.append("AI module integration (text/image handling)")
+        if has_payment:
+            features.append("secure payment processing")
+        if has_sub:
+            features.append("membership subscription with automated access")
+        if has_admin or has_broadcast:
+            features.append("admin panel with user broadcasting & statistics")
+
+        if features:
+            feat_text = ", ".join(features)
+            deliverable = f"Develop a robust Telegram bot tailored to your exact specs: {feat_text}, input validation, and reliable database storage."
+        else:
+            deliverable = "Develop a responsive Telegram bot: clean menu, interactive buttons, input validation, and secure database storage for leads."
+        post_support = "Free 24/7 deployment setup on your server with automatic restarts."
+        return deliverable, post_support
+
+    if kind == "parsing":
+        if has_antidetect:
+            deliverable = f"Build an automated, resilient scraper{src_mention} equipped to bypass anti-bot protections and cleanly export{fmt_mention}."
+        else:
+            deliverable = f"Set up reliable, structured data scraping{src_mention} and export{fmt_mention} with clean formatting and no duplicates."
+        post_support = "Deliver the completed dataset and a simple 1-click script with execution guide."
+        return deliverable, post_support
+
+    if kind in {"backend", "api"}:
+        deliverable = "Build a fast, well-structured backend with clean database models, data validation, and error handling."
+        post_support = "Assist with server deployment and thoroughly test every endpoint prior to delivery."
+        return deliverable, post_support
+
+    if kind == "ai_integration":
+        deliverable = "Integrate AI models (OpenAI/ChatGPT/Claude) tailored to your specific workflow with optimized system prompts."
+        post_support = "Validate with real prompt testing and assist with turnkey deployment."
+        return deliverable, post_support
+
+    if kind == "frontend":
+        deliverable = "Implement pixel-perfect, responsive UI matching your design flawlessly on mobile, tablet, and desktop."
+        post_support = "Test across modern browsers and connect submission forms."
+        return deliverable, post_support
+
+    if kind == "html_css":
+        deliverable = "Clean, semantic HTML5/CSS3 layout optimized for fast loading and all screen sizes."
+        post_support = "Verify form functionality and cross-browser responsiveness."
+        return deliverable, post_support
+
+    if kind == "wordpress":
+        deliverable = "Apply all requested fixes and theme adjustments safely without breaking existing features."
+        post_support = "Perform a full backup before starting work for complete safety."
+        return deliverable, post_support
+
+    if kind == "excel":
+        deliverable = "Automate calculations and data processing to eliminate manual spreadsheet routine."
+        post_support = "Set up foolproof formulas and provide clear step-by-step guidance."
+        return deliverable, post_support
+
+    deliverable = "Write clean, maintainable code matching your exact specifications and test thoroughly before delivery."
+    post_support = "Remain available after completion for questions or minor adjustments."
+    return deliverable, post_support
 
 
 def smart_project_questions(insights: dict) -> list[str]:
@@ -987,8 +1171,16 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
     fmt_mention = f" into {insights['formats'][0]}" if insights["formats"] else " into an organized spreadsheet"
 
     # Category-specific personalized action hooks
+    hook_bot = f"Hello! I am ready to develop a reliable and fast Telegram bot tailored to your requirements."
+    if "telegram" in task_name.lower() or "bot" in task_name.lower():
+        sub_en = re.sub(r"(?i)\b(telegram|bot|development|creation)\b", "", task_name).strip()
+        if sub_en:
+            hook_bot = f"Hello! I am ready to develop a reliable Telegram bot for {sub_en}."
+    elif task_name and task_name != "your project":
+        hook_bot = f"Hello! I am ready to develop a reliable Telegram bot for {task_name}."
+
     hooks_en = {
-        "telegram_bot": f"Hello! I am ready to develop a reliable and fast Telegram bot for {task_name}.",
+        "telegram_bot": hook_bot,
         "parsing": f"Hello! I can set up clean and automated data scraping{src_mention} with structured export{fmt_mention}.",
         "backend": f"Hello! I will build a secure and well-architected backend for {task_name}.",
         "api": f"Hello! I can reliably integrate and configure the API for {task_name} with proper error handling.",
@@ -1001,52 +1193,7 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
     hook_default = f"Hello! I reviewed your project and I am ready to complete {task_name}."
     hook_en = hooks_en.get(kind, hook_default)
 
-    deliverables_map = {
-        "telegram_bot": (
-            "Develop a responsive Telegram bot: clean menu, interactive buttons, input validation, and secure database storage for leads.",
-            "Free 24/7 deployment setup on your server with automatic restarts.",
-        ),
-        "parsing": (
-            f"Set up reliable, structured data scraping{src_mention} and export{fmt_mention} with clean formatting and no duplicates.",
-            "Deliver the completed data file and a simple 1-click script with instructions.",
-        ),
-        "backend": (
-            "Build a fast, well-structured backend with clean database models, data validation, and error handling.",
-            "Assist with server deployment and thoroughly test every endpoint prior to delivery.",
-        ),
-        "api": (
-            "Integrate the required API service seamlessly with robust error and rate-limit handling.",
-            "Ensure dependable performance and provide clear documentation for easy maintenance.",
-        ),
-        "frontend": (
-            "Implement pixel-perfect, responsive UI matching your design flawlessly on mobile, tablet, and desktop.",
-            "Test across all modern browsers and connect submission forms.",
-        ),
-        "html_css": (
-            "Clean, semantic HTML5/CSS3 layout optimized for fast loading and all screen sizes.",
-            "Verify form functionality and cross-browser responsiveness.",
-        ),
-        "wordpress": (
-            "Apply all requested fixes and theme adjustments safely without breaking existing features.",
-            "Perform a full backup before starting work for complete safety.",
-        ),
-        "excel": (
-            "Automate calculations and data processing to eliminate manual spreadsheet routine.",
-            "Set up foolproof formulas and provide clear step-by-step guidance.",
-        ),
-        "ai_integration": (
-            "Integrate OpenAI/ChatGPT tailored to your specific workflow with optimized system prompts.",
-            "Validate with real prompt testing and assist with deployment.",
-        ),
-    }
-
-    deliverables, post_support = deliverables_map.get(
-        kind,
-        (
-            "Write clean, maintainable code matching your exact specifications and test thoroughly before delivery.",
-            "Remain available after completion for questions or minor adjustments.",
-        ),
-    )
+    deliverables, post_support = build_project_deliverables_en(insights)
 
     if has_fixed:
         budget_line = f"aligned with your budget ({budget})"
@@ -1065,11 +1212,14 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
         budget_line = estimates.get(kind, "$50 - $160 after clarifying details")
 
     if variant == "technical":
+        bot_step2 = "2. Implement bot logic, database models, and payment/subscription flow." if (insights.get("has_payment") or insights.get("has_sub")) else ("2. Implement bot logic and connect AI processing module." if insights.get("has_ai") else "2. Implement bot logic, database integration, and interactive menus.")
+        bot_step3 = "3. Build administrator dashboard/broadcasts and run end-to-end tests." if (insights.get("has_admin") or insights.get("has_broadcast")) else "3. Thorough end-to-end testing on mobile and desktop clients."
+
         steps_map = {
             "telegram_bot": [
                 "1. Clarify user flows: bot menus, commands, and notification triggers.",
-                "2. Implement bot logic, database integration, and admin alerts.",
-                "3. Thorough end-to-end testing on mobile and desktop clients.",
+                bot_step2,
+                bot_step3,
                 "4. Free server deployment for 24/7 uninterrupted uptime.",
             ],
             "parsing": [
@@ -1228,8 +1378,16 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
     fmt_mention = f" у {insights['formats'][0]}" if insights["formats"] else " у зручну таблицю"
 
     # Category-specific personalized action hooks
-    hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота під ваше завдання."
-    if "розробку Telegram-бота" in task_name:
+    hook_bot = "Вітаю! Створю швидкого та надійного Telegram-бота під ваше завдання."
+    # Clean redundant wording if title repeats bot creation
+    clean_bot_target = re.sub(
+        r"(?i)^(розробку|створення|написання)\s+(telegram[- ]?бота|телеграм[- ]?бота|бота)\s*(для|під)?\s*",
+        "",
+        task_name
+    ).strip()
+    if clean_bot_target and clean_bot_target != task_name and clean_bot_target != "це завдання":
+        hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота для {clean_bot_target}."
+    elif "розробку Telegram-бота" in task_name:
         sub_task = task_name.replace("розробку Telegram-бота", "").strip()
         if sub_task:
             hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота {sub_task}."
@@ -1250,52 +1408,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
     hook_default = f"Вітаю! Ознайомився із завданням — готовий якісно виконати {task_name}."
     hook_uk = hooks_uk.get(kind, hook_default)
 
-    deliverables_map = {
-        "telegram_bot": (
-            "Створю зручного та швидкого бота: зрозуміле меню, кнопки, валідація відповідей та збереження контактів/заявок.",
-            "Безкоштовно налаштую автозапуск на сервері, щоб бот працював 24/7 і не вимикався.",
-        ),
-        "parsing": (
-            f"Налаштую акуратний збір усіх потрібних даних{src_mention} та вивантаження{fmt_mention} без дублікатів і пропусків.",
-            "Надам готовий файл та простий скрипт з інструкцією для запуску в 1 клік (за потреби налаштую автооновлення).",
-        ),
-        "backend": (
-            "Реалізую швидку та надійну серверну частину з базою даних, перевіркою інформації та захистом від збоїв.",
-            "Допоможу з налаштуванням сервера та перевірю роботу кожного запиту перед здачею.",
-        ),
-        "api": (
-            "Надійно підключу необхідний сервіс (API) з правильною обробкою помилок та лімітів.",
-            "Забезпечу стабільну роботу та надам просту інструкцію з використання.",
-        ),
-        "frontend": (
-            "Зроблю якісну, швидку верстку компонентів точно за макетом з плавною адаптивністю під телефони та планшети.",
-            "Перевірю відображення в усіх браузерах та допоможу підключити форми заявок.",
-        ),
-        "html_css": (
-            "Зроблю акуратну та швидку верстку, яка ідеально відкривається на смартфонах, планшетах і комп'ютерах.",
-            "Перевірю швидкість завантаження сторінки та коректність роботи форм.",
-        ),
-        "wordpress": (
-            "Акуратно внесу всі необхідні правки на сайті, не зачіпаючи інший працюючий функціонал.",
-            "Перед початком обов'язково зроблю резервну копію (бекап) сайту для повної безпеки.",
-        ),
-        "excel": (
-            "Повністю автоматизую обробку даних та підготовку підсумкового звіту без ручної рутини.",
-            "Налаштую формули та надам просту покрокову інструкцію, як користуватися таблицею.",
-        ),
-        "ai_integration": (
-            "Підключу штучний інтелект (OpenAI/ChatGPT) під ваші задачі з точними інструкціями для відповідей.",
-            "Перевірю роботу на тестових запитаннях і допоможу запустити рішення в роботу.",
-        ),
-    }
-
-    deliverables, post_support = deliverables_map.get(
-        kind,
-        (
-            "Напишу чистий, структурований код згідно з вашими вимогами та протестую перед здачею.",
-            "Залишаюся на зв'язку після здачі для відповідей на запитання або дрібних правок.",
-        ),
-    )
+    deliverables, post_support = build_project_deliverables(insights)
 
     if has_fixed:
         budget_line = f"орієнтуюся на ваш бюджет {budget} (готовий виконати в цих межах)"
@@ -1314,16 +1427,21 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
         budget_line = estimates.get(kind, "від 2 000 - 6 000 грн після уточнення деталей")
 
     if variant == "technical":
+        bot_step2 = "2. Підключення платіжного модуля/підписок та збереження даних у базі." if (insights.get("has_payment") or insights.get("has_sub")) else ("2. Створення логіки бота та інтеграція штучного інтелекту/нейромережі." if insights.get("has_ai") else "2. Створення логіки бота, зручного меню та збереження заявок у базі даних.")
+        bot_step3 = "3. Створення панелі адміністратора (статистика, розсилка) та фінальне тестування." if (insights.get("has_admin") or insights.get("has_broadcast")) else "3. Налаштування миттєвих сповіщень та ретельне тестування на смартфоні."
+
+        parse_step2 = "2. Реалізація парсера з обходом капчі/блокувань та пагінацією." if insights.get("has_antidetect") else "2. Налаштування стабільного збору інформації без блокувань та дублікатів."
+
         steps_map = {
             "telegram_bot": [
                 "1. Узгодження сценаріїв: які кнопки бачить користувач і які повідомлення отримує.",
-                "2. Створення меню, зручних кнопок та збереження контактів/заявок у базі даних.",
-                "3. Налаштування миттєвих сповіщень для адміністратора та тестування на телефоні.",
+                bot_step2,
+                bot_step3,
                 "4. Безкоштовний запуск на сервері для роботи 24/7 та передача вам результату.",
             ],
             "parsing": [
                 f"1. Аналіз сайту{src_mention} та погодження списку колонок для збору.",
-                "2. Налаштування стабільного збору інформації без блокувань та дублікатів.",
+                parse_step2,
                 f"3. Акуратне оформлення та збереження даних{fmt_mention} зі зручними фільтрами.",
                 "4. Передача готової таблиці та простої інструкції для запуску скрипта.",
             ],
@@ -1473,8 +1591,15 @@ def generate_chat_pitch(project: dict) -> str:
         }
         return pitches_en.get(kind, f"Hello! I reviewed your project and have experience with similar tasks. Ready to take on {task_en} professionally. Let's discuss details in chat!")
 
-    bot_target = f"під ваше завдання"
-    if "розробку Telegram-бота" in task_name:
+    bot_target = "під ваше завдання"
+    clean_bot_target = re.sub(
+        r"(?i)^(розробку|створення|написання)\s+(telegram[- ]?бота|телеграм[- ]?бота|бота)\s*(для|під)?\s*",
+        "",
+        task_name
+    ).strip()
+    if clean_bot_target and clean_bot_target != task_name and clean_bot_target != "це завдання":
+        bot_target = f"для {clean_bot_target}"
+    elif "розробку Telegram-бота" in task_name:
         sub = task_name.replace("розробку Telegram-бота", "").strip()
         bot_target = sub if sub else "під ключ"
     elif task_name and task_name != "це завдання":
