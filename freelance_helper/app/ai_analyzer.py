@@ -579,7 +579,7 @@ def project_context(project: dict) -> str:
 
 def preliminary_bid_estimate(project: dict) -> str:
     kind = project_type(project)
-    budget = str(project.get("budget") or "").strip()
+    budget = format_budget_display(project.get("budget"))
 
     estimates = {
         "telegram_bot": "Орієнтовно: 3-7 днів, від 4000-12000 грн залежно від сценаріїв, бази даних, адмін-функцій і деплою.",
@@ -596,7 +596,7 @@ def preliminary_bid_estimate(project: dict) -> str:
 
     estimate = estimates.get(kind, estimates["unknown"])
 
-    if budget and budget.lower() not in {"не вказано", "none"}:
+    if budget and budget != "Не вказано":
         return f"{estimate} Якщо бюджет проєкту фіксований ({budget}), можу підлаштувати обсяг під нього."
 
     return estimate

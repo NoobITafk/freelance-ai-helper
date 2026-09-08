@@ -1,3 +1,4 @@
+import ast
 import re
 from dataclasses import dataclass
 
@@ -262,6 +263,14 @@ def parse_budget_info(budget) -> tuple[int | None, str, int | None]:
     currency = "UAH"
     amount = None
 
+    if isinstance(budget, str) and budget.strip().startswith("{") and budget.strip().endswith("}"):
+        try:
+            parsed_dict = ast.literal_eval(budget.strip())
+            if isinstance(parsed_dict, dict):
+                budget = parsed_dict
+        except (ValueError, SyntaxError):
+            pass
+
     if isinstance(budget, dict):
         raw_amount = budget.get("amount")
         if raw_amount is not None:
@@ -312,6 +321,14 @@ def format_budget_display(budget) -> str:
     """Formats raw budget (dict or string) into a clean user-facing string."""
     if budget is None:
         return "Не вказано"
+
+    if isinstance(budget, str) and budget.strip().startswith("{") and budget.strip().endswith("}"):
+        try:
+            parsed_dict = ast.literal_eval(budget.strip())
+            if isinstance(parsed_dict, dict):
+                budget = parsed_dict
+        except (ValueError, SyntaxError):
+            pass
 
     if isinstance(budget, dict):
         amount = budget.get("amount")
