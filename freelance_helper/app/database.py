@@ -225,6 +225,37 @@ def set_setting(key: str, value: str) -> None:
         )
 
 
+def set_portfolio_link(category: str, url: str) -> None:
+    category = category.lower().strip()
+    key = f"portfolio_{category}"
+    set_setting(key, url.strip())
+
+
+def get_portfolio_links() -> dict[str, str]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE 'portfolio_%'").fetchall()
+        return {row["key"].replace("portfolio_", ""): row["value"] for row in rows}
+
+
+def get_portfolio_link_for_kind(kind: str) -> str | None:
+    mapping = {
+        "telegram_bot": "bot",
+        "parsing": "parsing",
+        "backend": "backend",
+        "api": "backend",
+        "frontend": "web",
+        "html_css": "web",
+        "wordpress": "web",
+        "excel": "excel",
+        "ai_integration": "bot",
+    }
+    cat = mapping.get(kind, kind)
+    specific = get_setting(f"portfolio_{cat}")
+    if specific:
+        return specific
+    return get_setting("portfolio_general")
+
+
 def get_recent_projects(limit: int = 5) -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute(

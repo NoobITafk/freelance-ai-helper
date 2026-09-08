@@ -6,6 +6,7 @@ import httpx
 import requests
 
 from .config import OLLAMA_MODEL, OLLAMA_URL, PROJECT_ROOT, USER_PROFILE
+from .database import get_portfolio_link_for_kind
 from .rules import format_budget_display
 
 ANALYSIS_NUM_PREDICT = 500
@@ -1285,6 +1286,9 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
         steps_text = "\n".join(steps)
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
+        portfolio_url = get_portfolio_link_for_kind(kind)
+        portfolio_block = f"\n📁 Relevant portfolio / case: {portfolio_url}" if portfolio_url else ""
+
         return (
             f"{hook_en}\n\n"
             f"📋 Work plan:\n"
@@ -1292,7 +1296,7 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
             f"✨ Deliverables:\n"
             f"• {deliverables}\n"
             f"• Fully tested, turnkey result with clear documentation.\n"
-            f"• {post_support}\n\n"
+            f"• {post_support}{portfolio_block}\n\n"
             f"💰 Budget: {budget_line}\n"
             f"⏱ Estimated timeline: {time_estimate}\n"
             f"🛡 Warranty: 14 days of free post-delivery technical support.\n\n"
@@ -1302,13 +1306,15 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
         )
 
     elif variant == "cautious":
+        portfolio_url = get_portfolio_link_for_kind(kind)
+        portfolio_block = f"\n• 📁 Portfolio: {portfolio_url}" if portfolio_url else ""
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
         return (
             f"{hook_en} I have practical experience with similar tasks.\n\n"
             f"To tailor everything precisely to your needs, could you please clarify:\n"
             f"{q_text}\n\n"
             f"Project highlights:\n"
-            f"• {deliverables}\n"
+            f"• {deliverables}{portfolio_block}\n"
             f"💰 Budget: {budget_line}\n"
             f"⏱ Timeline: {time_estimate} upon brief alignment\n"
             f"🛡 Warranty: 14 days of free post-delivery support.\n"
@@ -1317,12 +1323,14 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
         )
 
     else:  # "short"
+        portfolio_url = get_portfolio_link_for_kind(kind)
+        portfolio_block = f"\n• 📁 Portfolio / case: {portfolio_url}" if portfolio_url else ""
         return (
             f"{hook_en}\n\n"
             f"Why choose me for this task:\n"
             f"• {deliverables}\n"
             f"• Tech stack: {stack}.\n"
-            f"• Clean, tested, and reliable turnkey delivery.\n\n"
+            f"• Clean, tested, and reliable turnkey delivery.{portfolio_block}\n\n"
             f"💰 Budget: {budget_line}\n"
             f"⏱ Timeline: {time_estimate}\n"
             f"🛡 Warranty: 14 days of free post-delivery support (always reachable).\n"
@@ -1502,6 +1510,9 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
         steps_text = "\n".join(steps)
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
+        portfolio_url = get_portfolio_link_for_kind(kind)
+        portfolio_block = f"\n📁 Приклад роботи / кейс: {portfolio_url}" if portfolio_url else ""
+
         return (
             f"{hook_uk}\n\n"
             f"📋 Порядок виконання:\n"
@@ -1509,7 +1520,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             f"✨ Що ви отримаєте в результаті:\n"
             f"• {deliverables}\n"
             f"• Повністю готове та протестоване рішення з простою інструкцією.\n"
-            f"• {post_support}\n\n"
+            f"• {post_support}{portfolio_block}\n\n"
             f"💰 Бюджет: {budget_line}\n"
             f"⏱ Орієнтовний термін: {time_estimate}\n"
             f"🛡 Гарантія: 14 днів безкоштовної техпідтримки після здачі проєкту.\n\n"
@@ -1519,13 +1530,15 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
         )
 
     elif variant == "cautious":
+        portfolio_url = get_portfolio_link_for_kind(kind)
+        portfolio_block = f"\n• 📁 Портфоліо: {portfolio_url}" if portfolio_url else ""
         q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
         return (
             f"{hook_uk} Маю практичний досвід у таких завданнях.\n\n"
             f"Щоб погодити всі деталі та зробити все точно під ваші вимоги, підкажіть, будь ласка:\n"
             f"{q_text}\n\n"
             f"Орієнтири за проєктом:\n"
-            f"• {deliverables}\n"
+            f"• {deliverables}{portfolio_block}\n"
             f"💰 Бюджет: {budget_line}\n"
             f"⏱ Термін: {time_estimate} після короткого узгодження\n"
             f"🛡 Гарантія: 14 днів безкоштовного супроводу після передачі проєкту.\n"
@@ -1534,12 +1547,14 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
         )
 
     else:  # "short"
+        portfolio_url = get_portfolio_link_for_kind(kind)
+        portfolio_block = f"\n• 📁 Портфоліо / кейс: {portfolio_url}" if portfolio_url else ""
         return (
             f"{hook_uk}\n\n"
             f"Чому варто довірити задачу мені:\n"
             f"• {deliverables}\n"
             f"• Стек: {stack}.\n"
-            f"• Чистий та надійний результат під ключ, усе перевірю перед здачею.\n\n"
+            f"• Чистий та надійний результат під ключ, усе перевірю перед здачею.{portfolio_block}\n\n"
             f"💰 Бюджет: {budget_line}\n"
             f"⏱ Термін: {time_estimate}\n"
             f"🛡 Гарантія: 14 днів безкоштовної техпідтримки після здачі (я завжди на зв'язку).\n"

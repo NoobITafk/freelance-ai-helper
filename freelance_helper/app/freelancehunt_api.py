@@ -90,3 +90,62 @@ async def get_projects(timeout: float = 20.0) -> list[dict]:
     projects = data["data"]
     logger.info("Freelancehunt API: received %s projects", len(projects))
     return projects
+
+
+async def submit_project_bid(
+    project_id: str,
+    days: int,
+    amount: int,
+    currency: str,
+    comment: str,
+    safe_type: str = "employer",
+    timeout: float = 20.0,
+) -> dict:
+    """Submits a bid to a Freelancehunt project via official v2 API."""
+    if not FREELANCEHUNT_TOKEN:
+        raise FreelancehuntAPIError("FREELANCEHUNT_TOKEN не знайдено в .env")
+
+    url = f"https://api.freelancehunt.com/v2/projects/{project_id}/bids"
+    headers = {
+        "Authorization": f"Bearer {FREELANCEHUNT_TOKEN}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "days": max(1, int(days)),
+        "safe_type": safe_type,
+        "budget": {
+            "amount": int(amount),
+            "currency": currency.upper(),
+        },
+        "comment": comment.strip(),
+    }
+
+    client = await get_http_client(timeout=timeout)
+    try:
+        response = await client.post(url, headers=headers, json=payload)
+    except httpx.RequestError as error:
+        await close_http_client()
+        logger.exception("Freelancehunt API submit bid request failed")
+        raise FreelancehuntAPIError(f"Помилка з'єднання при подачі ставки: {error}") from error
+
+    if not response.is_success:
+        try:
+            err_json = response.json()
+            if "errors" in err_json and isinstance(err_json["errors"], list):
+                err_msgs = [e.get("detail") or e.get("title") or str(e) for e in err_json["errors"]]
+                msg = "; ".join(err_msgs)
+            else:
+                msg = str(err_json)
+        except Exception:
+            msg = response.text[:300].strip()
+        logger.error("Freelancehunt bid submission failed | status=%s | msg=%s", response.status_code, msg)
+        raise FreelancehuntAPIError(f"Помилка біржі (HTTP {response.status_code}): {msg}")
+
+    try:
+        data = response.json()
+        logger.info("Freelancehunt bid submitted successfully for project %s", project_id)
+        return data
+    except Exception:
+        return {"status": "ok"}
+

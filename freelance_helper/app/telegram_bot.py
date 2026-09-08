@@ -16,6 +16,8 @@ from .bot.handlers import (
     health_command,
     help_command,
     last_command,
+    portfolio_command,
+    portfolio_set_command,
     profile_command,
     profile_set_command,
     recent_command,
@@ -147,6 +149,8 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("threshold", threshold_command))
     app.add_handler(CommandHandler("profile", profile_command))
     app.add_handler(CommandHandler("profile_set", profile_set_command))
+    app.add_handler(CommandHandler("portfolio", portfolio_command))
+    app.add_handler(CommandHandler("portfolio_set", portfolio_set_command))
     app.add_handler(CommandHandler("ai_on", ai_on))
     app.add_handler(CommandHandler("ai_off", ai_off))
     app.add_handler(CommandHandler("last", last_command))

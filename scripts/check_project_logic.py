@@ -516,7 +516,66 @@ def main() -> int:
         print(f"Chat pitch generation: FAIL | uk={pitch_uk} | en={pitch_en}")
     else:
         print("=" * 80)
-        print("Chat pitch generation: OK")
+    # 8. Portfolio link management and dynamic injection into bids
+    total_checks += 1
+    from freelance_helper.app.database import (
+        get_portfolio_link_for_kind,
+        get_portfolio_links,
+        set_portfolio_link,
+    )
+
+    test_bot_link = "https://t.me/MyTestPortfolioBot"
+    test_gen_link = "https://github.com/my-test-profile"
+    set_portfolio_link("bot", test_bot_link)
+    set_portfolio_link("general", test_gen_link)
+
+    links = get_portfolio_links()
+    link_for_bot = get_portfolio_link_for_kind("telegram_bot")
+    link_for_parsing = get_portfolio_link_for_kind("parsing")  # should fallback to general
+
+    # Test bid injection
+    bot_project = CASES[0].project
+    bid_with_portfolio = fallback_bid(bot_project)
+
+    portfolio_ok = (
+        links.get("bot") == test_bot_link
+        and link_for_bot == test_bot_link
+        and link_for_parsing == test_gen_link
+        and test_bot_link in bid_with_portfolio
+    )
+
+    if not portfolio_ok:
+        failed += 1
+        print("=" * 80)
+        print("Portfolio management & bid injection: FAIL")
+    else:
+        print("=" * 80)
+        print("Portfolio management & bid injection: OK")
+
+    # 9. Keyboards and bid submission structure
+    total_checks += 1
+    from freelance_helper.app.bot.keyboards import bid_keyboard, confirm_publish_keyboard
+
+    b_kb = bid_keyboard("12345")
+    c_kb = confirm_publish_keyboard("12345")
+
+    # Verify buttons
+    b_callbacks = [btn.callback_data for row in b_kb.inline_keyboard for btn in row]
+    c_callbacks = [btn.callback_data for row in c_kb.inline_keyboard for btn in row]
+
+    kb_ok = (
+        "publish_bid:12345" in b_callbacks
+        and "confirm_publish:12345" in c_callbacks
+        and "cancel_publish:12345" in c_callbacks
+    )
+
+    if not kb_ok:
+        failed += 1
+        print("=" * 80)
+        print("Bid publish keyboards structure: FAIL")
+    else:
+        print("=" * 80)
+        print("Bid publish keyboards structure: OK")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

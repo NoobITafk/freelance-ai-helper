@@ -19,10 +19,11 @@ from ..ai_analyzer import (
     generate_questions,
     is_technical_project,
     normalize_analysis,
+    project_type,
     unsuitable_project_text,
 )
 from ..rules import parse_budget_info
-from .keyboards import bid_keyboard, questions_keyboard, unsuitable_project_keyboard
+from .keyboards import bid_keyboard, confirm_publish_keyboard, questions_keyboard, unsuitable_project_keyboard
 from ..config import (
     AI_ANALYSIS_ENABLED,
     AI_TIMEOUT_SECONDS,
@@ -36,15 +37,17 @@ from ..config import (
     TELEGRAM_CHAT_ID,
     USER_PROFILE,
 )
-from ..freelancehunt_api import get_projects
+from ..freelancehunt_api import FreelancehuntAPIError, get_projects, submit_project_bid
 from ..database import (
     check_database,
     cleanup_old_projects,
+    get_portfolio_links,
     get_project,
     get_recent_projects,
-    set_project_rating,
-    get_stats,
     get_setting,
+    get_stats,
+    set_portfolio_link,
+    set_project_rating,
     set_setting,
 )
 from ..services.project_service import format_project_message, process_and_send_project
@@ -184,12 +187,15 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /threshold 35 — те саме, коротше
 /profile — показати профіль виконавця
 /profile_set текст — змінити профіль
+/portfolio — налаштовані посилання на портфоліо/кейси
+/portfolio_set категорія посилання — задати кейс (bot, parsing, backend, web, excel, general)
 /test_ai — тест роботи аналізатора
 /why project_id — показати збережений аналіз
 
 📌 Кнопки під проєктом:
 ✅ Добрий | ❌ Поганий
-📝 Ставка | ❓ Уточнення
+📝 Ставка | 💬 Відгук у чат
+❓ Уточнення | 🚀 Опублікувати
 🔁 Нова ставка | ⏭ Пропустити
 """
     await reply_text(update, text)
@@ -542,6 +548,88 @@ async def profile_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     await reply_text(update, "✅ Профіль оновлено.")
 
 
+async def portfolio_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    links = get_portfolio_links()
+    if not links:
+        await reply_text(
+            update,
+            "📁 Посилання на портфоліо ще не налаштовані.\n\n"
+            "Щоб додати посилання під категорію, використовуйте:\n"
+            "<code>/portfolio_set bot https://github.com/...</code>\n"
+            "<code>/portfolio_set parsing https://github.com/...</code>\n"
+            "<code>/portfolio_set backend https://github.com/...</code>\n"
+            "<code>/portfolio_set web https://site.com/...</code>\n"
+            "<code>/portfolio_set excel https://docs.google.com/...</code>\n"
+            "<code>/portfolio_set general https://github.com/my-profile</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    lines = ["📁 <b>Налаштовані посилання на портфоліо:</b>\n"]
+    for cat, url in sorted(links.items()):
+        lines.append(f"• <b>{cat}</b>: {url}")
+
+    lines.append("\nЩоб змінити: <code>/portfolio_set &lt;категорія&gt; &lt;посилання&gt;</code>")
+    await reply_text(update, "\n".join(lines), parse_mode="HTML")
+
+
+async def portfolio_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args or []
+    if len(args) < 2:
+        await reply_text(
+            update,
+            "ℹ️ Формат: /portfolio_set <категорія> <посилання>\n\n"
+            "Доступні категорії:\n"
+            "• <code>bot</code> — Telegram-боти\n"
+            "• <code>parsing</code> — парсинг та скрейпінг\n"
+            "• <code>backend</code> — бекенд та API\n"
+            "• <code>web</code> — сайти, верстка, WordPress\n"
+            "• <code>excel</code> — Excel / Google Таблиці\n"
+            "• <code>general</code> — універсальне посилання (за замовчуванням)",
+            parse_mode="HTML",
+        )
+        return
+
+    category = args[0].lower().strip()
+    url = args[1].strip()
+
+    valid_categories = {
+        "bot",
+        "telegram_bot",
+        "parsing",
+        "backend",
+        "api",
+        "web",
+        "frontend",
+        "wordpress",
+        "excel",
+        "general",
+    }
+    if category not in valid_categories:
+        await reply_text(
+            update,
+            f"❌ Невідома категорія: <code>{category}</code>.\n"
+            "Використовуйте одну з: bot, parsing, backend, web, excel, general.",
+            parse_mode="HTML",
+        )
+        return
+
+    if category == "telegram_bot":
+        category = "bot"
+    elif category == "api":
+        category = "backend"
+    elif category in {"frontend", "wordpress"}:
+        category = "web"
+
+    set_portfolio_link(category, url)
+    logger.info("Portfolio link updated for %s: %s", category, url)
+    await reply_text(
+        update,
+        f"✅ Збережено посилання для категорії <b>{category}</b>:\n{url}",
+        parse_mode="HTML",
+    )
+
+
 async def ai_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
     set_setting("AI_ANALYSIS_ENABLED", "true")
     await reply_text(
@@ -679,6 +767,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         variant_name = variant_labels.get(variant, variant)
         bid_text = generate_bid(project, variant=variant)
+        context.user_data.setdefault("active_bids", {})[project_id] = bid_text
 
         # Financial calculation for fixed budget (Safe Freelancehunt ~9.9% fee)
         calc_footer = ""
@@ -740,3 +829,106 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"❓ Що уточнити:\n\n{questions}",
             reply_markup=reply_markup,
         )
+
+    elif action == "publish_bid":
+        if not FREELANCEHUNT_TOKEN:
+            await message.reply_text(
+                "❌ FREELANCEHUNT_TOKEN не знайдено в налаштуваннях бота.\n"
+                "Додайте токен у файл .env для можливості прямої публікації ставок на біржі."
+            )
+            return
+
+        amount, currency, _ = parse_budget_info(project.get("budget"))
+        if not amount or amount <= 0:
+            amount = 3000
+        currency = currency or "UAH"
+
+        kind = project_type(project)
+        days = 3 if kind in {"telegram_bot", "backend"} else 2
+
+        active_bids = context.user_data.setdefault("active_bids", {})
+        bid_text = active_bids.get(project_id)
+        if not bid_text:
+            bid_text = generate_bid(project, variant="short")
+            active_bids[project_id] = bid_text
+
+        pending = context.user_data.setdefault("pending_publish", {})
+        pending[project_id] = {
+            "days": days,
+            "amount": amount,
+            "currency": currency,
+            "comment": bid_text,
+            "title": project.get("title", "Без назви"),
+        }
+
+        preview = bid_text[:280] + ("..." if len(bid_text) > 280 else "")
+        prompt = (
+            f"🚀 <b>Підтвердження публікації ставки</b>\n\n"
+            f"📌 <b>Проєкт:</b> {project.get('title')}\n"
+            f"💰 <b>Сума ставки:</b> {amount:,} {currency}\n"
+            f"⏱ <b>Термін виконання:</b> {days} дн.\n"
+            f"🛡 <b>Тип безпечної угоди:</b> Робота з резервуванням (employer)\n\n"
+            f"📝 <b>Текст пропозиції:</b>\n"
+            f"<i>{preview}</i>\n\n"
+            f"⚠️ <b>Увага:</b> Після підтвердження ставку буде миттєво відправлено на біржу Freelancehunt від вашого облікового запису.\n\n"
+            f"Опублікувати ставку зараз?"
+        )
+
+        await message.reply_text(
+            prompt,
+            parse_mode="HTML",
+            reply_markup=confirm_publish_keyboard(project_id),
+        )
+
+    elif action == "cancel_publish":
+        pending = context.user_data.setdefault("pending_publish", {})
+        pending.pop(project_id, None)
+        await message.reply_text("❌ Публікацію ставки скасовано.")
+
+    elif action == "confirm_publish":
+        pending = context.user_data.setdefault("pending_publish", {})
+        publish_data = pending.pop(project_id, None)
+
+        if not publish_data:
+            amount, currency, _ = parse_budget_info(project.get("budget"))
+            if not amount or amount <= 0:
+                amount = 3000
+            currency = currency or "UAH"
+            bid_text = generate_bid(project, variant="short")
+            publish_data = {
+                "days": 2,
+                "amount": amount,
+                "currency": currency,
+                "comment": bid_text,
+            }
+
+        await message.reply_text("⏳ Відправляю ставку на Freelancehunt API...")
+        try:
+            res = await submit_project_bid(
+                project_id=project_id,
+                days=publish_data["days"],
+                amount=publish_data["amount"],
+                currency=publish_data["currency"],
+                comment=publish_data["comment"],
+            )
+            logger.info("Bid posted for project %s: %s", project_id, res)
+            await message.reply_text(
+                f"✅ <b>Ставку успішно опубліковано на Freelancehunt!</b>\n\n"
+                f"📌 {project.get('title')}\n"
+                f"💰 {publish_data['amount']:,} {publish_data['currency']}  •  ⏱ {publish_data['days']} дн.\n"
+                f"🔗 <a href=\"{project.get('url')}\">Переглянути проєкт на біржі</a>",
+                parse_mode="HTML",
+                disable_web_page_preview=True,
+            )
+        except FreelancehuntAPIError as err:
+            logger.error("Freelancehunt API error submitting bid: %s", err)
+            await message.reply_text(
+                f"❌ <b>Помилка Freelancehunt API:</b>\n{err}",
+                parse_mode="HTML",
+            )
+        except Exception as exc:
+            logger.exception("Unexpected error submitting bid: %s", exc)
+            await message.reply_text(
+                f"❌ <b>Непередбачена помилка:</b> {exc}",
+                parse_mode="HTML",
+            )
