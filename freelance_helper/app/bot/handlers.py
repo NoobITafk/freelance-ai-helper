@@ -776,7 +776,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             fee = round(amount * 0.099)
             net_payout = amount - fee
             calc_footer = (
-                f"\n\n🧮 Фінансовий розрахунок (Сейф ~9.9%):\n"
+                f"\n\nФінансовий розрахунок (Сейф ~9.9%):\n"
                 f"• Бюджет проєкту: {amount:,} {currency}\n"
                 f"• Комісія біржі: -{fee:,} {currency}\n"
                 f"• Чистими на карту: ~{net_payout:,} {currency}"
@@ -786,7 +786,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         escaped_bid = bid_text.replace("```", "'''")
         response_text = (
             f"📝 Пропозиція до проєкту ({variant_name})\n"
-            f"👇 Натисніть «📋 Скопіювати ставку» (або на текст), потім «🚀 Опублікувати на сайті»:\n\n"
+            f"👇 Натисніть «📋 Скопіювати ставку» (або на текст), потім «🚀 Опублікувати на Freelancehunt»:\n\n"
             f"```\n{escaped_bid}\n```{calc_footer}"
         )
 
@@ -812,7 +812,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         escaped_pitch = pitch_text.replace("```", "'''")
         response_text = (
             f"💬 Короткий відгук у чат (для першого контакту)\n"
-            f"👇 Натисніть «📋 Скопіювати відгук» (або на текст), потім «🚀 Опублікувати на сайті»:\n\n"
+            f"👇 Натисніть «📋 Скопіювати відгук» (або на текст), потім «🚀 Опублікувати на Freelancehunt»:\n\n"
             f"```\n{escaped_pitch}\n```"
         )
 

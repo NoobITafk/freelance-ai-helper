@@ -36,20 +36,9 @@ def bid_keyboard(
             InlineKeyboardButton(copy_label, copy_text=CopyTextButton(text=bid_text))
         )
     row1.append(
-        InlineKeyboardButton("🚀 Опублікувати на сайті", url=project_url)
+        InlineKeyboardButton("🚀 Опублікувати на Freelancehunt", url=project_url)
     )
     keyboard.append(row1)
-
-    keyboard.extend([
-        [
-            InlineKeyboardButton("🔁 Нова ставка", callback_data=f"rebid:{project_id}"),
-            InlineKeyboardButton("💬 Відгук у чат", callback_data=f"pitch:{project_id}"),
-        ],
-        [
-            InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
-            InlineKeyboardButton("⏭ Пропустити", callback_data=f"skip:{project_id}"),
-        ],
-    ])
 
     return InlineKeyboardMarkup(keyboard)
 

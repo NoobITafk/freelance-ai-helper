@@ -580,8 +580,11 @@ def main() -> int:
     c_callbacks = [btn.callback_data for row in c_kb.inline_keyboard for btn in row]
 
     kb_ok = (
-        copy_btn.copy_text is not None
+        len(b_kb.inline_keyboard) == 1
+        and len(row0) == 2
+        and copy_btn.copy_text is not None
         and copy_btn.copy_text.text == "Текст моєї ставки"
+        and site_btn.text == "🚀 Опублікувати на Freelancehunt"
         and site_btn.url == "https://freelancehunt.com/project/12345.html"
         and "confirm_publish:12345" in c_callbacks
         and "cancel_publish:12345" in c_callbacks
