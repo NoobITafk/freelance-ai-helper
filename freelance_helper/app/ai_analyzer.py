@@ -46,12 +46,32 @@ TECHNICAL_KEYWORDS = {
     "node.js",
     "react",
     "vue",
+    "next",
+    "next.js",
+    "nextjs",
+    "nuxt",
+    "nuxt.js",
+    "angular",
+    "svelte",
+    "frontend",
+    "фронтенд",
+    "фронт",
+    "fullstack",
+    "фулстек",
     "sqlite",
     "postgresql",
+    "postgres",
     "mysql",
     "mongodb",
+    "redis",
     "database",
     "база даних",
+    "бази даних",
+    "база данных",
+    "базы данных",
+    "бд",
+    "sql",
+    "nosql",
     "google sheets",
     "google sheet",
     "excel",
@@ -63,6 +83,22 @@ TECHNICAL_KEYWORDS = {
     "form",
     "landing",
     "лендінг",
+    "php",
+    "laravel",
+    "доработка",
+    "доработки",
+    "доробка",
+    "доробки",
+    "правки",
+    "код",
+    "code",
+    "разработка",
+    "розробка",
+    "скрипт",
+    "script",
+    "dev",
+    "tailwind",
+    "bootstrap",
     "openai",
     "chatgpt",
     "llm",
@@ -368,8 +404,28 @@ def calculate_score(data: dict) -> int:
     return max(0, min(100, score))
 
 
+def project_tags_text(project: dict) -> str:
+    tags = project.get("tags") or project.get("categories") or project.get("skills") or []
+
+    if isinstance(tags, str):
+        return tags
+
+    if isinstance(tags, list):
+        values = []
+        for tag in tags:
+            if isinstance(tag, dict):
+                values.append(str(tag.get("name") or tag.get("title") or tag.get("id") or "").strip())
+            else:
+                values.append(str(tag).strip())
+
+        return ", ".join(value for value in values if value)
+
+    return ""
+
+
 def project_text(project: dict) -> str:
-    return f"{project.get('title', '')} {project.get('description', '')}".lower()
+    tags = project_tags_text(project)
+    return f"{project.get('title', '')} {project.get('description', '')} {tags}".lower()
 
 
 def contains_keyword(text: str, keyword: str) -> bool:
@@ -408,8 +464,12 @@ def non_technical_reason(project: dict) -> tuple[str, str] | None:
 
 
 def is_technical_project(project: dict) -> bool:
+    if non_technical_reason(project) is not None:
+        return False
     text = project_text(project)
-    return non_technical_reason(project) is None and has_technical_keyword(text)
+    if has_technical_keyword(text):
+        return True
+    return project_type(project) not in {"non_technical", "unknown"}
 
 
 def project_analysis_questions(project: dict) -> list[str]:
@@ -494,7 +554,7 @@ def project_specific_questions(project: dict, base_questions: list[str], limit: 
 
 
 def project_type(project: dict) -> str:
-    text = f"{project.get('title', '')} {project.get('description', '')}".lower()
+    text = project_text(project)
 
     if non_technical_reason(project):
         return "non_technical"
@@ -505,10 +565,10 @@ def project_type(project: dict) -> str:
     if any(word in text for word in ["openai", "chatgpt", "llm", "ai", "штучний інтелект"]):
         return "ai_integration"
 
-    if any(word in text for word in ["fastapi", "django", "flask", "backend"]):
+    if any(word in text for word in ["fastapi", "django", "flask", "backend", "sql", "база дан", "бази дан", "базы дан", "database", "postgres", "mysql", "mongodb", "redis"]):
         return "backend"
 
-    if any(word in text for word in ["react", "vue", "next.js", "frontend"]):
+    if any(word in text for word in ["react", "vue", "next", "next.js", "nextjs", "nuxt", "angular", "svelte", "frontend", "фронтенд"]):
         return "frontend"
 
     if "wordpress" in text or "вордпрес" in text:
@@ -527,28 +587,9 @@ def project_type(project: dict) -> str:
         return "excel"
 
     if any(word in text for word in TECHNICAL_KEYWORDS):
-        return "unknown"
+        return "development"
 
     return "unknown"
-
-
-def project_tags_text(project: dict) -> str:
-    tags = project.get("tags") or project.get("categories") or project.get("skills") or []
-
-    if isinstance(tags, str):
-        return tags
-
-    if isinstance(tags, list):
-        values = []
-        for tag in tags:
-            if isinstance(tag, dict):
-                values.append(str(tag.get("name") or tag.get("title") or tag.get("id") or "").strip())
-            else:
-                values.append(str(tag).strip())
-
-        return ", ".join(value for value in values if value)
-
-    return ""
 
 
 def project_context(project: dict) -> str:
@@ -1279,7 +1320,7 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
                 "1. Review technical requirements and confirm deliverables.",
                 "2. Step-by-step implementation with ongoing testing.",
                 "3. Demo completed work and apply any feedback.",
-                "4. Final delivery, setup assistance, and warranty support.",
+                "4. Final verification and turnkey handover of completed work.",
             ],
         )
 
@@ -1295,11 +1336,9 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
             f"{steps_text}\n\n"
             f"Deliverables:\n"
             f"• {deliverables}\n"
-            f"• Fully tested, turnkey result with clear documentation.\n"
-            f"• {post_support}{portfolio_block}\n\n"
+            f"• Fully tested, turnkey result with clear documentation.{portfolio_block}\n\n"
             f"Budget: {budget_line}\n"
-            f"Estimated timeline: {time_estimate}\n"
-            f"Warranty: 14 days of free post-delivery technical support.\n\n"
+            f"Estimated timeline: {time_estimate}\n\n"
             f"A few quick questions before we begin:\n"
             f"{q_text}\n\n"
             f"Feel free to message me in chat to discuss the details and get started!"
@@ -1316,9 +1355,7 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
             f"Project highlights:\n"
             f"• {deliverables}{portfolio_block}\n"
             f"Budget: {budget_line}\n"
-            f"Timeline: {time_estimate} upon brief alignment\n"
-            f"Warranty: 14 days of free post-delivery support.\n"
-            f"Setup: {post_support}\n\n"
+            f"Timeline: {time_estimate} upon brief alignment\n\n"
             f"Once confirmed, I can immediately start working. Looking forward to your message!"
         )
 
@@ -1332,9 +1369,7 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
             f"• Tech stack: {stack}.\n"
             f"• Clean, tested, and reliable turnkey delivery.{portfolio_block}\n\n"
             f"Budget: {budget_line}\n"
-            f"Timeline: {time_estimate}\n"
-            f"Warranty: 14 days of free post-delivery support (always reachable).\n"
-            f"Setup: {post_support}\n\n"
+            f"Timeline: {time_estimate}\n\n"
             f"Available in chat to discuss details and start right away!"
         )
 
@@ -1503,7 +1538,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
                 "1. Узгодження деталей завдання та бажаного фінального результату.",
                 "2. Покрокова реалізація та тестування на реальних сценаріях.",
                 "3. Демонстрація готового результату та внесення правок за потреби.",
-                "4. Передача під ключ, налаштування та підтримка.",
+                "4. Фінальна перевірка та передача повністю готової роботи під ключ.",
             ],
         )
 
@@ -1519,11 +1554,9 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             f"{steps_text}\n\n"
             f"Що ви отримаєте в результаті:\n"
             f"• {deliverables}\n"
-            f"• Повністю готове та протестоване рішення з простою інструкцією.\n"
-            f"• {post_support}{portfolio_block}\n\n"
+            f"• Повністю готове та протестоване рішення з простою інструкцією.{portfolio_block}\n\n"
             f"Бюджет: {budget_line}\n"
-            f"Орієнтовний термін: {time_estimate}\n"
-            f"Гарантія: 14 днів безкоштовної техпідтримки після здачі проєкту.\n\n"
+            f"Орієнтовний термін: {time_estimate}\n\n"
             f"Перед стартом підкажіть лише:\n"
             f"{q_text}\n\n"
             f"Напишіть у чат — обговоримо деталі та одразу розпочну роботу!"
@@ -1540,9 +1573,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             f"Орієнтири за проєктом:\n"
             f"• {deliverables}{portfolio_block}\n"
             f"Бюджет: {budget_line}\n"
-            f"Термін: {time_estimate} після короткого узгодження\n"
-            f"Гарантія: 14 днів безкоштовного супроводу після передачі проєкту.\n"
-            f"Налаштування: {post_support}\n\n"
+            f"Термін: {time_estimate} після короткого узгодження\n\n"
             f"Після ваших відповідей готовий одразу зафіксувати фінальні деталі та розпочати роботу. На зв'язку!"
         )
 
@@ -1556,9 +1587,7 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             f"• Стек: {stack}.\n"
             f"• Чистий та надійний результат під ключ, усе перевірю перед здачею.{portfolio_block}\n\n"
             f"Бюджет: {budget_line}\n"
-            f"Термін: {time_estimate}\n"
-            f"Гарантія: 14 днів безкоштовної техпідтримки після здачі (я завжди на зв'язку).\n"
-            f"Налаштування: {post_support}\n\n"
+            f"Термін: {time_estimate}\n\n"
             f"Готовий відповісти на запитання в чаті та швидко розпочати роботу!"
         )
 

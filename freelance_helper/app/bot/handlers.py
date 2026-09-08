@@ -786,14 +786,18 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         escaped_bid = bid_text.replace("```", "'''")
         response_text = (
             f"📝 Пропозиція до проєкту ({variant_name})\n"
-            f"👇 Натисніть на текст нижче, щоб скопіювати:\n\n"
+            f"👇 Натисніть «📋 Скопіювати ставку» (або на текст), потім «🚀 Опублікувати на сайті»:\n\n"
             f"```\n{escaped_bid}\n```{calc_footer}"
         )
 
         await message.reply_text(
             response_text,
             parse_mode="Markdown",
-            reply_markup=bid_keyboard(project_id, url=project.get("url")),
+            reply_markup=bid_keyboard(
+                project_id,
+                url=project.get("url"),
+                bid_text=bid_text,
+            ),
         )
 
     elif action == "pitch":
@@ -808,14 +812,19 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         escaped_pitch = pitch_text.replace("```", "'''")
         response_text = (
             f"💬 Короткий відгук у чат (для першого контакту)\n"
-            f"👇 Натисніть на текст нижче, щоб скопіювати:\n\n"
+            f"👇 Натисніть «📋 Скопіювати відгук» (або на текст), потім «🚀 Опублікувати на сайті»:\n\n"
             f"```\n{escaped_pitch}\n```"
         )
 
         await message.reply_text(
             response_text,
             parse_mode="Markdown",
-            reply_markup=bid_keyboard(project_id, url=project.get("url")),
+            reply_markup=bid_keyboard(
+                project_id,
+                url=project.get("url"),
+                bid_text=pitch_text,
+                is_pitch=True,
+            ),
         )
 
     elif action == "questions":

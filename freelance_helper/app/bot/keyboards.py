@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def project_keyboard(project_id: str):
@@ -20,16 +20,25 @@ def project_keyboard(project_id: str):
     return InlineKeyboardMarkup(keyboard)
 
 
-def bid_keyboard(project_id: str, url: str | None = None):
+def bid_keyboard(
+    project_id: str,
+    url: str | None = None,
+    bid_text: str | None = None,
+    is_pitch: bool = False,
+):
+    project_url = url or f"https://freelancehunt.com/project/{project_id}.html"
     keyboard = []
-    if url:
-        keyboard.append([
-            InlineKeyboardButton("🔗 Відкрити на Freelancehunt", url=url),
-        ])
-    else:
-        keyboard.append([
-            InlineKeyboardButton("🚀 Опублікувати на Freelancehunt", callback_data=f"publish_bid:{project_id}"),
-        ])
+
+    row1 = []
+    if bid_text:
+        copy_label = "📋 Скопіювати відгук" if is_pitch else "📋 Скопіювати ставку"
+        row1.append(
+            InlineKeyboardButton(copy_label, copy_text=CopyTextButton(text=bid_text))
+        )
+    row1.append(
+        InlineKeyboardButton("🚀 Опублікувати на сайті", url=project_url)
+    )
+    keyboard.append(row1)
 
     keyboard.extend([
         [

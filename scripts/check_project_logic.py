@@ -145,6 +145,19 @@ CASES = [
         expected_technical=True,
     ),
     Case(
+        name="Next.js database improvements",
+        project={
+            "title": "Доработки в проекте Next.js",
+            "description": "Нужно сделать доработки в существующем проекте. Оптимизировать запросы и исправить баги.",
+            "skills": [{"name": "Базы данных"}],
+            "budget": "4550 грн",
+            "bids_count": 5,
+            "url": "https://freelancehunt.com/project/next-db",
+        },
+        expected_type="backend",
+        expected_technical=True,
+    ),
+    Case(
         name="HTML/CSS",
         project={
             "title": "Зверстати лендинг по Figma",
@@ -485,7 +498,8 @@ def main() -> int:
     en_ok = (
         detected_lang == "en"
         and "Hello!" in en_bid
-        and "Warranty: 14 days" in en_bid
+        and "Budget:" in en_bid
+        and "Warranty" not in en_bid
         and "Key questions to ask" in en_questions
     )
     if not en_ok:
@@ -556,15 +570,19 @@ def main() -> int:
     total_checks += 1
     from freelance_helper.app.bot.keyboards import bid_keyboard, confirm_publish_keyboard
 
-    b_kb = bid_keyboard("12345")
+    b_kb = bid_keyboard("12345", bid_text="Текст моєї ставки")
     c_kb = confirm_publish_keyboard("12345")
 
     # Verify buttons
-    b_callbacks = [btn.callback_data for row in b_kb.inline_keyboard for btn in row]
+    row0 = b_kb.inline_keyboard[0]
+    copy_btn = row0[0]
+    site_btn = row0[1]
     c_callbacks = [btn.callback_data for row in c_kb.inline_keyboard for btn in row]
 
     kb_ok = (
-        "publish_bid:12345" in b_callbacks
+        copy_btn.copy_text is not None
+        and copy_btn.copy_text.text == "Текст моєї ставки"
+        and site_btn.url == "https://freelancehunt.com/project/12345.html"
         and "confirm_publish:12345" in c_callbacks
         and "cancel_publish:12345" in c_callbacks
     )
@@ -576,6 +594,27 @@ def main() -> int:
     else:
         print("=" * 80)
         print("Bid publish keyboards structure: OK")
+
+    # 10. No warranty / support in generated bids
+    total_checks += 1
+    sample_proj = CASES[0].project
+    bids_to_check = [
+        fallback_bid(sample_proj, variant="short"),
+        fallback_bid(sample_proj, variant="technical"),
+        fallback_bid(sample_proj, variant="cautious"),
+    ]
+    unwanted_phrases = ["14 днів", "Гарантія", "Warranty", "Налаштування:", "Setup:"]
+    found_unwanted = [
+        phrase for phrase in unwanted_phrases
+        if any(phrase in b for b in bids_to_check)
+    ]
+    if found_unwanted:
+        failed += 1
+        print("=" * 80)
+        print(f"No warranty / support check: FAIL | found: {found_unwanted}")
+    else:
+        print("=" * 80)
+        print("No warranty / support check: OK")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")
