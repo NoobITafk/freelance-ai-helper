@@ -36,6 +36,7 @@ from ..config import (
 from ..freelancehunt_api import get_projects
 from ..database import (
     check_database,
+    cleanup_old_projects,
     get_project,
     get_recent_projects,
     set_project_rating,
@@ -43,7 +44,7 @@ from ..database import (
     get_setting,
     set_setting,
 )
-from ..services.project_service import process_and_send_project
+from ..services.project_service import format_project_message, process_and_send_project
 from ..logger import logger
 
 LAST_PROJECTS_LIMIT = 10
@@ -172,7 +173,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /auto_on — увімкнути автопошук
 /auto_off — вимкнути автопошук
 /stats — статистика
-/health — діагностика бота, API, бази, AI
+/health — діагностика бота, API, бази та налаштувань
 /last — те саме, що /recent
 /recent — останні проєкти з бази
 /settings — показати мінімальний score
@@ -180,9 +181,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /threshold 35 — те саме, коротше
 /profile — показати профіль виконавця
 /profile_set текст — змінити профіль
-/ai_on — увімкнути AI-аналіз
-/ai_off — вимкнути AI-аналіз
-/test_ai — перевірити Ollama/AI
+/test_ai — тест роботи аналізатора
 /why project_id — показати збережений аналіз
 
 📌 Кнопки під проєктом:
@@ -194,36 +193,39 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    test_project = """
-Потрібен Python-скрипт для парсингу товарів із сайту.
-Результат зберегти в Excel.
-Бюджет: 1000 грн.
-Термін: 1 день.
-"""
+    test_project = {
+        "title": "Python-скрипт для парсингу товарів із сайту",
+        "description": "Потрібен Python-скрипт для парсингу товарів із сайту. Результат зберегти в Excel.",
+        "budget": "1500 грн",
+        "bids_count": 4,
+        "url": "https://example.com/test",
+    }
 
-    await reply_text(update, f"Тестую AI...\nМодель: {OLLAMA_MODEL}\nURL: {OLLAMA_URL}")
+    started_at = time.monotonic()
+    from ..rules import classify_project, count_good_keyword_matches, build_rules_fallback_analysis
+    f_res = classify_project(test_project["title"], test_project["description"])
+    g_matches = count_good_keyword_matches(test_project["title"], test_project["description"])
+    analysis_data = build_rules_fallback_analysis(f_res, test_project["title"], test_project["description"], 4, "1500 грн")
+    score = int(analysis_data.get("success_chance", 0))
+    elapsed = time.monotonic() - started_at
 
-    try:
-        started_at = time.monotonic()
-        user_profile = get_setting("user_profile", USER_PROFILE)
-        raw_analysis = await asyncio.wait_for(
-            asyncio.to_thread(analyze_project_json, test_project, user_profile),
-            timeout=AI_TIMEOUT_SECONDS,
-        )
-        analysis_data = normalize_analysis(raw_analysis)
-        score = calculate_score(analysis_data)
-        analysis = format_analysis(analysis_data)
-        elapsed = time.monotonic() - started_at
-    except asyncio.TimeoutError:
-        logger.exception("AI test timed out")
-        await reply_text(update, f"AI-тест не пройшов: timeout {AI_TIMEOUT_SECONDS} сек.")
-        return
-    except Exception as error:
-        logger.exception("AI test failed")
-        await reply_text(update, f"AI-тест не пройшов:\n{error}")
-        return
+    sample_msg = format_project_message(
+        title=test_project["title"],
+        budget=test_project["budget"],
+        bids_count=test_project["bids_count"],
+        url=test_project["url"],
+        score=score,
+        analysis_data=analysis_data,
+        filter_result=f_res,
+        numeric_bids_count=4,
+        good_matches=g_matches,
+        project_dict=test_project,
+    )
 
-    await reply_text(update, f"Score: {score}/100\nЧас: {elapsed:.1f} сек\n\n{analysis}")
+    await reply_text(
+        update,
+        f"✅ Тест евристичного аналізатора ({elapsed:.4f} сек):\n\n{sample_msg}",
+    )
 
 
 async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -238,7 +240,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
     debug_stats = make_check_debug_stats()
 
     try:
-        projects = get_projects()
+        projects = await get_projects()
         logger.info("Fetched projects: %s", len(projects))
     except Exception as error:
         logger.exception("Freelancehunt API error")
@@ -303,7 +305,7 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
     logger.info("Auto check started")
 
     try:
-        projects = get_projects()
+        projects = await get_projects()
         logger.info("Fetched projects: %s", len(projects))
     except Exception as error:
         logger.exception("Auto API error")
@@ -348,6 +350,13 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         processed_count,
     )
     set_last_check_stats(len(projects), sent_count)
+
+    try:
+        cleaned = cleanup_old_projects(days=30)
+        if cleaned > 0:
+            logger.info("DB cleanup: removed %s old skipped projects", cleaned)
+    except Exception as cleanup_err:
+        logger.warning("DB cleanup error: %s", cleanup_err)
 
 
 async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -402,28 +411,18 @@ async def auto_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def health_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     database_ok, database_reason = check_database()
-    ai_setting = get_setting("AI_ANALYSIS_ENABLED")
-    if ai_setting is None:
-        ai_setting = get_setting("ai_enabled")
-    runtime_ai_enabled = setting_bool_from_env(ai_setting, AI_ANALYSIS_ENABLED)
     min_score = get_setting("min_score", str(MIN_SCORE))
 
     api_status = "OK"
     api_reason = "not checked"
 
     try:
-        projects = get_projects()
+        projects = await get_projects()
         api_reason = f"{len(projects)} projects"
     except Exception as error:
         logger.warning("Health Freelancehunt API check failed: %s", error)
         api_status = "error"
         api_reason = str(error)[:120]
-
-    try:
-        ollama_ok, ollama_reason = check_ollama_available()
-    except Exception as error:
-        ollama_ok = False
-        ollama_reason = str(error)[:120]
 
     text = f"""
 🩺 Health
@@ -434,10 +433,7 @@ TELEGRAM_CHAT_ID: {env_status(TELEGRAM_CHAT_ID)}
 FREELANCEHUNT_TOKEN: {env_status(FREELANCEHUNT_TOKEN)}
 Database: {"OK" if database_ok else "error"} ({database_reason})
 Freelancehunt API: {api_status} ({api_reason})
-AI_ANALYSIS_ENABLED: {str(runtime_ai_enabled).lower()}
-OLLAMA_URL: {OLLAMA_URL}
-OLLAMA_MODEL: {OLLAMA_MODEL}
-Ollama: {"OK" if ollama_ok else "unavailable"} ({ollama_reason})
+Аналізатор: Швидкий евристичний (без Ollama)
 AUTO_CHECK_INTERVAL_SECONDS: {AUTO_CHECK_INTERVAL_SECONDS}
 MIN_SCORE: {min_score}
 """.strip()
@@ -646,60 +642,35 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        await message.reply_text("Генерую відповідь клієнту...")
+        variant = "short"
+        if action == "rebid":
+            bid_variants = context.user_data.setdefault("bid_variants", {})
+            current_index = bid_variants.get(project_id, 0)
+            variant = BID_VARIANTS[(current_index + 1) % len(BID_VARIANTS)]
+            bid_variants[project_id] = current_index + 1
+        else:
+            context.user_data.setdefault("bid_variants", {})[project_id] = 0
 
-        try:
-            variant = "short"
-
-            if action == "rebid":
-                bid_variants = context.user_data.setdefault("bid_variants", {})
-                current_index = bid_variants.get(project_id, 0)
-                variant = BID_VARIANTS[(current_index + 1) % len(BID_VARIANTS)]
-                bid_variants[project_id] = current_index + 1
-            else:
-                context.user_data.setdefault("bid_variants", {})[project_id] = 0
-
-            bid_text = await asyncio.wait_for(
-                asyncio.to_thread(
-                    generate_bid,
-                    project,
-                    variant=variant,
-                ),
-                timeout=AI_TIMEOUT_SECONDS,
-            )
-        except asyncio.TimeoutError:
-            logger.exception("Bid generation timed out")
-            bid_text = fallback_bid(project, variant=variant)
-        except Exception as error:
-            logger.exception("Bid generation error")
-            bid_text = fallback_bid(project, variant=variant)
+        variant_labels = {
+            "short": "коротка",
+            "technical": "технічна",
+            "cautious": "обережна",
+        }
+        variant_name = variant_labels.get(variant, variant)
+        bid_text = generate_bid(project, variant=variant)
 
         await message.reply_text(
-            f"📝 Варіант ставки:\n\n{bid_text}",
+            f"📝 Варіант ставки ({variant_name}):\n\n{bid_text}",
             reply_markup=bid_keyboard(project_id),
         )
 
     elif action == "questions":
-        await message.reply_text("Генерую питання клієнту...")
-
-        try:
-            questions = await asyncio.wait_for(
-                asyncio.to_thread(generate_questions, project),
-                timeout=AI_TIMEOUT_SECONDS,
-            )
-        except asyncio.TimeoutError:
-            logger.exception("Questions generation timed out")
-            questions = fallback_questions(project)
-        except Exception as error:
-            logger.exception("Questions generation error")
-            questions = fallback_questions(project)
-
+        questions = generate_questions(project)
         reply_markup = (
             questions_keyboard(project_id)
             if is_technical_project(project)
             else unsuitable_project_keyboard(project_id)
         )
-
         await message.reply_text(
             f"❓ Що уточнити:\n\n{questions}",
             reply_markup=reply_markup,

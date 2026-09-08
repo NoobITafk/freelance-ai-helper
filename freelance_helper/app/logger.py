@@ -1,6 +1,9 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import re
 from pathlib import Path
+
+from .config import PROJECT_ROOT
 
 
 class TelegramTokenFilter(logging.Filter):
@@ -12,10 +15,16 @@ class TelegramTokenFilter(logging.Filter):
 
 
 def setup_logger():
-    Path("logs").mkdir(exist_ok=True)
+    log_dir = PROJECT_ROOT / "logs"
+    log_dir.mkdir(exist_ok=True)
     token_filter = TelegramTokenFilter()
     handlers = [
-        logging.FileHandler("logs/bot.log", encoding="utf-8"),
+        RotatingFileHandler(
+            log_dir / "bot.log",
+            maxBytes=5 * 1024 * 1024,
+            backupCount=3,
+            encoding="utf-8",
+        ),
         logging.StreamHandler(),
     ]
 

@@ -1,36 +1,33 @@
 # Freelance AI Helper
 
-**Freelance AI Helper** — це Telegram-бот для пошуку, фільтрації та AI-аналізу фриланс-проєктів із Freelancehunt.
+**Freelance AI Helper** — це легкий та швидкий Telegram-бот для пошуку, фільтрації та аналізу фриланс-проєктів із Freelancehunt.
 
-Бот отримує нові замовлення через Freelancehunt API, аналізує їх локально через Ollama, виставляє score, надсилає відповідні проєкти в Telegram і допомагає згенерувати ставку для клієнта.
+Бот отримує нові замовлення через Freelancehunt API, аналізує їх через оптимізований евристичний рушій (визначає стек, складність, ризики та бюджет), виставляє score і миттєво надсилає релевантні проєкти у стислому та зрозумілому форматі в Telegram. Працює автономно на будь-якому VPS без важких локальних нейромереж.
 
 ---
 
 ## Можливості
 
-- отримання проєктів із Freelancehunt API;
-- автоматична перевірка нових проєктів;
-- AI-аналіз через локальну LLM-модель Ollama;
-- score-система для оцінки проєкту;
-- фільтрація неактуальних або ризикованих задач;
-- Telegram-сповіщення;
-- кнопки для взаємодії з проєктом;
-- генерація ставки для клієнта;
-- генерація уточнюючих питань;
-- збереження проєктів у SQLite;
-- good/bad/skip система для простого навчання бота;
-- логування роботи в `logs/bot.log`.
+- отримання проєктів із Freelancehunt API (асинхронно через `httpx`);
+- автоматична перевірка нових проєктів у фоні;
+- швидкий аналіз стеку (Python, FastAPI, Telegram, React, Supabase, Parsing тощо);
+- score-система оцінки релевантності та ризиків;
+- захист сильних технічних збігів від пропуску;
+- короткі та зрозумілі сповіщення в Telegram (читаються за 3 секунди);
+- інтерактивні кнопки: генерація ставок (коротка, технічна, обережна), уточнюючі питання;
+- збереження проєктів у SQLite з ротацією старих даних;
+- ротація логів (`RotatingFileHandler`);
+- ready-to-deploy systemd сервіс для VPS.
 
 ---
 
 ## Технології
 
-- Python
-- python-telegram-bot
+- Python 3.10+
+- python-telegram-bot (async)
 - Freelancehunt API
-- Ollama
+- httpx
 - SQLite
-- requests
 - python-dotenv
 
 ---
@@ -44,6 +41,9 @@ freelance-ai-helper/
 ├─ requirements.txt
 ├─ data/
 ├─ logs/
+├─ deploy/
+│  ├─ freelance-helper.service
+│  └─ setup_vps.sh
 ├─ freelance_helper/
 │  └─ app/
 │     ├─ bot/
@@ -143,28 +143,19 @@ python -m pip install -r requirements.txt
 
 ---
 
-## Ollama
+## Формат сповіщень
 
-Бот використовує локальну LLM-модель через Ollama.
-
-### Встановлення Ollama
-
-Офіційний сайт:
+Сповіщення про нові замовлення оптимізовані для швидкого читання зі смартфона (5-7 рядків, максимум користі):
 
 ```text
-https://ollama.com
-```
+🚀 FastAPI backend для особистого кабінету
 
-### Завантаження моделі
+💰 Бюджет: 9000 грн  •  👥 Ставок: 7  •  🎯 Score: 80/100
+🛠 Стек: Backend / API (FastAPI, PostgreSQL, API)
+💡 Чому підходить: Збіг за ключовими словами: fastapi, postgresql, api
+⚠️ Ризик: помірний (4/10)
 
-```bash
-ollama pull qwen2.5:7b
-```
-
-Для слабшого ноутбука можна використати легшу модель:
-
-```bash
-ollama pull qwen2.5:3b
+🔗 https://freelancehunt.com/project/...
 ```
 
 ---
@@ -231,13 +222,51 @@ USER_PROFILE="Можу виконувати невеликі Python-скрипт
 
 ---
 
-## Запуск
+## Запуск локально
 
 ```bash
 python -m freelance_helper.app.main
 ```
 
 Після запуску бот автоматично почне перевіряти проєкти, якщо в `.env` вказаний `TELEGRAM_CHAT_ID`.
+
+---
+
+## Деплой на VPS (systemd)
+
+### 1. Клонування репозиторію та запуск скрипту встановлення
+
+```bash
+git clone https://github.com/NoobITafk/freelance-ai-helper.git /opt/freelance-ai-helper
+cd /opt/freelance-ai-helper
+chmod +x deploy/setup_vps.sh
+./deploy/setup_vps.sh
+```
+
+### 2. Заповнення `.env`
+Переконайся, що файл `/opt/freelance-ai-helper/.env` містить валідні токени:
+```bash
+nano /opt/freelance-ai-helper/.env
+```
+
+### 3. Налаштування та запуск системної служби
+
+```bash
+# Скопіювати systemd unit-файл
+sudo cp deploy/freelance-helper.service /etc/systemd/system/
+
+# Перезавантажити конфігурацію systemd
+sudo systemctl daemon-reload
+
+# Увімкнути автозапуск при завантаженні сервера і запустити бота
+sudo systemctl enable --now freelance-helper
+
+# Перевірити статус
+sudo systemctl status freelance-helper
+
+# Перегляд логів у реальному часі
+journalctl -u freelance-helper -f
+```
 
 ---
 
@@ -273,19 +302,17 @@ python -m compileall freelance_helper
 |---|---|
 | `/start` | запуск бота і показ chat_id |
 | `/help` | список команд |
-| `/health` | діагностика: токени, SQLite, Freelancehunt API, Ollama, AI, MIN_SCORE |
-| `/check` | перевірити проєкти вручну + статистика: отримано, оброблено, вже бачені, AI, fallback, score, конкуренція, надіслано |
+| `/health` | діагностика: токени, SQLite, Freelancehunt API, MIN_SCORE |
+| `/check` | перевірити проєкти вручну + статистика |
 | `/auto_on` | увімкнути автопошук у поточному чаті |
 | `/auto_off` | вимкнути автопошук у поточному чаті |
 | `/stats` | статистика оцінок і налаштувань |
 | `/settings` | показати мінімальний score |
 | `/settings 35` | змінити мінімальний score |
 | `/threshold 35` | те саме, що `/settings 35` |
-| `/profile` | показати профіль виконавця для AI |
+| `/profile` | показати профіль виконавця |
 | `/profile_set текст` | змінити профіль виконавця |
-| `/ai_on` | увімкнути AI (`AI_ANALYSIS_ENABLED=true` у settings) |
-| `/ai_off` | вимкнути AI (`AI_ANALYSIS_ENABLED=false`, fallback rules) |
-| `/test_ai` | тест Ollama на прикладі проєкту |
+| `/test_ai` | швидкий тест аналізатора на тестовому проєкті |
 | `/recent` | останні проєкти з бази (sent/skipped) |
 | `/last` | alias для `/recent` |
 | `/why project_id` | збережений аналіз проєкту за ID |

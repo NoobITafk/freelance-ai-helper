@@ -1,11 +1,11 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from .config import MIN_SCORE
+from .config import MIN_SCORE, PROJECT_ROOT
 
-DB_PATH = Path("data/projects.db")
+DB_PATH = PROJECT_ROOT / "data" / "projects.db"
 DEFAULT_MIN_SCORE = str(MIN_SCORE)
 ALLOWED_RATINGS = {"great", "good", "maybe", "bad", "not_mine", "skip"}
 
@@ -262,3 +262,18 @@ def get_good_bad_keywords() -> tuple[list[tuple[str, str]], list[tuple[str, str]
         bad = [(row["title"], row["description"]) for row in bad_rows]
 
         return good, bad
+
+
+def cleanup_old_projects(days: int = 30) -> int:
+    cutoff_date = (datetime.now() - timedelta(days=days)).isoformat(timespec="seconds")
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """
+            DELETE FROM projects
+            WHERE created_at < ?
+              AND user_rating IS NULL
+              AND status = 'skipped'
+            """,
+            (cutoff_date,),
+        )
+        return cursor.rowcount

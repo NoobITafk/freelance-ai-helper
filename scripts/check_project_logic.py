@@ -13,6 +13,15 @@ from freelance_helper.app.ai_analyzer import (
     is_technical_project,
     project_type,
 )
+from freelance_helper.app.rules import (
+    build_rules_fallback_analysis,
+    classify_project,
+    count_good_keyword_matches,
+)
+from freelance_helper.app.services.project_service import (
+    format_project_message,
+    protect_strong_technical_match,
+)
 
 
 @dataclass(frozen=True)
@@ -58,6 +67,73 @@ CASES = [
             "url": "https://example.com/wordpress",
         },
         expected_type="wordpress",
+        expected_technical=True,
+    ),
+    Case(
+        name="Backend API",
+        project={
+            "title": "FastAPI backend для особистого кабінету",
+            "description": "Потрібно зробити API, авторизацію, ролі користувачів, PostgreSQL і деплой.",
+            "budget": "9000 грн",
+            "bids_count": 7,
+            "url": "https://example.com/backend-api",
+        },
+        expected_type="backend",
+        expected_technical=True,
+    ),
+    Case(
+        name="AI integration",
+        project={
+            "title": "Інтеграція ChatGPT в Telegram-бота",
+            "description": "Потрібно підключити OpenAI API, налаштувати промпт і зберігати історію відповідей.",
+            "budget": "7000 грн",
+            "bids_count": 5,
+            "url": "https://example.com/ai-bot",
+        },
+        expected_type="telegram_bot",
+        expected_technical=True,
+    ),
+    Case(
+        name="Frontend React",
+        project={
+            "title": "React dashboard по Figma",
+            "description": "Потрібно зверстати dashboard, підключити API, зробити стани loading/error і адаптив.",
+            "budget": "8000 грн",
+            "bids_count": 9,
+            "url": "https://example.com/react-dashboard",
+        },
+        expected_type="frontend",
+        expected_technical=True,
+    ),
+    Case(
+        name="Short React Django",
+        project={
+            "title": "Допрацювання проєкту react + django",
+            "description": (
+                "Допрацювання сайту для онлайн-школи, завдання на пару годин. "
+                "Шукаю розробника зі стеком react + django"
+            ),
+            "budget": "1500 грн",
+            "bids_count": 3,
+            "url": "https://example.com/react-django",
+        },
+        expected_type="backend",
+        expected_technical=True,
+    ),
+    Case(
+        name="Next Supabase AI CRM",
+        project={
+            "title": "Доработка существующего Next.js/Supabase проекта: офферы, CRM, аналитика, AI-чат",
+            "description": (
+                "Стек проекта: Next.js / React, Supabase / PostgreSQL, Vercel, "
+                "API integrations, CSV/JSON import, AI-чат / OpenAI API. "
+                "Нужно доработать офферы, CRM-слой, аналитику и работать с существующим кодом."
+            ),
+            "budget": "Не вказано",
+            "bids_count": 3,
+            "url": "https://example.com/next-supabase-ai-crm",
+        },
+        expected_type="ai_integration",
         expected_technical=True,
     ),
     Case(
@@ -161,6 +237,7 @@ CASES = [
 
 def main() -> int:
     failed = 0
+    total_checks = len(CASES) + 2
 
     for case in CASES:
         actual_type = project_type(case.project)
@@ -184,8 +261,116 @@ def main() -> int:
         print("questions:")
         print(fallback_questions(case.project))
 
+    filter_result = classify_project(
+        "Допрацювання проєкту react + django",
+        "Шукаю розробника зі стеком react + django",
+        "Python, django, javascript, React",
+    )
+    good_matches = count_good_keyword_matches(
+        "Допрацювання проєкту react + django",
+        "Шукаю розробника зі стеком react + django",
+        "Python, django, javascript, React",
+    )
+    protected = protect_strong_technical_match(
+        {
+            "fit": "no",
+            "summary": "Помилково відхилено",
+            "difficulty": 3,
+            "risk": 5,
+            "success_chance": 60,
+            "competition": "medium",
+            "budget_ok": "yes",
+            "should_apply": False,
+            "reason": "AI помилився",
+            "questions": [],
+        },
+        filter_result,
+        good_matches,
+    )
+    if protected["fit"] != "partial" or not protected["should_apply"]:
+        failed += 1
+        print("=" * 80)
+        print("Strong technical protection: FAIL")
+        print(protected)
+    else:
+        print("=" * 80)
+        print("Strong technical protection: OK")
+
+    protected_fullstack = protect_strong_technical_match(
+        {
+            "fit": "no",
+            "summary": "Складний full-stack проєкт",
+            "difficulty": 7,
+            "risk": 6,
+            "success_chance": 40,
+            "competition": "medium",
+            "budget_ok": "unknown",
+            "should_apply": False,
+            "reason": "AI вважає ризик високим",
+            "questions": [],
+        },
+        classify_project(
+            "Next.js/Supabase CRM AI-чат",
+            "Next.js React Supabase PostgreSQL OpenAI API CRM",
+            "supabase react next.js postgresql",
+        ),
+        count_good_keyword_matches(
+            "Next.js/Supabase CRM AI-чат",
+            "Next.js React Supabase PostgreSQL OpenAI API CRM",
+            "supabase react next.js postgresql",
+        ),
+    )
+    if not protected_fullstack.get("manual_review"):
+        failed += 1
+        print("=" * 80)
+        print("Full-stack technical protection: FAIL")
+        print(protected_fullstack)
+    else:
+        print("=" * 80)
+    total_checks += 1
+    msg_project = {
+        "title": "FastAPI backend для особистого кабінету",
+        "description": "Потрібно зробити API, авторизацію, ролі користувачів, PostgreSQL і деплой.",
+        "budget": "9000 грн",
+        "bids_count": 7,
+        "url": "https://example.com/backend-api",
+    }
+    msg_filter = classify_project(msg_project["title"], msg_project["description"])
+    msg_matches = count_good_keyword_matches(msg_project["title"], msg_project["description"])
+    msg_analysis = build_rules_fallback_analysis(
+        msg_filter,
+        msg_project["title"],
+        msg_project["description"],
+        7,
+        msg_project["budget"],
+    )
+    formatted_msg = format_project_message(
+        title=msg_project["title"],
+        budget=msg_project["budget"],
+        bids_count=msg_project["bids_count"],
+        url=msg_project["url"],
+        score=80,
+        analysis_data=msg_analysis,
+        filter_result=msg_filter,
+        numeric_bids_count=7,
+        good_matches=msg_matches,
+        project_dict=msg_project,
+    )
+    msg_lines = [line for line in formatted_msg.split("\n") if line.strip()]
+    if len(msg_lines) > 8 or len(formatted_msg) > 600 or "Fallback rules" in formatted_msg:
+        failed += 1
+        print("=" * 80)
+        print("Concise message format: FAIL")
+        print(f"Lines count: {len(msg_lines)}, total chars: {len(formatted_msg)}")
+        print(formatted_msg)
+    else:
+        print("=" * 80)
+        print("Concise message format: OK")
+        print("Sample message output:")
+        print(formatted_msg)
+
     print("=" * 80)
-    print(f"Result: {len(CASES) - failed}/{len(CASES)} passed")
+    print(f"Result: {total_checks - failed}/{total_checks} passed")
     return 1 if failed else 0
 
 

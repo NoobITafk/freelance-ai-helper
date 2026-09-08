@@ -1,4 +1,4 @@
-import requests
+import httpx
 
 from .config import FREELANCEHUNT_TOKEN
 from .logger import logger
@@ -10,7 +10,7 @@ class FreelancehuntAPIError(RuntimeError):
     pass
 
 
-def get_projects():
+async def get_projects(timeout: float = 20.0) -> list[dict]:
     if not FREELANCEHUNT_TOKEN:
         logger.error("Freelancehunt API: FREELANCEHUNT_TOKEN missing in .env")
         raise FreelancehuntAPIError(
@@ -23,14 +23,19 @@ def get_projects():
     }
 
     try:
-        response = requests.get(API_URL, headers=headers, timeout=20)
-    except requests.RequestException as error:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.get(API_URL, headers=headers)
+    except httpx.RequestError as error:
         logger.exception("Freelancehunt API request failed")
         raise FreelancehuntAPIError(
             f"Не вдалося підключитися до Freelancehunt API: {error}"
         ) from error
 
-    if not response.ok:
+    if response.status_code == 429:
+        logger.warning("Freelancehunt API rate limit exceeded (HTTP 429)")
+        raise FreelancehuntAPIError("Freelancehunt API ліміт запитів вичерпано (HTTP 429). Зачекайте хвилину.")
+
+    if not response.is_success:
         error_text = response.text[:300].replace("\n", " ").strip()
         logger.error(
             "Freelancehunt API HTTP error | status=%s | body=%s",

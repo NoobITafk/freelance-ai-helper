@@ -40,6 +40,35 @@ LOCK_PATH = Path(__file__).resolve().parents[2] / "data" / "bot.lock"
 _lock_file = None
 
 
+def is_process_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+    return True
+
+
+def remove_stale_lock() -> bool:
+    try:
+        pid_text = LOCK_PATH.read_text(encoding="utf-8").strip()
+        pid = int(pid_text)
+    except (OSError, ValueError):
+        pid = 0
+
+    if is_process_running(pid):
+        return False
+
+    LOCK_PATH.unlink(missing_ok=True)
+    logger.warning("Removed stale bot lock: %s", LOCK_PATH)
+    return True
+
+
 def acquire_single_instance_lock() -> None:
     global _lock_file
 
@@ -51,10 +80,13 @@ def acquire_single_instance_lock() -> None:
         if error.errno != errno.EEXIST:
             raise
 
-        raise RuntimeError(
-            f"Бот уже запущений або залишився lock-файл: {LOCK_PATH}. "
-            "Якщо бот точно зупинений, видали цей файл і запусти ще раз."
-        ) from error
+        if remove_stale_lock():
+            fd = os.open(LOCK_PATH, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        else:
+            raise RuntimeError(
+                f"Бот уже запущений або залишився lock-файл: {LOCK_PATH}. "
+                "Якщо бот точно зупинений, видали цей файл і запусти ще раз."
+            ) from error
 
     _lock_file = os.fdopen(fd, "w", encoding="utf-8")
     _lock_file.write(str(os.getpid()))

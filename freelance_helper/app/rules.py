@@ -11,6 +11,19 @@ GOOD_KEYWORDS = [
     "fastapi",
     "django",
     "flask",
+    "webhook",
+    "вебхук",
+    "selenium",
+    "playwright",
+    "beautifulsoup",
+    "bs4",
+    "requests",
+    "pandas",
+    "openai",
+    "chatgpt",
+    "llm",
+    "ai",
+    "штучний інтелект",
     "parsing",
     "парсинг",
     "scraping",
@@ -23,8 +36,15 @@ GOOD_KEYWORDS = [
     "sqlite",
     "postgresql",
     "mysql",
+    "mongodb",
+    "firebase",
     "sql",
+    "database",
     "база даних",
+    "бд",
+    "авторизація",
+    "authorization",
+    "authentication",
     "excel",
     "google sheets",
     "google sheet",
@@ -45,8 +65,19 @@ GOOD_KEYWORDS = [
     "скрипт",
     "script",
     "node",
+    "node.js",
+    "next.js",
+    "nextjs",
     "react",
     "vue",
+    "supabase",
+    "vercel",
+    "render",
+    "dashboard",
+    "адмін",
+    "адмінка",
+    "кабінет",
+    "crm",
     "bootstrap",
 ]
 
@@ -67,7 +98,6 @@ HARD_BAD_KEYWORDS = [
     "facebook app review",
     "highload",
     "high load",
-    "crm",
     "erp",
     "1с",
     "бухгалтерія",
@@ -141,14 +171,17 @@ class FilterResult:
 def keyword_in_text(word: str, text_lower: str) -> bool:
     keyword = word.lower()
 
+    if re.fullmatch(r"[a-z0-9_+#.-]+", keyword):
+        return re.search(rf"(?<![a-z0-9_]){re.escape(keyword)}(?![a-z0-9_])", text_lower) is not None
+
     if len(keyword) <= 3:
         return re.search(rf"\b{re.escape(keyword)}\b", text_lower) is not None
 
     return keyword in text_lower
 
 
-def classify_project(title: str, description: str) -> FilterResult:
-    text = f"{title or ''} {description or ''}"
+def classify_project(title: str, description: str, extra_text: str = "") -> FilterResult:
+    text = f"{title or ''} {description or ''} {extra_text or ''}"
     text_lower = text.lower()
 
     hard_bad = [word for word in HARD_BAD_KEYWORDS if keyword_in_text(word, text_lower)]
@@ -193,8 +226,12 @@ def basic_filter(title: str, description: str) -> bool:
     return classify_project(title, description).category != "bad"
 
 
-def count_good_keyword_matches(title: str, description: str) -> list[str]:
-    text_lower = f"{title or ''} {description or ''}".lower()
+def count_good_keyword_matches(
+    title: str,
+    description: str,
+    extra_text: str = "",
+) -> list[str]:
+    text_lower = f"{title or ''} {description or ''} {extra_text or ''}".lower()
     return [word for word in GOOD_KEYWORDS if keyword_in_text(word, text_lower)]
 
 

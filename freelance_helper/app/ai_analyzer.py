@@ -2,13 +2,14 @@ import json
 import re
 from pathlib import Path
 from typing import Any
+import httpx
 import requests
 
-from .config import OLLAMA_MODEL, OLLAMA_URL, USER_PROFILE
+from .config import OLLAMA_MODEL, OLLAMA_URL, PROJECT_ROOT, USER_PROFILE
 
-ANALYSIS_NUM_PREDICT = 350
+ANALYSIS_NUM_PREDICT = 500
 TEXT_NUM_PREDICT = 500
-AI_RAW_LOG_PATH = Path("logs/ai_raw.log")
+AI_RAW_LOG_PATH = PROJECT_ROOT / "logs" / "ai_raw.log"
 BID_VARIANTS = ("short", "technical", "cautious")
 
 TECHNICAL_KEYWORDS = {
@@ -18,15 +19,37 @@ TECHNICAL_KEYWORDS = {
     "bot",
     "бот",
     "api",
+    "fastapi",
+    "django",
+    "flask",
+    "backend",
+    "webhook",
+    "вебхук",
     "парсинг",
     "parsing",
     "parser",
     "scraping",
+    "selenium",
+    "playwright",
+    "beautifulsoup",
+    "bs4",
+    "requests",
+    "pandas",
     "html",
     "css",
     "wordpress",
     "javascript",
+    "typescript",
+    "node",
+    "node.js",
+    "react",
+    "vue",
     "sqlite",
+    "postgresql",
+    "mysql",
+    "mongodb",
+    "database",
+    "база даних",
     "google sheets",
     "google sheet",
     "excel",
@@ -38,6 +61,15 @@ TECHNICAL_KEYWORDS = {
     "form",
     "landing",
     "лендінг",
+    "openai",
+    "chatgpt",
+    "llm",
+    "ai",
+    "штучний інтелект",
+    "адмін",
+    "адмінка",
+    "dashboard",
+    "crm",
 }
 
 NON_TECHNICAL_KEYWORDS = {
@@ -68,16 +100,17 @@ NON_TECHNICAL_KEYWORDS = {
 }
 
 
-def check_ollama_available(timeout: float = 5) -> tuple[bool, str]:
+def check_ollama_available(timeout: float = 5.0) -> tuple[bool, str]:
     base_url = OLLAMA_URL.rsplit("/api/", 1)[0]
     tags_url = f"{base_url}/api/tags"
 
     try:
-        response = requests.get(tags_url, timeout=timeout)
-    except requests.RequestException as error:
+        with httpx.Client(timeout=timeout) as client:
+            response = client.get(tags_url)
+    except (httpx.RequestError, requests.RequestException, Exception) as error:
         return False, str(error)
 
-    if response.ok:
+    if response.is_success:
         return True, "OK"
 
     return False, f"HTTP {response.status_code}"
@@ -87,6 +120,7 @@ def ask_ollama(
     prompt: str,
     temperature: float = 0.3,
     num_predict: int = 500,
+    timeout: float = 120.0,
 ) -> str:
     payload = {
         "model": OLLAMA_MODEL,
@@ -98,15 +132,23 @@ def ask_ollama(
         },
     }
 
-    response = requests.post(OLLAMA_URL, json=payload, timeout=120)
-    response.raise_for_status()
-
-    data = response.json()
-    return str(data.get("response", "")).strip()
+    with httpx.Client(timeout=timeout) as client:
+        response = client.post(OLLAMA_URL, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        return str(data.get("response", "")).strip()
 
 
 def log_raw_ai_response(task: str, response: str) -> None:
     AI_RAW_LOG_PATH.parent.mkdir(exist_ok=True)
+
+    try:
+        if AI_RAW_LOG_PATH.is_file() and AI_RAW_LOG_PATH.stat().st_size > 10 * 1024 * 1024:
+            backup_path = AI_RAW_LOG_PATH.with_suffix(".log.1")
+            backup_path.unlink(missing_ok=True)
+            AI_RAW_LOG_PATH.rename(backup_path)
+    except OSError:
+        pass
 
     with AI_RAW_LOG_PATH.open("a", encoding="utf-8") as file:
         file.write(f"\n--- {task} ---\n")
@@ -145,7 +187,7 @@ def normalize_analysis(data: dict) -> dict:
     if fit not in {"yes", "partial", "no"}:
         fit = "no"
 
-    if competition not in {"low", "medium", "high", "unknown"}:
+    if competition not in {"low", "medium", "high", "very_high", "unknown"}:
         competition = "unknown"
 
     if budget_ok not in {"yes", "partial", "no", "unknown"}:
@@ -185,19 +227,26 @@ def analyze_project_json(project_text: str, user_profile: str | None = None) -> 
 Поверни тільки JSON без пояснень.
 Оцінюй не занадто суворо: якщо junior з AI може розібратися і виконати задачу,
 став fit="partial" або "yes", але чесно піднімай risk/difficulty.
+Дивись на теги/категорії так само уважно, як на опис.
+Визнач:
+- чи задача справді технічна для профілю виконавця;
+- який очікуваний результат треба здати клієнту;
+- які доступи, API, дані, макети або приклади потрібні;
+- що може зірвати оцінку термінів/ціни.
+Питання мають бути конкретні до цього проєкту, а не загальні.
 
 Формат:
 {{
   "fit": "yes/partial/no",
-  "summary": "коротка суть завдання",
+  "summary": "коротка суть завдання і очікуваний результат",
   "difficulty": число від 1 до 10,
   "risk": число від 1 до 10,
   "success_chance": число від 0 до 100,
-  "competition": "low/medium/high/unknown",
+  "competition": "low/medium/high/very_high/unknown",
   "budget_ok": "yes/partial/no/unknown",
   "should_apply": true або false,
-  "reason": "коротко чому",
-  "questions": ["питання 1", "питання 2", "питання 3"]
+  "reason": "коротко чому підходить або не підходить",
+  "questions": ["конкретне питання 1", "конкретне питання 2", "конкретне питання 3", "конкретне питання 4"]
 }}
 """
 
@@ -361,14 +410,104 @@ def is_technical_project(project: dict) -> bool:
     return non_technical_reason(project) is None and has_technical_keyword(text)
 
 
+def project_analysis_questions(project: dict) -> list[str]:
+    analysis = str(project.get("analysis") or "")
+    marker = "❓ Що уточнити:"
+
+    if marker not in analysis:
+        return []
+
+    question_block = analysis.split(marker, 1)[1].split("🧾", 1)[0]
+    questions = []
+
+    for line in question_block.splitlines():
+        cleaned = re.sub(r"^[-*\d.)\s]+", "", line).strip()
+        if cleaned and "немає уточнень" not in cleaned.lower():
+            questions.append(cleaned)
+
+    return questions[:5]
+
+
+def project_specific_questions(project: dict, base_questions: list[str], limit: int = 5) -> list[str]:
+    text = project_text(project)
+    questions = list(project_analysis_questions(project))
+
+    def signal_in_text(keyword: str) -> bool:
+        if keyword in {"ai", "api", "llm"}:
+            return contains_keyword(text, keyword)
+
+        return keyword in text
+
+    signal_questions = [
+        (
+            ("авторизац", "login", "auth", "кабінет"),
+            "які ролі користувачів, авторизація та права доступу потрібні?",
+        ),
+        (
+            ("адмін", "admin"),
+            "які дії має виконувати адмін і які дані потрібно бачити в адмін-частині?",
+        ),
+        (
+            ("dashboard", "дашборд", "панель"),
+            "які показники, таблиці або графіки потрібно показувати на дашборді?",
+        ),
+        (
+            ("deploy", "деплой", "сервер", "hosting", "хостинг"),
+            "де потрібно розгорнути рішення і чи є доступи до сервера або хостингу?",
+        ),
+        (
+            ("api", "webhook", "вебхук", "інтеграц"),
+            "чи є документація API, тестові ключі та приклади потрібних запитів?",
+        ),
+        (
+            ("база", "database", "sqlite", "postgres", "mysql", "mongodb"),
+            "які дані потрібно зберігати і чи є готова структура бази даних?",
+        ),
+        (
+            ("openai", "chatgpt", "llm", "ai", "штучний інтелект"),
+            "який AI-сервіс або модель потрібно використовувати і які обмеження по якості відповіді?",
+        ),
+        (
+            ("cron", "schedule", "автоматично", "регулярно", "щодня"),
+            "як часто має запускатися автоматизація і що робити при помилках?",
+        ),
+    ]
+
+    for keywords, question in signal_questions:
+        if any(signal_in_text(keyword) for keyword in keywords):
+            questions.append(question)
+
+    questions.extend(base_questions)
+
+    unique_questions = []
+    seen = set()
+
+    for question in questions:
+        normalized = question.strip().lower()
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            unique_questions.append(question.strip())
+
+    return unique_questions[:limit]
+
+
 def project_type(project: dict) -> str:
     text = f"{project.get('title', '')} {project.get('description', '')}".lower()
 
     if non_technical_reason(project):
         return "non_technical"
 
-    if any(word in text for word in ["telegram", "телеграм", "bot", "бот"]):
+    if any(contains_keyword(text, word) for word in ["telegram", "телеграм", "bot", "бот"]):
         return "telegram_bot"
+
+    if any(word in text for word in ["openai", "chatgpt", "llm", "ai", "штучний інтелект"]):
+        return "ai_integration"
+
+    if any(word in text for word in ["fastapi", "django", "flask", "backend"]):
+        return "backend"
+
+    if any(word in text for word in ["react", "vue", "next.js", "frontend"]):
+        return "frontend"
 
     if "wordpress" in text or "вордпрес" in text:
         return "wordpress"
@@ -424,6 +563,7 @@ def project_context(project: dict) -> str:
         f"score: {project.get('score') if project.get('score') is not None else 'Невідомо'}",
         f"why_fit: {project.get('reason') or 'Не вказано'}",
         f"risks: {project.get('analysis') or 'Не вказано'}",
+        f"saved_questions: {'; '.join(project_analysis_questions(project)) or 'Не вказано'}",
         f"is_technical_project: {str(is_technical_project(project)).lower()}",
         f"project_type: {project_type(project)}",
     ]
@@ -442,6 +582,9 @@ def preliminary_bid_estimate(project: dict) -> str:
 
     estimates = {
         "telegram_bot": "Орієнтовно: 3-7 днів, від 4000-12000 грн залежно від сценаріїв, бази даних, адмін-функцій і деплою.",
+        "ai_integration": "Орієнтовно: 2-6 днів, від 4000-12000 грн залежно від AI-сервісу, промптів, інтеграції та тестування якості.",
+        "backend": "Орієнтовно: 3-8 днів, від 5000-15000 грн залежно від API, бази даних, авторизації та деплою.",
+        "frontend": "Орієнтовно: 2-6 днів, від 3000-10000 грн залежно від макета, станів інтерфейсу, адаптиву та інтеграції з API.",
         "wordpress": "Орієнтовно: 1-4 дні, від 1500-6000 грн залежно від кількості правок, доступів і теми.",
         "parsing": "Орієнтовно: 2-5 днів, від 3000-9000 грн залежно від джерела, захисту сайту, полів і формату результату.",
         "html_css": "Орієнтовно: 1-5 днів, від 2000-8000 грн залежно від кількості сторінок, макета, адаптиву і форм.",
@@ -473,6 +616,36 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             "чи потрібна база даних?",
             "чи потрібні адмін-команди та логування?",
             "де бот має бути розгорнутий?",
+        ]
+
+    elif kind == "ai_integration":
+        task = "інтеграцією AI-сервісу або автоматизацією на основі LLM"
+        stack = "Python, API потрібної AI-моделі, промпти, валідацію відповідей і логування"
+        questions = [
+            "який AI-сервіс або модель потрібно використовувати?",
+            "які вхідні дані й очікуваний формат відповіді?",
+            "чи є приклади хороших і поганих відповідей?",
+            "чи потрібне збереження історії або логування?",
+        ]
+
+    elif kind == "backend":
+        task = "невеликою backend-розробкою"
+        stack = "Python/FastAPI або Django, базу даних, API-ендпоінти, логування та деплой"
+        questions = [
+            "які endpoints або сценарії потрібно реалізувати?",
+            "чи потрібна авторизація та ролі користувачів?",
+            "яка база даних або структура даних очікується?",
+            "чи є вимоги до деплою та документації API?",
+        ]
+
+    elif kind == "frontend":
+        task = "frontend-розробкою або правками інтерфейсу"
+        stack = "React/Vue або чистий HTML/CSS/JavaScript залежно від поточного проєкту"
+        questions = [
+            "чи є Figma або приклад бажаного інтерфейсу?",
+            "які стани екранів і адаптив потрібні?",
+            "чи є готовий backend/API для інтеграції?",
+            "у якому репозиторії або стеку треба вносити правки?",
         ]
 
     elif kind == "wordpress":
@@ -534,6 +707,8 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
             "у якому форматі потрібно передати готову роботу?",
         ]
 
+    questions = project_specific_questions(project, questions)
+
     if variant == "technical":
         intro = f"Добрий день. Можу допомогти з {task}."
         approach = f"Технічно бачу реалізацію через {stack}."
@@ -571,6 +746,27 @@ def fallback_questions(project: dict) -> str:
             "який AI/API-сервіс потрібно використовувати, якщо він потрібен?",
             "де бот має бути розгорнутий?",
             "чи потрібне логування помилок або дій користувачів?",
+        ],
+        "ai_integration": [
+            "який AI-сервіс або модель потрібно використовувати?",
+            "які вхідні дані і який формат відповіді потрібен?",
+            "чи є приклади правильних відповідей або тестові кейси?",
+            "чи потрібно зберігати історію запитів і відповідей?",
+            "які обмеження по швидкості, вартості або приватності даних?",
+        ],
+        "backend": [
+            "які endpoints або бізнес-сценарії потрібно реалізувати?",
+            "чи потрібна авторизація, ролі користувачів або адмін-частина?",
+            "які сутності потрібно зберігати в базі даних?",
+            "чи є вимоги до деплою, логування та документації API?",
+            "чи є приклади запитів/відповідей або готове ТЗ?",
+        ],
+        "frontend": [
+            "чи є Figma або приклад потрібного інтерфейсу?",
+            "які екрани, стани і брейкпоінти адаптиву потрібні?",
+            "чи є готовий backend/API для інтеграції?",
+            "у якому стеку або репозиторії потрібно вносити правки?",
+            "чи потрібна підтримка форм, валідації або авторизації?",
         ],
         "wordpress": [
             "чи є доступ до адмінки WordPress і хостингу?",
@@ -648,6 +844,7 @@ def fallback_questions(project: dict) -> str:
     else:
         questions = question_sets.get(kind, question_sets["general"])
 
+    questions = project_specific_questions(project, questions, limit=6)
     numbered = "\n".join(f"{index}. {question}" for index, question in enumerate(questions, 1))
 
     return (
@@ -660,97 +857,11 @@ def fallback_questions(project: dict) -> str:
 def generate_bid(project: dict, user_profile: str | None = None, variant: str = "short") -> str:
     if not is_technical_project(project):
         return unsuitable_project_text(project)
-
-    variant_instruction = {
-        "short": "Коротка ставка: найважливіше, без зайвих деталей.",
-        "technical": "Більш технічна ставка: коротко поясни стек або етапи реалізації.",
-        "cautious": "Обережна ставка: менше обіцянок, більше уточнюючих питань.",
-    }.get(variant, "Коротка ставка: найважливіше, без зайвих деталей.")
-
-    prompt = f"""
-Напиши ставку клієнту на Freelancehunt.
-
-Контекст проєкту:
-{project_context(project)}
-
-Варіант:
-{variant_instruction}
-
-Вимоги до ставки:
-- відповідай мовою проєкту, не змішуй мови;
-- 600-1200 символів;
-- тон впевнений, нейтральний, без перебільшень;
-- не згадуй, що виконавець студент, навчається, новачок;
-- не згадуй AI/vibe coding як спосіб виконання;
-- не вигадуй досвід, клієнтів або факти;
-- не пиши "маю 5 років досвіду", "гарантую результат", "робив десятки таких проєктів";
-- використовуй формулювання на кшталт "Можу допомогти", "Попередньо бачу реалізацію через...", "Перед точною оцінкою потрібно уточнити...";
-- обов'язково вкажи попередню ціну і термін виконання у форматі "Орієнтовно: X днів, Y грн";
-- якщо бюджет проєкту вказаний, врахуй його і не пропонуй суму набагато вищу без пояснення;
-- якщо опис короткий, все одно дай обережну вилку ціни й терміну, а потім напиши, що фінальна оцінка залежить від відповідей;
-- ціна і термін мають звучати реалістично для junior-виконавця, без демпінгу і без завищених обіцянок;
-- якщо опис короткий, дай більше питань і менше обіцянок.
-- якщо is_technical_project=false або project_type=non_technical, не генеруй ставку розробника; поверни коротку рекомендацію пропустити проєкт.
-
-Структура:
-1. Привітання.
-2. Що саме можна зробити по цьому проєкту.
-3. Попередній стек або підхід.
-4. Окреме речення з попереднім терміном і ціною.
-5. 2-5 уточнюючих питань, якщо ТЗ нечітке.
-6. Фраза, що фінальні терміни/вартість підтверджуються після уточнення.
-
-Орієнтир для ціни й терміну, якщо в описі немає достатньо даних:
-{preliminary_bid_estimate(project)}
-
-Поверни тільки текст ставки без заголовків і markdown.
-"""
-
-    try:
-        return ask_ollama(
-            prompt=prompt,
-            temperature=0.55 if variant != "cautious" else 0.45,
-            num_predict=TEXT_NUM_PREDICT,
-        )
-    except requests.RequestException:
-        return fallback_bid(project, variant=variant)
+    return fallback_bid(project, variant=variant)
 
 
 def generate_questions(project: dict) -> str:
-    prompt = f"""
-Склади уточнюючі питання клієнту. Не пиши ставку.
-
-Контекст проєкту:
-{project_context(project)}
-
-Формат відповіді:
-Перед оцінкою потрібно уточнити:
-
-1. ...
-2. ...
-3. ...
-4. ...
-
-Після відповідей можна буде точніше визначити стек, терміни й вартість.
-
-Вимоги:
-- відповідай мовою проєкту, не змішуй мови;
-- питання мають залежати від типу проєкту;
-- для Telegram-бота уточни сценарії/команди, базу даних, адмін-функції, AI/API-сервіс, деплой;
-- для WordPress уточни доступи, тему, список правок, адаптивність, макет;
-- для парсингу уточни джерело, поля, формат результату, частоту запуску, авторизацію/захист;
-- для HTML/CSS уточни макет, кількість сторінок, брейкпоінти, форми, інтеграцію з CMS;
-- не додавай пропозицію виконання робіт, тільки питання у вказаному форматі.
-"""
-
-    try:
-        return ask_ollama(
-            prompt=prompt,
-            temperature=0.35,
-            num_predict=350,
-        )
-    except requests.RequestException:
-        return fallback_questions(project)
+    return fallback_questions(project)
 
 
 def unsuitable_project_text(project: dict) -> str:

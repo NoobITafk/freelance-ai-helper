@@ -4,6 +4,8 @@ __pycache__/
 *.pyc
 
 data/*.db
+data/*.lock
+*.lock
 logs/*.log
 logs/ai_raw.log
 

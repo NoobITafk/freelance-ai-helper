@@ -1,0 +1,18 @@
+[Unit]
+Description=Freelance AI Helper Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+# Замініть root на ім'я вашого користувача на VPS, якщо запускаєте не під root
+User=root
+# Вкажіть точний шлях до каталогу проєкту на VPS
+WorkingDirectory=/opt/freelance-ai-helper
+ExecStart=/opt/freelance-ai-helper/venv/bin/python -m freelance_helper.app.main
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
