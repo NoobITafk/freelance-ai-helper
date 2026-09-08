@@ -10,6 +10,23 @@ class FreelancehuntAPIError(RuntimeError):
     pass
 
 
+_client: httpx.AsyncClient | None = None
+
+
+async def get_http_client(timeout: float = 20.0) -> httpx.AsyncClient:
+    global _client
+    if _client is None or _client.is_closed:
+        _client = httpx.AsyncClient(timeout=timeout)
+    return _client
+
+
+async def close_http_client() -> None:
+    global _client
+    if _client is not None and not _client.is_closed:
+        await _client.aclose()
+        _client = None
+
+
 async def get_projects(timeout: float = 20.0) -> list[dict]:
     if not FREELANCEHUNT_TOKEN:
         logger.error("Freelancehunt API: FREELANCEHUNT_TOKEN missing in .env")
@@ -21,11 +38,13 @@ async def get_projects(timeout: float = 20.0) -> list[dict]:
         "Authorization": f"Bearer {FREELANCEHUNT_TOKEN}",
         "Accept": "application/json",
     }
+    params = {"page[size]": 50}
 
+    client = await get_http_client(timeout=timeout)
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.get(API_URL, headers=headers)
+        response = await client.get(API_URL, headers=headers, params=params)
     except httpx.RequestError as error:
+        await close_http_client()
         logger.exception("Freelancehunt API request failed")
         raise FreelancehuntAPIError(
             f"Не вдалося підключитися до Freelancehunt API: {error}"

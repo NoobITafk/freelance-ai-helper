@@ -170,14 +170,7 @@ class FilterResult:
 
 def keyword_in_text(word: str, text_lower: str) -> bool:
     keyword = word.lower()
-
-    if re.fullmatch(r"[a-z0-9_+#.-]+", keyword):
-        return re.search(rf"(?<![a-z0-9_]){re.escape(keyword)}(?![a-z0-9_])", text_lower) is not None
-
-    if len(keyword) <= 3:
-        return re.search(rf"\b{re.escape(keyword)}\b", text_lower) is not None
-
-    return keyword in text_lower
+    return re.search(rf"(?<!\w){re.escape(keyword)}(?!\w)", text_lower) is not None
 
 
 def classify_project(title: str, description: str, extra_text: str = "") -> FilterResult:
@@ -251,34 +244,109 @@ def estimate_competition(numeric_bids_count: int | None) -> str:
     return "low"
 
 
-def parse_budget_amount(budget) -> int | None:
+def parse_budget_info(budget) -> tuple[int | None, str, int | None]:
+    """
+    Parses raw budget into (amount, currency, amount_uah).
+    Supports dicts (Freelancehunt v2 API) and strings ('3000 грн', '$300', etc.).
+    """
     if budget is None:
-        return None
+        return None, "UAH", None
 
-    text = str(budget).lower().replace(" ", "")
-    numbers = re.findall(r"\d+", text)
+    currency = "UAH"
+    amount = None
 
-    if not numbers:
-        return None
+    if isinstance(budget, dict):
+        raw_amount = budget.get("amount")
+        if raw_amount is not None:
+            try:
+                amount = int(raw_amount)
+            except (ValueError, TypeError):
+                pass
+        currency = str(budget.get("currency", "UAH")).upper()
+    else:
+        text = str(budget).lower().strip()
+        if not text or text in {"не вказано", "none", "null"}:
+            return None, "UAH", None
 
-    return int(numbers[0])
+        if "$" in text or "usd" in text or "дол" in text:
+            currency = "USD"
+        elif "€" in text or "eur" in text or "євр" in text:
+            currency = "EUR"
+        elif "грн" in text or "uah" in text:
+            currency = "UAH"
+
+        clean_digits = text.replace(" ", "").replace(",", "")
+        numbers = re.findall(r"\d+", clean_digits)
+        if numbers:
+            try:
+                amount = int(numbers[0])
+            except ValueError:
+                pass
+
+    if amount is None:
+        return None, currency, None
+
+    rate = 1.0
+    if currency == "USD":
+        rate = 41.0
+    elif currency == "EUR":
+        rate = 44.0
+
+    amount_uah = int(amount * rate)
+    return amount, currency, amount_uah
+
+
+def parse_budget_amount(budget) -> int | None:
+    _, _, amount_uah = parse_budget_info(budget)
+    return amount_uah
+
+
+def format_budget_display(budget) -> str:
+    """Formats raw budget (dict or string) into a clean user-facing string."""
+    if budget is None:
+        return "Не вказано"
+
+    if isinstance(budget, dict):
+        amount = budget.get("amount")
+        currency = str(budget.get("currency", "UAH")).upper()
+        if amount is not None:
+            try:
+                amount_int = int(amount)
+                return f"{amount_int:,} {currency}".replace(",", " ")
+            except (ValueError, TypeError):
+                return f"{amount} {currency}"
+        return "Не вказано"
+
+    text = str(budget).strip()
+    if not text or text.lower() in {"не вказано", "none", "null"}:
+        return "Не вказано"
+
+    return text
 
 
 def budget_score_adjustment(budget) -> tuple[int, str]:
-    amount = parse_budget_amount(budget)
+    _, _, amount_uah = parse_budget_info(budget)
 
-    if amount is None:
+    if amount_uah is None:
         return 0, "unknown"
 
-    if 500 <= amount <= 5000:
+    # Inadequately tiny budget (< 500 UAH / < $12)
+    if amount_uah < 500:
+        return -8, "no"
+
+    # Micro task (500 - 1500 UAH / $12 - $36)
+    if amount_uah < 1500:
+        return 2, "partial"
+
+    # Sweet spot for freelance tasks (1500 - 30 000 UAH / $36 - $730)
+    if amount_uah <= 30000:
         return 8, "yes"
 
-    if amount > 15000:
-        return -12, "no"
+    # Solid high-budget projects (30 000 - 75 000 UAH / $730 - $1800)
+    if amount_uah <= 75000:
+        return 6, "yes"
 
-    if amount > 8000:
-        return -6, "partial"
-
+    # Large / enterprise projects (> 75 000 UAH / > $1800)
     return 2, "partial"
 
 

@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 
 from telegram import Update
+from telegram.error import BadRequest, Forbidden, TelegramError
 from telegram.ext import ContextTypes
 
 from ..ai_analyzer import (
@@ -310,15 +311,30 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
     except Exception as error:
         logger.exception("Auto API error")
         set_last_check_stats(0, 0, str(error))
-        await context.bot.send_message(chat_id=chat_id, text=f"Помилка API:\n{error}")
+        try:
+            await context.bot.send_message(chat_id=chat_id, text=f"Помилка API:\n{error}")
+        except TelegramError:
+            pass
         return
 
     async def send_func(text, reply_markup=None):
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            reply_markup=reply_markup,
-        )
+        try:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                reply_markup=reply_markup,
+            )
+        except BadRequest as b_err:
+            if "chat not found" in str(b_err).lower():
+                logger.warning(
+                    "Chat not found (chat_id=%s). Відкрийте нового бота в Telegram та надішліть йому /start!",
+                    chat_id,
+                )
+                return
+            raise
+        except Forbidden as f_err:
+            logger.warning("Бот заблокований користувачем або немає прав (chat_id=%s): %s", chat_id, f_err)
+            return
 
     sent_count = 0
     processed_count = 0
@@ -526,14 +542,17 @@ async def profile_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def ai_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
     set_setting("AI_ANALYSIS_ENABLED", "true")
-    await reply_text(update, "✅ AI-аналіз увімкнено (AI_ANALYSIS_ENABLED=true).")
+    await reply_text(
+        update,
+        "⚡ Швидкий евристичний аналіз увімкнено (миттєва оцінка без затримок)."
+    )
 
 
 async def ai_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
     set_setting("AI_ANALYSIS_ENABLED", "false")
     await reply_text(
         update,
-        "⏹ AI-аналіз вимкнено (AI_ANALYSIS_ENABLED=false). Використовується fallback rules."
+        "ℹ️ Базовий евристичний фільтр активний за замовчуванням."
     )
 
 
@@ -652,15 +671,15 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data.setdefault("bid_variants", {})[project_id] = 0
 
         variant_labels = {
-            "short": "коротка",
-            "technical": "технічна",
-            "cautious": "обережна",
+            "short": "основна",
+            "technical": "розгорнута",
+            "cautious": "з питаннями",
         }
         variant_name = variant_labels.get(variant, variant)
         bid_text = generate_bid(project, variant=variant)
 
         await message.reply_text(
-            f"📝 Варіант ставки ({variant_name}):\n\n{bid_text}",
+            f"📝 Пропозиція до проєкту ({variant_name}):\n\n{bid_text}",
             reply_markup=bid_keyboard(project_id),
         )
 

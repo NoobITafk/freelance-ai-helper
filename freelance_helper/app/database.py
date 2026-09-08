@@ -15,10 +15,12 @@ def get_connection() -> sqlite3.Connection:
 
     conn = sqlite3.connect(
         DB_PATH,
-        timeout=10,
+        timeout=15,
     )
 
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode = WAL;")
+    conn.execute("PRAGMA synchronous = NORMAL;")
     return conn
 
 
@@ -60,6 +62,11 @@ def init_db() -> None:
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_projects_created_at
             ON projects(created_at)
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_projects_status_created
+            ON projects(status, created_at)
         """)
 
         conn.execute(

@@ -12,6 +12,7 @@ from ..config import (
     AI_ANALYSIS_ENABLED,
     AI_TIMEOUT_SECONDS,
     ANALYZE_MAYBE_PROJECTS,
+    HIGH_COMPETITION_BIDS,
     MAX_BIDS_COUNT,
     MIN_SCORE,
     USER_PROFILE,
@@ -26,6 +27,7 @@ from ..rules import (
     build_rules_fallback_analysis,
     classify_project,
     count_good_keyword_matches,
+    format_budget_display,
     learning_bonus,
     should_skip_high_competition,
 )
@@ -272,13 +274,38 @@ def protect_strong_technical_match(
     return fixed_analysis
 
 
+def human_why_fit(kind: str, good_matches: list[str] | None, raw_reason: str) -> str:
+    raw = str(raw_reason or "").strip()
+    if raw and not raw.startswith("IT keywords:") and not raw.startswith("Fallback rules:"):
+        return raw
+
+    descriptions = {
+        "telegram_bot": "розробка Telegram-бота (кнопки, меню, збереження заявок)",
+        "parsing": "збір даних із сайту в таблицю (парсинг без дублікатів)",
+        "backend": "розробка бекенду та API (робота з базою даних)",
+        "api": "підключення та налаштування зовнішнього API",
+        "frontend": "розробка веб-інтерфейсу (адаптивність, форми)",
+        "html_css": "акуратна верстка сторінки під смартфони та комп'ютери",
+        "wordpress": "правки та доопрацювання сайту на WordPress",
+        "excel": "автоматизація обробки таблиць та звітів",
+        "ai_integration": "підключення штучного інтелекту (ChatGPT / AI)",
+    }
+    desc = descriptions.get(kind, "проєкт за вашим технічним профілем")
+    if good_matches:
+        top = [m.capitalize() if len(m) > 3 else m.upper() for m in good_matches[:3]]
+        return f"{desc} ({', '.join(top)})"
+    return desc
+
+
 def format_risks(analysis_data: dict, numeric_bids_count: int | None) -> str:
     risk_val = int(analysis_data.get("risk", 4))
     factors = []
 
     competition = str(analysis_data.get("competition", "unknown")).lower()
     if competition in {"high", "very_high"} or (numeric_bids_count is not None and numeric_bids_count >= 20):
-        factors.append(f"багато ставок ({numeric_bids_count})")
+        factors.append(f"багато ставок: {numeric_bids_count}")
+    elif numeric_bids_count is not None and numeric_bids_count > 10:
+        factors.append(f"ставок: {numeric_bids_count}")
 
     if analysis_data.get("budget_ok") == "no":
         factors.append("неясний бюджет")
@@ -289,12 +316,17 @@ def format_risks(analysis_data: dict, numeric_bids_count: int | None) -> str:
 
     if not factors:
         if risk_val <= 3:
-            return f"низький ({risk_val}/10)"
+            return f"🟢 низький ({risk_val}/10)"
         if risk_val <= 6:
-            return f"помірний ({risk_val}/10)"
-        return f"підвищений ({risk_val}/10)"
+            return f"🟡 помірний ({risk_val}/10)"
+        return f"🔴 підвищений ({risk_val}/10)"
 
-    return f"{risk_val}/10 ({', '.join(factors)})"
+    joined = ", ".join(factors)
+    if risk_val <= 3:
+        return f"🟢 низький ({risk_val}/10) • {joined}"
+    if risk_val <= 6:
+        return f"🟡 помірний ({risk_val}/10) • {joined}"
+    return f"🔴 підвищений ({risk_val}/10) • {joined}"
 
 
 def format_project_message(
@@ -334,7 +366,8 @@ def format_project_message(
     else:
         stack_line = stack_label
 
-    why_fit = analysis_data.get("reason") or filter_result.reason
+    raw_why = analysis_data.get("reason") or filter_result.reason
+    why_fit = human_why_fit(kind, good_matches, raw_why)
     risk_info = format_risks(analysis_data, numeric_bids_count)
 
     lines = [
@@ -399,7 +432,7 @@ async def process_and_send_project(
     description = attributes.get("description", "")
     tags_text = extract_project_tags(attributes)
     stored_description = description_with_tags(description, tags_text)
-    budget = attributes.get("budget", "Не вказано")
+    budget = format_budget_display(attributes.get("budget"))
     bids_count = (
         attributes.get("bid_count")
         or attributes.get("bids_count")
@@ -457,10 +490,16 @@ async def process_and_send_project(
     numeric_bids_count = parse_bids_count(bids_count)
     good_matches = count_good_keyword_matches(title, description, tags_text)
 
-    if numeric_bids_count is not None and numeric_bids_count > MAX_BIDS_COUNT:
+    is_strong_tech = (
+        any(k in STRONG_TECH_KEYWORDS for k in good_matches)
+        or len(good_matches) >= 2
+    )
+    bids_limit = HIGH_COMPETITION_BIDS if is_strong_tech else MAX_BIDS_COUNT
+
+    if numeric_bids_count is not None and numeric_bids_count > bids_limit:
         if debug_stats is not None:
             debug_stats["competition_skipped"] += 1
-        reason = f"skipped: {numeric_bids_count} ставок > MAX_BIDS_COUNT {MAX_BIDS_COUNT}"
+        reason = f"skipped: {numeric_bids_count} ставок > ліміту {bids_limit}"
         save_project_status(
             project_id,
             title,

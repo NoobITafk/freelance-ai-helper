@@ -6,6 +6,7 @@ import httpx
 import requests
 
 from .config import OLLAMA_MODEL, OLLAMA_URL, PROJECT_ROOT, USER_PROFILE
+from .rules import format_budget_display
 
 ANALYSIS_NUM_PREDICT = 500
 TEXT_NUM_PREDICT = 500
@@ -601,256 +602,448 @@ def preliminary_bid_estimate(project: dict) -> str:
     return estimate
 
 
+def determine_tech_stack(kind: str, tech_list: list[str]) -> str:
+    tech_lower = {t.lower() for t in tech_list}
+    if kind == "telegram_bot":
+        framework = "aiogram 3" if "aiogram" in tech_lower else ("pyTelegramBotAPI" if "pytelegrambotapi" in tech_lower or "telebot" in tech_lower else "aiogram 3")
+        db = "PostgreSQL" if any(t in tech_lower for t in ["postgresql", "postgres"]) else "SQLite"
+        return f"Python ({framework}, {db}, зручне меню та кнопки)"
+
+    if kind == "parsing":
+        tool = "Playwright/Selenium" if any(t in tech_lower for t in ["playwright", "selenium"]) else "requests / BeautifulSoup"
+        return f"Python ({tool}, експорт в Excel/CSV)"
+
+    if kind in {"backend", "api"}:
+        framework = "FastAPI" if "fastapi" in tech_lower else ("Django" if "django" in tech_lower else ("Flask" if "flask" in tech_lower else "FastAPI / Django"))
+        db = "PostgreSQL" if any(t in tech_lower for t in ["postgresql", "postgres"]) else ("MySQL" if "mysql" in tech_lower else "PostgreSQL / SQLite")
+        return f"Python ({framework}, {db}, перевірка даних)"
+
+    if kind == "ai_integration":
+        return "Python, OpenAI API (ChatGPT / GPT-4o), точні інструкції"
+
+    if kind == "frontend":
+        framework = "Next.js / React" if "next.js" in tech_lower or "nextjs" in tech_lower else ("React" if "react" in tech_lower else ("Vue" if "vue" in tech_lower else "React"))
+        return f"{framework}, адаптивність для смартфонів"
+
+    if kind == "html_css":
+        return "HTML5, CSS3, JavaScript (ідеально відкривається на смартфонах)"
+
+    if kind == "wordpress":
+        return "WordPress, PHP, налаштування теми, CSS/JS"
+
+    if kind == "excel":
+        return "Google Sheets / Excel (автоматичні формули, очищення даних)"
+
+    if tech_list:
+        clean_tech = ", ".join(tech_list[:3])
+        return f"{clean_tech} (надійний та перевірений код)"
+
+    return "Python та сучасні надійні інструменти"
+
+
+def extract_project_insights(project: dict) -> dict:
+    title = str(project.get("title") or "").strip()
+    desc = str(project.get("description") or "").strip()
+    full_text = f"{title} {desc}".lower()
+    kind = project_type(project)
+    budget = format_budget_display(project.get("budget"))
+
+    # Clean task name from title with proper grammatical context
+    task_name = title
+    for prefix in [
+        "потрібно зробити", "потрібно", "потрібен", "потрібна", "потрібні",
+        "шукаю розробника для", "шукаю розробника зі стеком", "шукаю розробника",
+        "шукаю", "треба", "разработка", "нужно сделать", "нужен", "нужна",
+        "требуется", "допрацювання проєкту", "допрацювання сайту",
+        "доработка проекта", "доработка существующего", "доработка",
+    ]:
+        if task_name.lower().startswith(prefix):
+            task_name = task_name[len(prefix):].strip()
+            break
+    task_name = task_name.rstrip(".!:").strip()
+    if task_name:
+        c_lower = task_name.lower()
+        if c_lower.startswith("telegram-бот") or c_lower.startswith("телеграм-бот"):
+            task_name = "розробку Telegram-бота" + task_name[12:]
+        elif c_lower.startswith("бот"):
+            task_name = "розробку бота" + task_name[3:]
+        elif c_lower.startswith("скрипт"):
+            task_name = "розробку скрипта" + task_name[6:]
+        elif c_lower.startswith("парсер"):
+            task_name = "розробку парсера" + task_name[6:]
+        elif c_lower.startswith("лендинг") or c_lower.startswith("лендінг"):
+            task_name = "верстку лендингу" + task_name[7:]
+        elif not re.search(r"[а-яіїєґ]", task_name[:5].lower()):
+            task_name = f"проєкт «{task_name}»"
+        else:
+            task_name = task_name[0].lower() + task_name[1:]
+    else:
+        task_name = "це завдання"
+
+    # Known sources / websites
+    sources = []
+    domains = re.findall(r"\b[a-z0-9-]+\.(?:com|ua|net|org|io|co|pl|de|site|info)\b", full_text)
+    if domains:
+        sources.extend(domains[:2])
+    for site_kw, site_name in [
+        ("rozetka", "Rozetka"), ("prom", "Prom.ua"), ("olx", "OLX"),
+        ("instagram", "Instagram"), ("telegram", "Telegram"), ("youtube", "YouTube"),
+    ]:
+        if site_kw in full_text and site_name not in sources:
+            sources.append(site_name)
+
+    # Known formats
+    formats = []
+    if any(k in full_text for k in ["excel", "ексель", "xlsx", "xls"]):
+        formats.append("Excel (.xlsx)")
+    if any(k in full_text for k in ["google sheet", "google таблиц", "гугл таблиц", "гугл шит"]):
+        formats.append("Google Таблиці")
+    if "csv" in full_text:
+        formats.append("CSV")
+    if "json" in full_text:
+        formats.append("JSON")
+    if "xml" in full_text:
+        formats.append("XML")
+    if any(k in full_text for k in ["баз", "database", "sqlite", "postgres", "mysql"]):
+        formats.append("База даних")
+
+    # Known tech mentioned
+    tech = []
+    if any(k in full_text for k in ["aiogram"]):
+        tech.append("aiogram")
+    if any(k in full_text for k in ["telebot", "pytelegrambotapi"]):
+        tech.append("pyTelegramBotAPI")
+    if any(k in full_text for k in ["fastapi"]):
+        tech.append("FastAPI")
+    if any(k in full_text for k in ["django"]):
+        tech.append("Django")
+    if any(k in full_text for k in ["flask"]):
+        tech.append("Flask")
+    if any(k in full_text for k in ["playwright"]):
+        tech.append("Playwright")
+    if any(k in full_text for k in ["selenium"]):
+        tech.append("Selenium")
+    if any(k in full_text for k in ["beautifulsoup", "bs4"]):
+        tech.append("BeautifulSoup")
+    if any(k in full_text for k in ["react"]):
+        tech.append("React")
+    if any(k in full_text for k in ["next.js", "nextjs"]):
+        tech.append("Next.js")
+    if any(k in full_text for k in ["vue"]):
+        tech.append("Vue")
+    if any(k in full_text for k in ["wordpress", "вордпрес"]):
+        tech.append("WordPress")
+    if any(k in full_text for k in ["figma", "фігма"]):
+        tech.append("Figma")
+
+    has_auth = any(k in full_text for k in ["авториз", "auth", "login", "парол", "ролі"])
+    has_admin = any(k in full_text for k in ["адмін", "admin", "кабінет", "панель"])
+    has_db = bool(formats and "База даних" in formats) or any(
+        k in full_text for k in ["баз", "database", "sqlite", "postgres", "mysql"]
+    )
+    has_payment = any(k in full_text for k in ["оплат", "платіж", "payment", "wayforpay", "liqpay", "stripe", "mono"])
+
+    return {
+        "title": title,
+        "desc": desc,
+        "task_name": task_name,
+        "kind": kind,
+        "budget": budget,
+        "has_fixed_budget": budget != "Не вказано",
+        "sources": sources,
+        "formats": formats,
+        "tech": tech,
+        "has_auth": has_auth,
+        "has_admin": has_admin,
+        "has_db": has_db,
+        "has_payment": has_payment,
+    }
+
+
+def smart_project_questions(insights: dict) -> list[str]:
+    kind = insights["kind"]
+    sources = insights["sources"]
+    formats = insights["formats"]
+    has_payment = insights.get("has_payment", False)
+    questions = []
+
+    if kind == "parsing":
+        if not sources:
+            questions.append("з якого саме сайту потрібно зібрати дані?")
+        else:
+            questions.append(f"чи є список посилань або розділів для збору з {sources[0]}?")
+
+        if not formats:
+            questions.append("у якому форматі зручніше отримати таблицю (Excel чи Google Таблиця)?")
+        else:
+            questions.append("збір даних потрібен один раз чи плануєте оновлювати регулярно?")
+
+        questions.append("які саме поля обов'язково зібрати (назва, ціна, фото, контакти чи наявність)?")
+
+    elif kind == "telegram_bot":
+        questions.append("які основні кнопки та дії має бачити користувач у меню бота?")
+        if has_payment:
+            questions.append("яку платіжну систему плануєте підключити (WayForPay, LiqPay чи Monobank)?")
+        else:
+            questions.append("куди вам зручніше отримувати сповіщення про нові заявки (в особисті повідомлення чи групу)?")
+        questions.append("чи є вже сервер для роботи бота, чи допомогти з вибором та запуском?")
+
+    elif kind in {"backend", "api"}:
+        questions.append("чи є короткий опис, які саме дані має приймати та повертати система?")
+        if not insights["has_auth"]:
+            questions.append("чи потрібна реєстрація користувачів та поділ на ролі?")
+        questions.append("де планується розміщення проєкту (сервер/хостинг)?")
+
+    elif kind in {"frontend", "html_css"}:
+        if "Figma" not in insights["tech"]:
+            questions.append("чи є готовий зразок або макет сторінки (Figma чи приклад іншого сайту)?")
+        else:
+            questions.append("чи повністю затверджений макет у Figma?")
+        questions.append("куди мають приходити заявки з форми (на пошту чи в Telegram)?")
+
+    elif kind == "excel":
+        questions.append("чи є зразок файлу з прикладом початкових даних та бажаного звіту?")
+        questions.append("дані мають оновлюватися автоматично чи за кнопкою?")
+
+    elif kind == "wordpress":
+        questions.append("чи є доступ до панелі керування сайтом (WordPress або хостингу)?")
+        questions.append("який список правок потрібно зробити в першу чергу?")
+
+    elif kind == "ai_integration":
+        questions.append("які саме завдання має вирішувати штучний інтелект (відповіді клієнтам, аналіз чи допомога в чаті)?")
+        questions.append("чи є вже створений акаунт OpenAI (ChatGPT), чи допомогти налаштувати новий?")
+
+    else:
+        questions.append("який кінцевий результат очікується на виході?")
+        questions.append("чи є готові початкові матеріали або доступи?")
+        questions.append("які орієнтири за термінами виконання?")
+
+    return questions[:3]
+
+
 def fallback_bid(project: dict, variant: str = "short") -> str:
     kind = project_type(project)
-    title = str(project.get("title") or "цим завданням").strip()
-
     if kind == "non_technical":
         return unsuitable_project_text(project)
 
-    if kind == "telegram_bot":
-        task = "реалізацією Telegram-бота на Python"
-        stack = "python-telegram-bot або aiogram, за потреби SQLite, логування та деплой"
-        questions = [
-            "які команди або сценарії має виконувати бот?",
-            "чи потрібна база даних?",
-            "чи потрібні адмін-команди та логування?",
-            "де бот має бути розгорнутий?",
-        ]
+    insights = extract_project_insights(project)
+    task_name = insights["task_name"]
+    budget = insights["budget"]
+    has_fixed = insights["has_fixed_budget"]
+    questions = smart_project_questions(insights)
+    stack = determine_tech_stack(kind, insights["tech"])
 
-    elif kind == "ai_integration":
-        task = "інтеграцією AI-сервісу або автоматизацією на основі LLM"
-        stack = "Python, API потрібної AI-моделі, промпти, валідацію відповідей і логування"
-        questions = [
-            "який AI-сервіс або модель потрібно використовувати?",
-            "які вхідні дані й очікуваний формат відповіді?",
-            "чи є приклади хороших і поганих відповідей?",
-            "чи потрібне збереження історії або логування?",
-        ]
+    time_map = {
+        "telegram_bot": "1-3 дні",
+        "parsing": "1-2 дні",
+        "backend": "2-4 дні",
+        "api": "1-3 дні",
+        "frontend": "1-3 дні",
+        "html_css": "1-2 дні",
+        "wordpress": "1-2 дні",
+        "excel": "1-2 дні",
+        "ai_integration": "2-4 дні",
+    }
+    time_estimate = time_map.get(kind, "1-3 дні")
 
-    elif kind == "backend":
-        task = "невеликою backend-розробкою"
-        stack = "Python/FastAPI або Django, базу даних, API-ендпоінти, логування та деплой"
-        questions = [
-            "які endpoints або сценарії потрібно реалізувати?",
-            "чи потрібна авторизація та ролі користувачів?",
-            "яка база даних або структура даних очікується?",
-            "чи є вимоги до деплою та документації API?",
-        ]
+    src_mention = f" з сайту {insights['sources'][0]}" if insights["sources"] else " із сайту"
+    fmt_mention = f" у {insights['formats'][0]}" if insights["formats"] else " у зручну таблицю"
 
-    elif kind == "frontend":
-        task = "frontend-розробкою або правками інтерфейсу"
-        stack = "React/Vue або чистий HTML/CSS/JavaScript залежно від поточного проєкту"
-        questions = [
-            "чи є Figma або приклад бажаного інтерфейсу?",
-            "які стани екранів і адаптив потрібні?",
-            "чи є готовий backend/API для інтеграції?",
-            "у якому репозиторії або стеку треба вносити правки?",
-        ]
+    deliverables_map = {
+        "telegram_bot": (
+            "Створю зручного та швидкого бота: зрозуміле меню, кнопки, валідація відповідей та збереження контактів/заявок.",
+            "Безкоштовно налаштую автозапуск на сервері, щоб бот працював 24/7 і не вимикався.",
+        ),
+        "parsing": (
+            f"Налаштую акуратний збір усіх потрібних даних{src_mention} та вивантаження{fmt_mention} без дублікатів і пропусків.",
+            "Надам готовий файл та простий скрипт з інструкцією для запуску в 1 клік (за потреби налаштую автооновлення).",
+        ),
+        "backend": (
+            "Реалізую швидку та надійну серверну частину з базою даних, перевіркою інформації та захистом від збоїв.",
+            "Допоможу з налаштуванням сервера та перевірю роботу кожного запиту перед здачею.",
+        ),
+        "api": (
+            "Надійно підключу необхідний сервіс (API) з правильною обробкою помилок та лімітів.",
+            "Забезпечу стабільну роботу та надам просту інструкцію з використання.",
+        ),
+        "frontend": (
+            "Зроблю якісну, швидку верстку компонентів точно за макетом з плавною адаптивністю під телефони та планшети.",
+            "Перевірю відображення в усіх браузерах та допоможу підключити форми заявок.",
+        ),
+        "html_css": (
+            "Зроблю акуратну та швидку верстку, яка ідеально відкривається на смартфонах, планшетах і комп'ютерах.",
+            "Перевірю швидкість завантаження сторінки та коректність роботи форм.",
+        ),
+        "wordpress": (
+            "Акуратно внесу всі необхідні правки на сайті, не зачіпаючи інший працюючий функціонал.",
+            "Перед початком обов'язково зроблю резервну копію (бекап) сайту для повної безпеки.",
+        ),
+        "excel": (
+            "Повністю автоматизую обробку даних та підготовку підсумкового звіту без ручної рутини.",
+            "Налаштую формули та надам просту покрокову інструкцію, як користуватися таблицею.",
+        ),
+        "ai_integration": (
+            "Підключу штучний інтелект (OpenAI/ChatGPT) під ваші задачі з точними інструкціями для відповідей.",
+            "Перевірю роботу на тестових запитаннях і допоможу запустити рішення в роботу.",
+        ),
+    }
 
-    elif kind == "wordpress":
-        task = "правками або налаштуванням WordPress-сайту"
-        stack = "адмінку WordPress, тему сайту, CSS/HTML-правки та перевірку адаптивності"
-        questions = [
-            "чи є доступ до адмінки та хостингу?",
-            "який точний список правок потрібно внести?",
-            "тема готова чи кастомна?",
-            "чи є макет або приклад бажаного результату?",
-        ]
+    deliverables, post_support = deliverables_map.get(
+        kind,
+        (
+            "Напишу чистий, структурований код згідно з вашими вимогами та протестую перед здачею.",
+            "Залишаюся на зв'язку після здачі для відповідей на запитання або дрібних правок.",
+        ),
+    )
 
-    elif kind == "parsing":
-        task = "парсингом даних і підготовкою результату у потрібному форматі"
-        stack = "Python, requests/BeautifulSoup або Playwright, залежно від сайту та захисту"
-        questions = [
-            "з якого джерела потрібно збирати дані?",
-            "які поля потрібно отримати?",
-            "у якому форматі потрібен результат?",
-            "чи є авторизація, CAPTCHA або інший захист?",
-        ]
-
-    elif kind == "html_css":
-        task = "HTML/CSS-версткою або правками інтерфейсу"
-        stack = "семантичний HTML, CSS/адаптив, за потреби JavaScript для простих взаємодій"
-        questions = [
-            "чи є Figma або інший макет?",
-            "скільки сторінок потрібно зробити?",
-            "які брейкпоінти адаптиву потрібні?",
-            "чи потрібні форми або інтеграція з CMS?",
-        ]
-
-    elif kind == "api":
-        task = "інтеграцією API або невеликою backend-задачею"
-        stack = "Python, requests/httpx або FastAPI, залежно від потрібного сценарію"
-        questions = [
-            "чи є документація API?",
-            "які саме сценарії потрібно реалізувати?",
-            "який формат даних очікується?",
-            "чи потрібне логування помилок?",
-        ]
-
-    elif kind == "excel":
-        task = "автоматизацією Google Sheets або Excel"
-        stack = "формули, Apps Script або Python-скрипт, залежно від джерела даних"
-        questions = [
-            "яка структура вхідних таблиць?",
-            "який результат має бути на виході?",
-            "дані потрібно оновлювати вручну чи автоматично?",
-            "чи є приклад готового звіту?",
-        ]
-
+    if has_fixed:
+        budget_line = f"орієнтуюся на ваш бюджет {budget} (готовий виконати в цих межах)"
     else:
-        task = f"виконанням завдання: {title}"
-        stack = "простий технічний підхід після уточнення вимог, доступів і формату результату"
-        questions = [
-            "який кінцевий результат потрібно отримати?",
-            "які матеріали або доступи вже є?",
-            "у якому форматі потрібно передати готову роботу?",
-        ]
-
-    questions = project_specific_questions(project, questions)
+        estimates = {
+            "telegram_bot": "від 3 000 - 8 000 грн (залежно від кількості кнопок та бази)",
+            "parsing": "від 2 000 - 6 000 грн (залежно від обсягу даних та сайту)",
+            "backend": "від 4 000 - 12 000 грн (залежно від функціоналу)",
+            "api": "від 2 500 - 7 000 грн (залежно від кількості методів)",
+            "frontend": "від 2 500 - 7 000 грн (залежно від кількості екранів)",
+            "html_css": "від 1 500 - 5 000 грн (залежно від обсягу верстки)",
+            "wordpress": "від 1 500 - 5 000 грн (залежно від списку правок)",
+            "excel": "від 1 500 - 4 000 грн (залежно від складності розрахунків)",
+            "ai_integration": "від 3 500 - 9 000 грн (залежно від сценарію використання)",
+        }
+        budget_line = estimates.get(kind, "від 2 000 - 6 000 грн після уточнення деталей")
 
     if variant == "technical":
-        intro = f"Добрий день. Можу допомогти з {task}."
-        approach = f"Технічно бачу реалізацію через {stack}."
+        steps_map = {
+            "telegram_bot": [
+                "1. Узгодження сценаріїв: які кнопки бачить користувач і які повідомлення отримує.",
+                "2. Створення меню, зручних кнопок та збереження контактів/заявок у базі даних.",
+                "3. Налаштування миттєвих сповіщень для адміністратора та тестування на телефоні.",
+                "4. Безкоштовний запуск на сервері для роботи 24/7 та передача вам результату.",
+            ],
+            "parsing": [
+                f"1. Аналіз сайту{src_mention} та погодження списку колонок для збору.",
+                "2. Налаштування стабільного збору інформації без блокувань та дублікатів.",
+                f"3. Акуратне оформлення та збереження даних{fmt_mention} зі зручними фільтрами.",
+                "4. Передача готової таблиці та простої інструкції для запуску скрипта.",
+            ],
+            "backend": [
+                "1. Складання списку функцій та оптимальної структури бази даних.",
+                "2. Розробка серверної частини з перевіркою введених даних та захистом від збоїв.",
+                "3. Тестування роботи під навантаженням та підключення потрібних сервісів.",
+                "4. Розгортання на сервері та надання зрозумілої інструкції.",
+            ],
+            "api": [
+                "1. Узгодження списку необхідних запитів та форматів передачі даних.",
+                "2. Підключення сервісу з правильною обробкою можливих мережевих помилок.",
+                "3. Налаштування надійного збереження даних та повне тестування.",
+                "4. Передача готового рішення з наочними прикладами роботи.",
+            ],
+            "ai_integration": [
+                "1. Підключення штучного інтелекту та оптимізація інструкцій для відповідей.",
+                "2. Налаштування збереження історії діалогів та захисту від некоректних відповідей.",
+                "3. Оптимізація витрат, щоб запити працювали швидко та економно.",
+                "4. Тестування на реальних запитаннях і запуск рішення під ключ.",
+            ],
+            "frontend": [
+                "1. Аналіз макета (Figma) та підготовка структури сторінки.",
+                "2. Акуратна верстка компонентів з плавною роботою на мобільних телефонах.",
+                "3. Підключення інтерактивних кнопок, форм заявки та перевірка полів.",
+                "4. Фінальне тестування в усіх браузерах перед передачею вам.",
+            ],
+            "html_css": [
+                "1. Підготовка сторінки за вашим зразком чи макетом.",
+                "2. Акуратна верстка з ідеальною адаптивністю під смартфони та комп'ютери.",
+                "3. Налаштування кнопок, анімацій та форми відправки заявок.",
+                "4. Перевірка швидкості відкриття сторінки на різних пристроях.",
+            ],
+            "wordpress": [
+                "1. Створення повної резервної копії (бекапу) сайту для безпеки.",
+                "2. Акуратне внесення необхідних змін у тему чи налаштування.",
+                "3. Перевірка коректності відображення на телефонах та комп'ютерах.",
+                "4. Тестування роботи форм заявок та кнопок після внесених правок.",
+            ],
+            "excel": [
+                "1. Узгодження структури початкових даних та бажаного підсумкового звіту.",
+                "2. Автоматизація обробки: очищення від помилок, зведення та розрахунки.",
+                "3. Налаштування надійних формул та захисту від випадкових змін.",
+                "4. Перевірка розрахунків та надання простої інструкції користувача.",
+            ],
+        }
+
+        steps = steps_map.get(
+            kind,
+            [
+                "1. Узгодження деталей завдання та бажаного фінального результату.",
+                "2. Покрокова реалізація та тестування на реальних сценаріях.",
+                "3. Демонстрація готового результату та внесення правок за потреби.",
+                "4. Передача під ключ, налаштування та підтримка.",
+            ],
+        )
+
+        steps_text = "\n".join(steps)
+        q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
+
+        return (
+            f"Добрий день! Готовий професійно та під ключ виконати {task_name}.\n\n"
+            f"📋 Порядок виконання:\n"
+            f"{steps_text}\n\n"
+            f"✨ Що ви отримаєте в результаті:\n"
+            f"• {deliverables}\n"
+            f"• Повністю готове та протестоване рішення з простою інструкцією.\n"
+            f"• {post_support}\n\n"
+            f"💰 Бюджет: {budget_line}\n"
+            f"⏱ Орієнтовний термін: {time_estimate}\n"
+            f"🛡 Гарантія: 14 днів безкоштовної техпідтримки після здачі проєкту.\n\n"
+            f"Перед стартом підкажіть лише:\n"
+            f"{q_text}\n\n"
+            f"Напишіть у чат — обговоримо деталі та одразу розпочну роботу!"
+        )
+
     elif variant == "cautious":
-        intro = f"Добрий день. Можу допомогти з {task}, але перед оцінкою варто уточнити обсяг."
-        approach = f"Попередній підхід: {stack}. Якщо ТЗ коротке, краще спочатку зафіксувати сценарії та очікуваний результат."
-    else:
-        intro = f"Добрий день. Можу допомогти з {task}."
-        approach = f"Попередньо бачу реалізацію через {stack}."
+        q_text = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
+        return (
+            f"Вітаю! Завдання зрозуміле, маю практичний досвід у таких проєктах і готовий взятися за {task_name}.\n\n"
+            f"Щоб погодити всі деталі та зробити все точно під ваші вимоги, підкажіть, будь ласка:\n"
+            f"{q_text}\n\n"
+            f"Орієнтири за проєктом:\n"
+            f"• {deliverables}\n"
+            f"💰 Бюджет: {budget_line}\n"
+            f"⏱ Термін: {time_estimate} після короткого узгодження\n"
+            f"🛡 Гарантія: 14 днів безкоштовного супроводу після передачі проєкту.\n"
+            f"🚀 Налаштування: {post_support}\n\n"
+            f"Після ваших відповідей готовий одразу зафіксувати фінальні деталі та розпочати роботу. На зв'язку!"
+        )
 
-    questions_text = "\n".join(
-        f"{index}. {question}" for index, question in enumerate(questions, 1)
-    )
-    estimate = preliminary_bid_estimate(project)
-
-    return (
-        f"{intro}\n\n"
-        f"{approach}\n\n"
-        f"{estimate}\n\n"
-        "Перед точною оцінкою потрібно уточнити:\n"
-        f"{questions_text}\n\n"
-        "Після відповідей підтверджу фінальні терміни й вартість."
-    )
+    else:  # "short"
+        return (
+            f"Вітаю! Ознайомився із завданням — готовий якісно виконати {task_name}.\n\n"
+            f"Чому варто довірити задачу мені:\n"
+            f"• {deliverables}\n"
+            f"• Стек: {stack}.\n"
+            f"• Чистий та надійний результат під ключ, усе перевірю перед здачею.\n\n"
+            f"💰 Бюджет: {budget_line}\n"
+            f"⏱ Термін: {time_estimate}\n"
+            f"🛡 Гарантія: 14 днів безкоштовної техпідтримки після здачі (я завжди на зв'язку).\n"
+            f"🚀 Налаштування: {post_support}\n\n"
+            f"Готовий відповісти на запитання в чаті та швидко розпочати роботу!"
+        )
 
 
 def fallback_questions(project: dict) -> str:
     kind = project_type(project)
     non_technical = non_technical_reason(project)
 
-    question_sets = {
-        "telegram_bot": [
-            "які команди або сценарії має виконувати бот?",
-            "чи потрібна база даних для користувачів, історії або налаштувань?",
-            "чи потрібні адмін-команди або окрема адмін-панель?",
-            "який AI/API-сервіс потрібно використовувати, якщо він потрібен?",
-            "де бот має бути розгорнутий?",
-            "чи потрібне логування помилок або дій користувачів?",
-        ],
-        "ai_integration": [
-            "який AI-сервіс або модель потрібно використовувати?",
-            "які вхідні дані і який формат відповіді потрібен?",
-            "чи є приклади правильних відповідей або тестові кейси?",
-            "чи потрібно зберігати історію запитів і відповідей?",
-            "які обмеження по швидкості, вартості або приватності даних?",
-        ],
-        "backend": [
-            "які endpoints або бізнес-сценарії потрібно реалізувати?",
-            "чи потрібна авторизація, ролі користувачів або адмін-частина?",
-            "які сутності потрібно зберігати в базі даних?",
-            "чи є вимоги до деплою, логування та документації API?",
-            "чи є приклади запитів/відповідей або готове ТЗ?",
-        ],
-        "frontend": [
-            "чи є Figma або приклад потрібного інтерфейсу?",
-            "які екрани, стани і брейкпоінти адаптиву потрібні?",
-            "чи є готовий backend/API для інтеграції?",
-            "у якому стеку або репозиторії потрібно вносити правки?",
-            "чи потрібна підтримка форм, валідації або авторизації?",
-        ],
-        "wordpress": [
-            "чи є доступ до адмінки WordPress і хостингу?",
-            "тема вже готова чи використовується кастомна?",
-            "який точний список правок потрібно внести?",
-            "чи потрібна адаптивність для мобільних пристроїв?",
-            "чи є макет або приклади бажаного результату?",
-        ],
-        "parsing": [
-            "з якого джерела потрібно збирати дані?",
-            "які саме поля потрібно отримати?",
-            "у якому форматі потрібен результат?",
-            "як часто має запускатися парсинг?",
-            "чи є авторизація, CAPTCHA або інший захист?",
-        ],
-        "html_css": [
-            "чи є Figma або інший макет?",
-            "скільки сторінок потрібно зверстати?",
-            "які брейкпоінти адаптиву потрібні?",
-            "чи потрібні форми?",
-            "чи потрібна інтеграція з CMS?",
-        ],
-        "api": [
-            "з яким API потрібно працювати?",
-            "які endpoints або сценарії потрібні?",
-            "чи є документація та тестові доступи?",
-            "який формат даних очікується?",
-            "чи потрібне логування помилок?",
-        ],
-        "excel": [
-            "які саме дані потрібно обробляти?",
-            "який формат вхідного файлу або таблиці?",
-            "який результат має бути на виході?",
-            "чи потрібна автоматизація запуску?",
-        ],
-        "general": [
-            "який кінцевий результат потрібно отримати?",
-            "які доступи або матеріали вже є?",
-            "які обмеження по термінах?",
-            "у якому форматі потрібно передати готову роботу?",
-        ],
-    }
-
     if kind == "non_technical" and non_technical:
-        sphere, _skills = non_technical
+        return unsuitable_project_text(project)
 
-        if "переклади" in sphere:
-            questions = [
-                "який обсяг тексту потрібно перекласти?",
-                "з якої мови на яку потрібен переклад?",
-                "чи потрібна адаптація стилю або лише дослівний переклад?",
-                "у якому форматі потрібно передати результат?",
-            ]
-        elif "SEO" in sphere:
-            questions = [
-                "чи потрібна тільки SEO-стратегія, чи також технічні правки на сайті?",
-                "чи є список сторінок і ключових запитів?",
-                "чи потрібна робота з мета-тегами, контентом або структурою сайту?",
-                "чи передбачені зміни в коді або тільки маркетингова оптимізація?",
-            ]
-        elif any(word in sphere for word in ["логотип", "векторизація", "поліграфія", "ілюстрації"]):
-            questions = [
-                "який точний формат результату потрібен?",
-                "які розміри, матеріали або технічні вимоги до друку?",
-                "чи є вихідні файли або приклади бажаного результату?",
-                "у яких форматах потрібно передати готові файли?",
-            ]
-        else:
-            questions = [
-                "який кінцевий результат потрібно отримати?",
-                "які матеріали або приклади вже є?",
-                "у якому форматі потрібно передати готову роботу?",
-                "які терміни та обмеження важливі?",
-            ]
-    else:
-        questions = question_sets.get(kind, question_sets["general"])
-
-    questions = project_specific_questions(project, questions, limit=6)
-    numbered = "\n".join(f"{index}. {question}" for index, question in enumerate(questions, 1))
+    insights = extract_project_insights(project)
+    questions = smart_project_questions(insights)
+    numbered = "\n".join(f"{i}. {q}" for i, q in enumerate(questions, 1))
 
     return (
-        "Перед оцінкою потрібно уточнити:\n\n"
+        f"❓ Що варто уточнити у замовника ({insights['task_name']}):\n\n"
         f"{numbered}\n\n"
-        "Після відповідей можна буде точніше визначити стек, терміни й вартість."
+        "💡 Порада: задайте ці питання у чаті або додайте до своєї ставки, щоб показати експертність і зафіксувати точне ТЗ."
     )
 
 
