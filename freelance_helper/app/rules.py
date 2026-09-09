@@ -168,6 +168,61 @@ SOFT_BAD_KEYWORDS = [
     "shopify",
     "дизайн",
     "design",
+    "озвучка",
+    "озвучки",
+    "озвучення",
+    "озвучити",
+    "диктор",
+    "диктора",
+    "дикторський",
+    "аудіо",
+    "голос",
+    "голосом",
+    "voice",
+    "voiceover",
+    "audio",
+    "sound",
+    "саунд",
+    "звукозапис",
+    "вокал",
+    "музика",
+    "пісня",
+    "трек",
+    "відео",
+    "відеоролик",
+    "ролик",
+    "монтаж",
+    "зйомка",
+    "зйомки",
+    "відеозйомка",
+    "титри",
+    "субтитри",
+    "анімація",
+    "animation",
+    "motion",
+    "моушн",
+    "after effects",
+    "premiere",
+    "davinci",
+    "capcut",
+    "ретуш",
+    "фотосесія",
+    "фотограф",
+    "обробка фото",
+    "стаття",
+    "пост",
+    "контент",
+    "сценарій",
+    "вірш",
+    "книга",
+    "набір тексту",
+    "транскрибація",
+    "розшифровка",
+    "дзвінки",
+    "обдзвін",
+    "холодні дзвінки",
+    "менеджер з продажу",
+    "дропшипінг",
 ]
 
 WEAK_GOOD_KEYWORDS = {
@@ -428,10 +483,13 @@ def calculate_rules_score(
     numeric_bids_count: int | None,
     budget,
 ) -> int:
+    if filter_result.category == "bad":
+        return 0
+
     if filter_result.category == "good":
         score = 42 + min(30, len(good_matches) * 5)
     else:
-        score = 34
+        score = 15 + (len(good_matches) * 5)
 
     score += competition_score_adjustment(numeric_bids_count)
     score += budget_score_adjustment(budget)[0]

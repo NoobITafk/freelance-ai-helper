@@ -325,12 +325,13 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
             pass
         return
 
-    async def send_func(text, reply_markup=None):
+    async def send_func(text, reply_markup=None, **kwargs):
         try:
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=text,
                 reply_markup=reply_markup,
+                **kwargs,
             )
         except BadRequest as b_err:
             if "chat not found" in str(b_err).lower():
@@ -769,25 +770,12 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bid_text = generate_bid(project, variant=variant)
         context.user_data.setdefault("active_bids", {})[project_id] = bid_text
 
-        # Financial calculation for fixed budget (Safe Freelancehunt ~9.9% fee)
-        calc_footer = ""
-        amount, currency, _ = parse_budget_info(project.get("budget"))
-        if amount and amount > 0:
-            fee = round(amount * 0.099)
-            net_payout = amount - fee
-            calc_footer = (
-                f"\n\nФінансовий розрахунок (Сейф ~9.9%):\n"
-                f"• Бюджет проєкту: {amount:,} {currency}\n"
-                f"• Комісія біржі: -{fee:,} {currency}\n"
-                f"• Чистими на карту: ~{net_payout:,} {currency}"
-            )
-
         # Preformatted code block enables 1-tap/1-click instant copying in Telegram
         escaped_bid = bid_text.replace("```", "'''")
         response_text = (
             f"📝 Пропозиція до проєкту ({variant_name})\n"
             f"👇 Натисніть на текст нижче, щоб скопіювати:\n\n"
-            f"```\n{escaped_bid}\n```{calc_footer}"
+            f"```\n{escaped_bid}\n```"
         )
 
         await message.reply_text(

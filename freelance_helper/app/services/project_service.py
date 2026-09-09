@@ -366,20 +366,30 @@ def format_project_message(
     else:
         stack_line = stack_label
 
-    raw_why = analysis_data.get("reason") or filter_result.reason
-    why_fit = human_why_fit(kind, good_matches, raw_why)
-    risk_info = format_risks(analysis_data, numeric_bids_count)
+    desc = ""
+    if project_dict:
+        desc = (project_dict.get("description") or "").strip()
+        if "Теги/категорії:" in desc:
+            desc = desc.split("Теги/категорії:")[0].strip()
+
+    desc_snippet = ""
+    if desc:
+        clean_desc = " ".join(desc.split())
+        if len(clean_desc) > 220:
+            clean_desc = clean_desc[:217].rstrip() + "..."
+        desc_snippet = f"📝 {clean_desc}"
 
     lines = [
         f"🚀 {title}",
         "",
-        f"💰 Бюджет: {budget}  •  👥 Ставок: {bids_count}  •  🎯 Score: {score}/100",
         f"🛠 Стек: {stack_line}",
-        f"💡 Чому підходить: {why_fit}",
-        f"⚠️ Ризик: {risk_info}",
+    ]
+    if desc_snippet:
+        lines.append(desc_snippet)
+    lines.extend([
         "",
         f"🔗 {url}",
-    ]
+    ])
 
     return "\n".join(lines)
 
@@ -624,6 +634,7 @@ async def process_and_send_project(
     await send_func(
         message[:4000],
         reply_markup=project_keyboard(project_id),
+        disable_web_page_preview=True,
     )
 
     if debug_stats is not None:

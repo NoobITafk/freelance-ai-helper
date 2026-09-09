@@ -230,6 +230,18 @@ CASES = [
         expected_technical=False,
     ),
     Case(
+        name="Voiceover advertising video",
+        project={
+            "title": "Запис озвучки рекламного відео",
+            "description": "Потрібен приємний дикторський голос для озвучення рекламного ролика.",
+            "budget": "1000 грн",
+            "bids_count": 1,
+            "url": "https://freelancehunt.com/project/voiceover",
+        },
+        expected_type="non_technical",
+        expected_technical=False,
+    ),
+    Case(
         name="SEO without programming",
         project={
             "title": "SEO-просування WordPress-сайту",
@@ -378,11 +390,12 @@ def main() -> int:
         project_dict=msg_project,
     )
     msg_lines = [line for line in formatted_msg.split("\n") if line.strip()]
-    if len(msg_lines) > 8 or len(formatted_msg) > 600 or "Fallback rules" in formatted_msg:
+    has_unwanted = any(w in formatted_msg for w in ["Score:", "Бюджет:", "Чому підходить:", "Ризик:"])
+    if len(msg_lines) > 6 or len(formatted_msg) > 600 or "Fallback rules" in formatted_msg or has_unwanted:
         failed += 1
         print("=" * 80)
         print("Concise message format: FAIL")
-        print(f"Lines count: {len(msg_lines)}, total chars: {len(formatted_msg)}")
+        print(f"Lines count: {len(msg_lines)}, total chars: {len(formatted_msg)}, has_unwanted: {has_unwanted}")
         print(formatted_msg)
     else:
         print("=" * 80)

@@ -135,6 +135,31 @@ NON_TECHNICAL_KEYWORDS = {
     "data entry": ("ручне внесення даних", "уважність до даних/операторська робота"),
     "внесення даних": ("ручне внесення даних", "уважність до даних/операторська робота"),
     "smm": ("SMM", "SMM/контент-маркетинг"),
+    "озвучк": ("озвучка / диктор", "дикторський голос / мікрофон"),
+    "озвучен": ("озвучка / диктор", "дикторський голос / мікрофон"),
+    "диктор": ("озвучка / диктор", "дикторський голос / звукозапис"),
+    "голос": ("озвучка / диктор", "дикторський голос / мікрофон"),
+    "аудіо": ("аудіо / звук", "звукозапис / аудіомонтаж"),
+    "audio": ("аудіо / звук", "звукозапис / аудіомонтаж"),
+    "voice": ("озвучка / диктор", "дикторський голос / звукозапис"),
+    "звукозапис": ("аудіо / звукозапис", "звукозаписне обладнання"),
+    "відео": ("відеомонтаж / відеозйомка", "Premiere Pro / DaVinci Resolve / After Effects"),
+    "монтаж": ("відеомонтаж", "Premiere Pro / DaVinci Resolve / CapCut"),
+    "анімац": ("анімація", "After Effects / 2D / 3D"),
+    "animation": ("анімація", "After Effects / 2D / 3D"),
+    "motion": ("моушн-дизайн", "After Effects"),
+    "титри": ("відеомонтаж / титри", "субтитри / відеомонтаж"),
+    "субтитри": ("відеомонтаж / титри", "субтитри / відеомонтаж"),
+    "ретуш": ("ретуш фото", "Photoshop / Lightroom"),
+    "фотосес": ("фотозйомка", "фототехніка"),
+    "фотограф": ("фотозйомка", "фототехніка"),
+    "транскрибац": ("транскрибація", "розшифровка аудіо в текст"),
+    "розшифровк": ("розшифровка аудіо", "розшифровка аудіо в текст"),
+    "сценарій": ("написання сценарію", "копірайтинг / креатив"),
+    "стаття": ("копірайтинг / статті", "копірайтинг / редактура"),
+    "контент": ("контент-маркетинг", "створення контенту"),
+    "обдзвін": ("дзвінки / продажі", "холодні дзвінки / комунікація"),
+    "дзвінк": ("дзвінки / продажі", "холодні дзвінки / комунікація"),
 }
 
 
@@ -689,7 +714,7 @@ def determine_tech_stack(kind: str, tech_list: list[str]) -> str:
         clean_tech = ", ".join(tech_list[:3])
         return f"{clean_tech} (надійний та перевірений код)"
 
-    return "Python та сучасні надійні інструменти"
+    return "Сучасні та надійні інструменти"
 
 
 def determine_tech_stack_en(kind: str, tech_list: list[str]) -> str:
@@ -728,7 +753,7 @@ def determine_tech_stack_en(kind: str, tech_list: list[str]) -> str:
         clean_tech = ", ".join(tech_list[:3])
         return f"{clean_tech} (clean, well-tested code)"
 
-    return "Python & modern reliable tools"
+    return "Modern reliable tools"
 
 
 def extract_project_insights(project: dict) -> dict:
@@ -987,7 +1012,7 @@ def build_project_deliverables(insights: dict) -> tuple[str, str]:
         post_support = "Налаштую формули та надам просту покрокову інструкцію, як користуватися таблицею."
         return deliverable, post_support
 
-    deliverable = "Напишу чистий, структурований код згідно з вашими вимогами та протестую перед здачею."
+    deliverable = "Якісно та в обумовлений термін виконаю завдання згідно з вашими вимогами з повною перевіркою результату."
     post_support = "Залишаюся на зв'язку після здачі для відповідей на запитання або дрібних правок."
     return deliverable, post_support
 
@@ -1063,7 +1088,7 @@ def build_project_deliverables_en(insights: dict) -> tuple[str, str]:
         post_support = "Set up foolproof formulas and provide clear step-by-step guidance."
         return deliverable, post_support
 
-    deliverable = "Write clean, maintainable code matching your exact specifications and test thoroughly before delivery."
+    deliverable = "Deliver high-quality work strictly matching your requirements and test everything thoroughly before delivery."
     post_support = "Remain available after completion for questions or minor adjustments."
     return deliverable, post_support
 
