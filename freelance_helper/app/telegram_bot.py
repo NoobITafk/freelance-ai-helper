@@ -9,23 +9,33 @@ from .bot.handlers import (
     ai_off,
     ai_on,
     auto_check,
+    auto_morning_digest,
     auto_off,
     auto_on,
+    backup_command,
+    case_add_command,
+    case_del_command,
+    cases_command,
     check_projects,
+    crm_command,
+    digest_command,
     handle_button,
     health_command,
     help_command,
+    income_command,
     last_command,
     portfolio_command,
     portfolio_set_command,
     profile_command,
     profile_set_command,
+    quiet_command,
     recent_command,
     settings_command,
     start,
     stats_command,
     test_ai,
     threshold_command,
+    webapp_command,
     why_command,
 )
 from .config import (
@@ -134,18 +144,27 @@ def run_bot() -> None:
 
     if TELEGRAM_CHAT_ID:
         try:
+            chat_id_int = int(TELEGRAM_CHAT_ID)
             app.job_queue.run_repeating(
                 auto_check,
                 interval=AUTO_CHECK_INTERVAL_SECONDS,
                 first=AUTO_CHECK_FIRST_RUN_SECONDS,
-                chat_id=int(TELEGRAM_CHAT_ID),
+                chat_id=chat_id_int,
                 name="auto_search",
+            )
+            # Schedule morning digest at 08:30
+            from datetime import time as dt_time
+            app.job_queue.run_daily(
+                auto_morning_digest,
+                time=dt_time(hour=8, minute=30),
+                chat_id=chat_id_int,
+                name="morning_digest",
             )
         except ValueError:
             logger.warning("TELEGRAM_CHAT_ID must be an integer: %s", TELEGRAM_CHAT_ID)
         else:
             logger.info(
-                "Auto search scheduled on startup | interval=%s seconds",
+                "Auto search and morning digest scheduled on startup | interval=%s seconds",
                 AUTO_CHECK_INTERVAL_SECONDS,
             )
 
@@ -163,6 +182,15 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("profile_set", profile_set_command))
     app.add_handler(CommandHandler("portfolio", portfolio_command))
     app.add_handler(CommandHandler("portfolio_set", portfolio_set_command))
+    app.add_handler(CommandHandler("cases", cases_command))
+    app.add_handler(CommandHandler("case_add", case_add_command))
+    app.add_handler(CommandHandler("case_del", case_del_command))
+    app.add_handler(CommandHandler("income", income_command))
+    app.add_handler(CommandHandler("crm", crm_command))
+    app.add_handler(CommandHandler("quiet", quiet_command))
+    app.add_handler(CommandHandler("digest", digest_command))
+    app.add_handler(CommandHandler("backup", backup_command))
+    app.add_handler(CommandHandler("webapp", webapp_command))
     app.add_handler(CommandHandler("ai_on", ai_on))
     app.add_handler(CommandHandler("ai_off", ai_off))
     app.add_handler(CommandHandler("last", last_command))

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Freelance AI Helper | Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: var(--tg-theme-bg-color, #0f172a);
+      --text-color: var(--tg-theme-text-color, #f8fafc);
+      --hint-color: var(--tg-theme-hint-color, #94a3b8);
+      --button-color: var(--tg-theme-button-color, #38bdf8);
+      --button-text: var(--tg-theme-button-text-color, #0f172a);
+      --card-bg: var(--tg-theme-secondary-bg-color, #1e293b);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --success: #22c55e;
+      --accent: #6366f1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding-bottom: 70px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      padding: 16px 20px;
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand span {
+      color: var(--button-color);
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--button-color);
+      font-weight: 600;
+    }
+
+    .container {
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--hint-color);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--success);
+      margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--hint-color);
+      margin: 16px 0 10px 4px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: transform 0.15s ease;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .card-score {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      margin-left: 10px;
+    }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--hint-color);
+      margin: 10px 0;
+    }
+
+    .meta-tag {
+      background: rgba(255,255,255,0.05);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .card-desc {
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: #cbd5e1;
+      margin-bottom: 14px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    button:active {
+      opacity: 0.8;
+    }
+
+    .btn-primary {
+      background: var(--button-color);
+      color: var(--button-text);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-color);
+    }
+
+    /* Tab Bar */
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--hint-color);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+
+    .tab-item.active {
+      color: var(--button-color);
+    }
+
+    .tab-icon {
+      font-size: 1.25rem;
+      margin-bottom: 2px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 75px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      color: #f8fafc;
+      padding: 10px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      🚀 Freelance <span>AI Helper</span>
+    </div>
+    <div class="badge" id="botStatus">Онлайн 24/7</div>
+  </header>
+
+  <div class="container">
+    <!-- Top Stats / CRM overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">💼 Заявки & Win Rate</div>
+        <div class="stat-value">25%</div>
+        <div class="stat-sub">3 завершено з 12 ставок</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">💰 Дохід за місяць</div>
+        <div class="stat-value">18,500 ₴</div>
+        <div class="stat-sub">+3,500 ₴ цього тижня</div>
+      </div>
+    </div>
+
+    <div class="section-title">Стрічка гарячих замовлень</div>
+
+    <!-- Project 1 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Розробка Telegram-бота для бронювання послуг</div>
+        <div class="card-score">88/100</div>
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">🛠 Telegram-бот (Python, SQLite)</span>
+        <span class="meta-tag">👤 ⭐ Топ-замовник (14 робіт, 100% 👍)</span>
+        <span class="meta-tag">📎 Figma макет</span>
+      </div>
+      <div class="card-desc">
+        Потрібен зручний Telegram-бот для запису клієнтів з календарем слотів, сповіщеннями адміністратора та панеллю керування.
+      </div>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="copyBid('Вітаю! Створю швидкого та надійного Telegram-бота для бронювання послуг. Ознайомився з макетом у Figma...')">
+          📋 Скопіювати ставку
+        </button>
+        <button class="btn-secondary" onclick="markPlaced('123')">
+          💼 Подав ставку
+        </button>
+      </div>
+    </div>
+
+    <!-- Project 2 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">FastAPI сервіс для синхронізації замовлень з CRM</div>
+        <div class="card-score">92/100</div>
+      </div>
+      <div class="card-meta">
+        <span class="meta-tag">🛠 Backend / API (FastAPI, PostgreSQL)</span>
+        <span class="meta-tag">👤 ✅ Надійний (5 робіт)</span>
+        <span class="meta-tag">📎 Google Docs ТЗ</span>
+      </div>
+      <div class="card-desc">
+        Необхідно реалізувати REST API бекенд з авторизацією через JWT, чергами завдань та інтеграцією з базою даних.
+      </div>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="copyBid('Вітаю! Розроблю чисту серверну частину для синхронізації замовлень з CRM на FastAPI. Ознайомився з ТЗ у Google Docs...')">
+          📋 Скопіювати ставку
+        </button>
+        <button class="btn-secondary" onclick="markPlaced('124')">
+          💼 Подав ставку
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="tabbar">
+    <div class="tab-item active">
+      <div class="tab-icon">⚡️</div>
+      <div>Стрічка</div>
+    </div>
+    <div class="tab-item" onclick="showToast('Розділ CRM аналітики')">
+      <div class="tab-icon">📊</div>
+      <div>Воронка</div>
+    </div>
+    <div class="tab-item" onclick="showToast('Кейси портфоліо')">
+      <div class="tab-icon">💼</div>
+      <div>Кейси</div>
+    </div>
+    <div class="tab-item" onclick="showToast('Налаштування: /settings')">
+      <div class="tab-icon">⚙️</div>
+      <div>Опції</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Текст скопійовано!</div>
+
+  <script>
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function copyBid(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('✅ Текст пропозиції скопійовано!');
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+      }).catch(() => {
+        showToast('Ставка скопійована!');
+      });
+    }
+
+    function markPlaced(id) {
+      showToast('💼 Статус: Ставку подано!');
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+      }
+    }
+  </script>
+</body>
+</html>

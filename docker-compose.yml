@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  freelance-helper:
+    build: .
+    container_name: freelance-ai-helper
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs

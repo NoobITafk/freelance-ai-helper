@@ -25,6 +25,9 @@ from freelance_helper.app.rules import (
     parse_budget_info,
 )
 from freelance_helper.app.services.project_service import (
+    calculate_sweet_spot,
+    detect_project_assets,
+    evaluate_employer,
     format_project_message,
     protect_strong_technical_match,
 )
@@ -719,6 +722,109 @@ def main() -> int:
     else:
         print("=" * 80)
         print("Natural grammar & budget negotiation: OK")
+
+    # 14. Employer evaluation, asset detection, and sweet spot calculation
+    total_checks += 1
+    emp_top = evaluate_employer({"completed_projects": 15, "positive_reviews": 15, "negative_reviews": 0})
+    emp_risky = evaluate_employer({"completed_projects": 4, "positive_reviews": 2, "negative_reviews": 3})
+    emp_new = evaluate_employer({"completed_projects": 0})
+
+    sample_attrs = {
+        "name": "Доопрацювання веб-сервісу",
+        "description": "Макет у figma.com/file/xyz123, ТЗ у docs.google.com/document/d/abc, також є архів dump.zip",
+    }
+    detected = detect_project_assets(sample_attrs)
+    sweet_spot = calculate_sweet_spot((10000, "UAH", True), 15)
+
+    module1_2_ok = (
+        emp_top["status"] == "top"
+        and emp_top["score_bonus"] > 0
+        and emp_risky["status"] == "risky"
+        and emp_risky["score_bonus"] < 0
+        and emp_new["status"] == "new"
+        and "Figma макет" in detected
+        and "Google Docs ТЗ" in detected
+        and "Архів з файлами" in detected
+        and sweet_spot is not None
+        and "sweet spot" in sweet_spot
+    )
+    if not module1_2_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Client intelligence & asset detection: FAIL | detected={detected} | sweet_spot={sweet_spot}")
+    else:
+        print("=" * 80)
+        print(f"Client intelligence & asset detection: OK (top bonus={emp_top['score_bonus']}, assets={detected})")
+
+    # 15. Portfolio cases RAG & Freelance CRM Pipeline
+    total_checks += 1
+    from freelance_helper.app.database import (
+        add_portfolio_case,
+        delete_portfolio_case,
+        get_best_case_for_project,
+        get_crm_stats,
+        get_portfolio_cases,
+        update_project_pipeline,
+    )
+    case_id = add_portfolio_case(
+        category="bot",
+        title="Telegram Crypto Payment Bot",
+        description="Бот для автоматичного прийому криптовалюти через webhook",
+        url="https://t.me/CryptoTestBot",
+    )
+    all_cases = get_portfolio_cases("bot")
+    best_case = get_best_case_for_project("telegram_bot", "Потрібен бот для оплати")
+
+    update_project_pipeline("test_crm_proj_1", "bid_placed")
+    update_project_pipeline("test_crm_proj_2", "completed", deal_amount=8500.0, currency="UAH")
+    crm_stats = get_crm_stats()
+
+    crm_cases_ok = (
+        case_id > 0
+        and any(c["id"] == case_id for c in all_cases)
+        and best_case is not None
+        and best_case["title"] == "Telegram Crypto Payment Bot"
+        and crm_stats["bids_placed"] >= 2
+        and crm_stats["completed"] >= 1
+        and crm_stats["income_total"] >= 8500.0
+    )
+    delete_portfolio_case(case_id)
+
+    if not crm_cases_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Portfolio cases RAG & CRM: FAIL | crm_stats={crm_stats} | best_case={best_case}")
+    else:
+        print("=" * 80)
+        print(f"Portfolio cases RAG & CRM: OK (win_rate={crm_stats['win_rate']:.1f}%, income={crm_stats['income_total']} UAH)")
+
+    # 16. Quiet hours evaluation & Database backup
+    total_checks += 1
+    from datetime import datetime
+    from freelance_helper.app.database import create_database_backup, is_quiet_hours_now, set_setting
+
+    set_setting("quiet_hours", "23:00 - 08:00")
+    night_time = datetime(2026, 9, 10, 2, 30)
+    day_time = datetime(2026, 9, 10, 14, 30)
+    is_quiet_night = is_quiet_hours_now(custom_now=night_time)
+    is_quiet_day = is_quiet_hours_now(custom_now=day_time)
+
+    backup_file = create_database_backup()
+    backup_ok = backup_file.exists() and backup_file.stat().st_size > 0
+    if backup_ok:
+        try:
+            backup_file.unlink()
+        except Exception:
+            pass
+
+    quiet_backup_ok = is_quiet_night and not is_quiet_day and backup_ok
+    if not quiet_backup_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Quiet hours & Backup check: FAIL | night={is_quiet_night} | day={is_quiet_day} | backup={backup_ok}")
+    else:
+        print("=" * 80)
+        print(f"Quiet hours & Backup check: OK (night={is_quiet_night}, day={is_quiet_day}, backup={backup_ok})")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

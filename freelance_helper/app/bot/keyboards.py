@@ -36,8 +36,25 @@ def bid_keyboard(project_id: str, url: str | None = None):
             InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
             InlineKeyboardButton("⏭ Пропустити", callback_data=f"skip:{project_id}"),
         ],
+        [
+            InlineKeyboardButton("💼 Я подав ставку", callback_data=f"crm_bid:{project_id}"),
+        ],
     ]
 
+    return InlineKeyboardMarkup(keyboard)
+
+
+def crm_pipeline_keyboard(project_id: str, current_status: str | None = None):
+    keyboard = [
+        [
+            InlineKeyboardButton("💬 Відповіли" + (" ✔️" if current_status == "replied" else ""), callback_data=f"crm_reply:{project_id}"),
+            InlineKeyboardButton("🤝 В роботі" + (" ✔️" if current_status == "in_progress" else ""), callback_data=f"crm_work:{project_id}"),
+        ],
+        [
+            InlineKeyboardButton("💰 Завершено" + (" ✔️" if current_status == "completed" else ""), callback_data=f"crm_done:{project_id}"),
+            InlineKeyboardButton("❌ Відхилено", callback_data=f"crm_declined:{project_id}"),
+        ],
+    ]
     return InlineKeyboardMarkup(keyboard)
 
 

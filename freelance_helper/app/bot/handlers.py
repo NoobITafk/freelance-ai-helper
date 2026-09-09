@@ -39,16 +39,32 @@ from ..config import (
 )
 from ..freelancehunt_api import FreelancehuntAPIError, get_projects, submit_project_bid
 from ..database import (
+    add_portfolio_case,
     check_database,
     cleanup_old_projects,
+    create_database_backup,
+    delete_portfolio_case,
+    get_crm_stats,
+    get_night_projects,
+    get_portfolio_cases,
     get_portfolio_links,
     get_project,
     get_recent_projects,
     get_setting,
     get_stats,
+    is_quiet_hours_now,
     set_portfolio_link,
     set_project_rating,
     set_setting,
+    update_project_pipeline,
+)
+from .keyboards import (
+    bid_keyboard,
+    confirm_publish_keyboard,
+    crm_pipeline_keyboard,
+    project_keyboard,
+    questions_keyboard,
+    unsuitable_project_keyboard,
 )
 from ..services.project_service import format_project_message, process_and_send_project
 from ..logger import logger
@@ -187,15 +203,23 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /threshold 35 — те саме, коротше
 /profile — показати профіль виконавця
 /profile_set текст — змінити профіль
-/portfolio — налаштовані посилання на портфоліо/кейси
-/portfolio_set категорія посилання — задати кейс (bot, parsing, backend, web, excel, general)
+/portfolio — посилання на портфоліо
+/portfolio_set кат посилання — задати посилання (bot, parsing, backend, web, mobile, devops, excel, general)
+/cases — список реальних кейсів для ставок
+/case_add кат назва | url | опис — додати кейс у базу
+/case_del ID — видалити кейс із бази
+/income (або /crm) — воронка заявок, конверсія та заробіток
+/quiet — налаштування тихих нічних годин
+/digest — ранковий дайджест проєктів за ніч
+/backup — надіслати бекап бази даних у чат
+/webapp — Telegram Mini App інтерфейс
 /test_ai — тест роботи аналізатора
 /why project_id — показати збережений аналіз
 
 📌 Кнопки під проєктом:
 ✅ Добрий | ❌ Поганий
 📝 Ставка | 💬 Відгук у чат
-❓ Уточнення | 🚀 Опублікувати
+❓ Уточнення | 💼 Я подав ставку
 🔁 Нова ставка | ⏭ Пропустити
 """
     await reply_text(update, text)
@@ -713,6 +737,246 @@ async def why_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply_text(update, text[:4000])
 
 
+async def cases_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    cases = get_portfolio_cases()
+    if not cases:
+        await reply_text(
+            update,
+            "📂 <b>База кейсів порожня.</b>\n\n"
+            "Додайте ваші реальні роботи для автоматичної підстановки у ставки:\n"
+            "<code>/case_add bot Назва кейсу | https://посилання | Короткий опис</code>\n\n"
+            "Категорії: <code>bot</code>, <code>parser</code>, <code>backend</code>, <code>web</code>, <code>mobile</code>, <code>devops</code>, <code>general</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    lines = ["📁 <b>Ваші реальні кейси в портфоліо:</b>\n"]
+    for c in cases:
+        lines.append(
+            f"🔹 <b>[ID {c['id']}]</b> [{c['category'].upper()}] {c['title']}\n"
+            f"   🔗 {c['url'] or 'Без посилання'}\n"
+            f"   📝 {c['description'] or 'Без опису'}\n"
+        )
+    lines.append("Видалити: <code>/case_del ID</code>\nДодати: <code>/case_add кат Назва | URL | Опис</code>")
+    await reply_text(update, "\n".join(lines)[:4000], parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def case_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await reply_text(
+            update,
+            "ℹ️ <b>Формат додавання кейсу:</b>\n"
+            "<code>/case_add <категорія> <назва> | <посилання> | <опис></code>\n\n"
+            "Приклад:\n"
+            "<code>/case_add bot Telegram Shop Bot | https://t.me/example_bot | Бот інтернет-магазину з оплатою LiqPay</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    full_arg = " ".join(context.args)
+    first_space = full_arg.find(" ")
+    if first_space == -1:
+        category = full_arg.lower()
+        rest = ""
+    else:
+        category = full_arg[:first_space].lower()
+        rest = full_arg[first_space:].strip()
+
+    parts = [p.strip() for p in rest.split("|")]
+    title = parts[0] if parts and parts[0] else f"Кейс {category}"
+    url = parts[1] if len(parts) > 1 else ""
+    desc = parts[2] if len(parts) > 2 else ""
+
+    case_id = add_portfolio_case(category=category, title=title, description=desc, url=url)
+    await reply_text(
+        update,
+        f"✅ <b>Кейс успішно додано! [ID {case_id}]</b>\n\n"
+        f"🏷 <b>Категорія:</b> {category}\n"
+        f"📌 <b>Назва:</b> {title}\n"
+        f"🔗 <b>URL:</b> {url or 'не вказано'}\n"
+        f"📝 <b>Опис:</b> {desc or 'не вказано'}\n\n"
+        "Тепер цей кейс буде автоматично підставлятися у відповідні ставки!",
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
+
+
+async def case_del_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args or not context.args[0].isdigit():
+        await reply_text(update, "Вкажіть числовий ID кейсу для видалення. Наприклад: <code>/case_del 2</code>", parse_mode="HTML")
+        return
+
+    case_id = int(context.args[0])
+    ok = delete_portfolio_case(case_id)
+    if ok:
+        await reply_text(update, f"✅ Кейс [ID {case_id}] видалено з бази.")
+    else:
+        await reply_text(update, f"❌ Кейс [ID {case_id}] не знайдено.")
+
+
+async def crm_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await income_command(update, context)
+
+
+async def income_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    stats = get_crm_stats()
+    text = (
+        f"💼 <b>Freelance CRM & Воронка замовлень</b>\n\n"
+        f"📊 <b>Конверсія відгуків:</b>\n"
+        f"• Подано заявок: <b>{stats['bids_placed']}</b>\n"
+        f"• Замовники відповіли: <b>{stats['replied']}</b> ({stats['reply_rate']:.1f}% відгук)\n"
+        f"• В активній роботі: <b>{stats['in_progress']}</b>\n"
+        f"• Успішно завершено: <b>{stats['completed']}</b> (Win Rate: <b>{stats['win_rate']:.1f}%</b>)\n\n"
+        f"💰 <b>Фінансові результати:</b>\n"
+        f"• Дохід за поточний місяць: <b>{stats['income_month']:,.0f} грн</b>\n"
+        f"• Загальний заробіток: <b>{stats['income_total']:,.0f} грн</b>\n\n"
+        f"💡 <i>Позначайте статус проєктів кнопкою «💼 Я подав ставку» під кожною згенерованою пропозицією.</i>"
+    )
+    await reply_text(update, text, parse_mode="HTML")
+
+
+async def quiet_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        current = get_setting("quiet_hours") or "23:00 - 08:00"
+        is_active = is_quiet_hours_now()
+        status_text = "🟢 Зараз діє (без звуку)" if is_active else "⚪ Зараз день (повідомлення зі звуком)"
+        await reply_text(
+            update,
+            f"🌙 <b>Режим «Тихі години»</b>\n\n"
+            f"⏱ Поточний інтервал: <b>{current}</b>\n"
+            f"Статус: {status_text}\n\n"
+            f"Корисні команди:\n"
+            f"• <code>/quiet 23:00-08:00</code> — встановити нічний час\n"
+            f"• <code>/quiet off</code> — вимкнути тихий режим\n\n"
+            f"<i>Під час тихих годин усі нові проєкти надсилаються тихо (без звукового сигналу), щоб не турбувати сон.</i>",
+            parse_mode="HTML",
+        )
+        return
+
+    arg = context.args[0].lower().strip()
+    if arg in {"off", "false", "0", "вимк", "вимкнути"}:
+        set_setting("quiet_hours", "off")
+        await reply_text(update, "☀️ Тихі години вимкнено. Усі сповіщення надходитимуть зі звуком.")
+        return
+
+    if "-" in arg:
+        parts = arg.split("-")
+        try:
+            datetime.strptime(parts[0].strip(), "%H:%M")
+            datetime.strptime(parts[1].strip(), "%H:%M")
+            formatted = f"{parts[0].strip()} - {parts[1].strip()}"
+            set_setting("quiet_hours", formatted)
+            await reply_text(
+                update,
+                f"🌙 <b>Тихі години встановлено: {formatted}</b>\n"
+                "У цей період бот надсилатиме нові проєкти без звуку.",
+                parse_mode="HTML",
+            )
+            return
+        except ValueError:
+            pass
+
+    await reply_text(
+        update,
+        "❌ Невірний формат. Вкажіть години як <code>HH:MM-HH:MM</code>, наприклад: <code>/quiet 23:00-08:00</code> або <code>/quiet off</code>",
+        parse_mode="HTML",
+    )
+
+
+async def digest_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    min_score = safe_setting_int(get_setting("min_score", str(MIN_SCORE)), MIN_SCORE)
+    projects = get_night_projects(hours=12, min_score=min_score)
+
+    if not projects:
+        await reply_text(
+            update,
+            "🌅 <b>Ранковий дайджест:</b>\n\n"
+            "За останні 12 годин нових високих за score проєктів не надходило.\n"
+            "Бот продовжує моніторинг у звичайному режимі!",
+            parse_mode="HTML",
+        )
+        return
+
+    lines = [
+        f"🌅 <b>Ранковий дайджест ({len(projects)} найкращих проєктів за ніч):</b>\n"
+    ]
+    for i, p in enumerate(projects, 1):
+        budget_str = p.get("budget") or "За домовленістю"
+        score_val = p.get("score") or 0
+        lines.append(
+            f"{i}. <b>{p.get('title')}</b>\n"
+            f"   💰 {budget_str}  •  🎯 Score: {score_val}/100\n"
+            f"   🔗 <a href=\"{p.get('url')}\">Відкрити на біржі</a>\n"
+        )
+    lines.append("<i>Щоб згенерувати ставку, використовуйте кнопку під карткою проєкту в стрічці або /recent.</i>")
+
+    await reply_text(update, "\n".join(lines)[:4000], parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def auto_morning_digest(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = context.job.chat_id if context.job else TELEGRAM_CHAT_ID
+    if not chat_id:
+        return
+    min_score = safe_setting_int(get_setting("min_score", str(MIN_SCORE)), MIN_SCORE)
+    projects = get_night_projects(hours=10, min_score=min_score)
+    if not projects:
+        return
+    lines = [
+        f"🌅 <b>Ранковий дайджест ({len(projects)} найкращих проєктів за ніч):</b>\n"
+    ]
+    for i, p in enumerate(projects, 1):
+        budget_str = p.get("budget") or "За домовленістю"
+        score_val = p.get("score") or 0
+        lines.append(
+            f"{i}. <b>{p.get('title')}</b>\n"
+            f"   💰 {budget_str}  •  🎯 Score: {score_val}/100\n"
+            f"   🔗 <a href=\"{p.get('url')}\">Відкрити на біржі</a>\n"
+        )
+    lines.append("<i>Щоб згенерувати ставку, використовуйте кнопку під карткою проєкту в стрічці або /recent.</i>")
+    try:
+        await context.bot.send_message(
+            chat_id=int(chat_id),
+            text="\n".join(lines)[:4000],
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    except Exception as e:
+        logger.warning("Auto morning digest failed: %s", e)
+
+
+async def backup_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_chat:
+        return
+
+    await reply_text(update, "⏳ Створюю резервну копію бази даних...")
+    try:
+        backup_path = create_database_backup()
+        with open(backup_path, "rb") as doc:
+            await context.bot.send_document(
+                chat_id=update.effective_chat.id,
+                document=doc,
+                filename=backup_path.name,
+                caption=f"📦 <b>Резервна копія бази даних</b>\n\nДата: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}\nФайл: <code>{backup_path.name}</code>",
+                parse_mode="HTML",
+            )
+    except Exception as exc:
+        logger.exception("Backup failed: %s", exc)
+        await reply_text(update, f"❌ Помилка створення бекапу: {exc}")
+
+
+async def webapp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (
+        "📱 <b>Telegram Mini App для Freelance AI Helper</b>\n\n"
+        "Інтерактивний мобільний інтерфейс дозволяє:\n"
+        "• 📊 Переглядати CRM воронку та заробіток\n"
+        "• ⚡️ Копіювати згенеровані ставки в 1 дотик\n"
+        "• ⚙️ Перемикати фільтри, тихі години та score прямо з телефону\n\n"
+        "Файл інтерфейсу: <code>freelance_helper/web_app/index.html</code>\n"
+        "Ви можете відкрити його локально або підключити як WebApp меню в @BotFather через команду <code>/setmenubutton</code>."
+    )
+    await reply_text(update, text, parse_mode="HTML")
+
+
 async def reply_safe_markdown(message, text: str, reply_markup=None):
     """
     Sends message with Markdown parse_mode, automatically falling back to plain text
@@ -785,6 +1049,58 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             pass
         await message.reply_text(labels[action])
+
+    elif action == "crm_bid":
+        update_project_pipeline(project_id, "bid_placed")
+        await message.reply_text(
+            f"💼 <b>Статус: Заявку подано!</b>\n\n"
+            f"📌 {project.get('title')}\n"
+            f"Замовлення додано до воронки активних заявок.\n"
+            f"Коли замовник відповість, оновіть статус нижче:",
+            parse_mode="HTML",
+            reply_markup=crm_pipeline_keyboard(project_id, current_status="bid_placed"),
+        )
+
+    elif action == "crm_reply":
+        update_project_pipeline(project_id, "replied")
+        await message.reply_text(
+            f"💬 <b>Статус: Замовник відповів!</b>\n\n"
+            f"📌 {project.get('title')}\n"
+            f"Конверсія у відповідь зафіксована. Успішних переговорів!",
+            parse_mode="HTML",
+            reply_markup=crm_pipeline_keyboard(project_id, current_status="replied"),
+        )
+
+    elif action == "crm_work":
+        update_project_pipeline(project_id, "in_progress")
+        await message.reply_text(
+            f"🤝 <b>Статус: Проєкт у роботі!</b>\n\n"
+            f"📌 {project.get('title')}\n"
+            f"Проєкт переведено в активне виконання. Продуктивної роботи!",
+            parse_mode="HTML",
+            reply_markup=crm_pipeline_keyboard(project_id, current_status="in_progress"),
+        )
+
+    elif action == "crm_done":
+        amount, currency, _ = parse_budget_info(project.get("budget"))
+        val = float(amount or 0)
+        curr = currency or "UAH"
+        update_project_pipeline(project_id, "completed", deal_amount=val, currency=curr)
+        await message.reply_text(
+            f"🏆 <b>Вітаємо! Проєкт успішно завершено!</b>\n\n"
+            f"📌 {project.get('title')}\n"
+            f"💰 Зараховано в дохід: <b>{val:,.0f} {curr}</b>\n"
+            f"Статистика та Win Rate оновлені у /income!",
+            parse_mode="HTML",
+            reply_markup=crm_pipeline_keyboard(project_id, current_status="completed"),
+        )
+
+    elif action == "crm_declined":
+        update_project_pipeline(project_id, "declined")
+        await message.reply_text(
+            f"❌ <b>Статус: Проєкт відхилено/архівовано.</b>\n📌 {project.get('title')}",
+            parse_mode="HTML",
+        )
 
     elif action in ["bid", "rebid"]:
         if not is_technical_project(project):

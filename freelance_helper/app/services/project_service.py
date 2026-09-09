@@ -18,10 +18,11 @@ from ..config import (
     USER_PROFILE,
 )
 from ..database import (
+    get_good_bad_keywords,
+    get_setting,
+    is_quiet_hours_now,
     is_seen,
     save_project,
-    get_setting,
-    get_good_bad_keywords,
 )
 from ..rules import (
     build_rules_fallback_analysis,
@@ -329,6 +330,135 @@ def format_risks(analysis_data: dict, numeric_bids_count: int | None) -> str:
     return f"🔴 підвищений ({risk_val}/10) • {joined}"
 
 
+def evaluate_employer(employer: dict | None) -> dict:
+    if not employer or not isinstance(employer, dict):
+        return {"badge": "", "score_bonus": 0, "status": "unknown"}
+
+    completed = int(employer.get("completed_projects") or 0)
+    pos = int(employer.get("positive_reviews") or 0)
+    neg = int(employer.get("negative_reviews") or 0)
+    total_reviews = pos + neg
+
+    if neg >= 2 or (completed >= 3 and total_reviews > 0 and (pos / total_reviews) < 0.8):
+        return {
+            "badge": f"⚠️ Ризик ({neg} негат. відгуків)",
+            "score_bonus": -6,
+            "status": "risky",
+        }
+
+    if completed >= 10 and (pos >= 8 or neg == 0):
+        pos_pct = int((pos / total_reviews * 100)) if total_reviews else 100
+        return {
+            "badge": f"⭐ Топ-замовник ({completed} робіт, {pos_pct}% 👍)",
+            "score_bonus": 7,
+            "status": "top",
+        }
+
+    if completed >= 3 and neg == 0:
+        return {
+            "badge": f"✅ Надійний ({completed} робіт, 100% 👍)",
+            "score_bonus": 5,
+            "status": "reliable",
+        }
+
+    if completed == 0:
+        return {
+            "badge": "🆕 Новий замовник (без відгуків)",
+            "score_bonus": 0,
+            "status": "new",
+        }
+
+    return {
+        "badge": f"👤 {completed} робіт",
+        "score_bonus": 2,
+        "status": "regular",
+    }
+
+
+def detect_project_assets(attributes: dict) -> list[str]:
+    assets = []
+    text = (attributes.get("description") or "").lower()
+    name = (attributes.get("name") or "").lower()
+    combined = f"{name} {text}"
+
+    # 1. API attachments
+    attachments = attributes.get("attachments") or attributes.get("attachment")
+    if attachments:
+        if isinstance(attachments, list):
+            for att in attachments:
+                fname = ""
+                if isinstance(att, dict):
+                    fname = (att.get("name") or att.get("file_name") or "").lower()
+                elif isinstance(att, str):
+                    fname = att.lower()
+                if fname:
+                    combined += f" {fname}"
+        elif isinstance(attachments, dict):
+            combined += f" {str(attachments).lower()}"
+
+    # 2. Figma designs
+    if "figma.com/" in combined or "макет" in combined or "дизайн" in combined and "figma" in combined:
+        assets.append("Figma макет")
+
+    # 3. Google Docs & Drive
+    if "docs.google.com/document" in combined or "google doc" in combined or "гугл док" in combined:
+        assets.append("Google Docs ТЗ")
+    elif "docs.google.com/spreadsheets" in combined or "google sheets" in combined or "гугл таблиц" in combined:
+        assets.append("Google Таблиця")
+    elif "drive.google.com" in combined:
+        assets.append("Google Drive")
+
+    # 4. Code Repositories
+    if "github.com" in combined or "gitlab.com" in combined:
+        assets.append("GitHub/GitLab репозиторій")
+
+    # 5. Screencast & Video
+    if "loom.com/share" in combined or "youtu.be" in combined or "youtube.com/watch" in combined:
+        assets.append("Відео ТЗ (Loom/YouTube)")
+
+    # 6. Audio / Voice notes
+    if any(ext in combined for ext in [".mp3", ".wav", ".ogg", ".m4a"]) or "аудіо" in combined or "голосове" in combined:
+        assets.append("Аудіозапис ТЗ")
+
+    # 7. Document files
+    if any(ext in combined for ext in [".pdf", ".docx", ".doc", ".xlsx", ".csv"]):
+        assets.append("Файл ТЗ / Документ")
+
+    # 8. Archives
+    if any(ext in combined for ext in [".zip", ".rar", ".7z", ".tar.gz"]):
+        assets.append("Архів з файлами")
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique_assets = []
+    for a in assets:
+        if a not in seen:
+            seen.add(a)
+            unique_assets.append(a)
+
+    return unique_assets
+
+
+def calculate_sweet_spot(budget_info: tuple, numeric_bids: int | None) -> str | None:
+    amount, currency, is_fixed = budget_info
+    if not amount or amount <= 0:
+        return None
+
+    currency = currency or "UAH"
+    bids = numeric_bids or 0
+
+    if bids <= 3:
+        # Low competition: bid full budget
+        return f"{amount:,} {currency} (повний бюджет)"
+    elif bids <= 10:
+        # Moderate competition: bid full budget or competitive sweet spot
+        return f"{amount:,} {currency}"
+    else:
+        # High competition: sweet spot is 90-95% of budget for edge
+        sweet_amount = int(amount * 0.95 / 50) * 50
+        return f"{sweet_amount:,} {currency} (sweet spot)"
+
+
 def format_project_message(
     title: str,
     budget,
@@ -347,6 +477,8 @@ def format_project_message(
         "telegram_bot": "Telegram-бот",
         "backend": "Backend / API",
         "frontend": "Frontend / Веб",
+        "mobile": "Mobile додаток",
+        "devops": "DevOps / Сервер",
         "ai_integration": "AI / Інтеграція",
         "wordpress": "WordPress",
         "parsing": "Парсинг даних",
@@ -367,10 +499,23 @@ def format_project_message(
         stack_line = stack_label
 
     desc = ""
+    employer_badge = ""
+    assets_badges = []
     if project_dict:
         desc = (project_dict.get("description") or "").strip()
         if "Теги/категорії:" in desc:
             desc = desc.split("Теги/категорії:")[0].strip()
+
+        # Check for employer
+        emp = project_dict.get("employer")
+        if emp and isinstance(emp, dict):
+            emp_eval = evaluate_employer(emp)
+            employer_badge = emp_eval.get("badge", "")
+
+        # Check for assets
+        detected = detect_project_assets(project_dict)
+        if detected:
+            assets_badges = detected[:2]
 
     desc_snippet = ""
     if desc:
@@ -379,11 +524,21 @@ def format_project_message(
             clean_desc = clean_desc[:217].rstrip() + "..."
         desc_snippet = f"📝 {clean_desc}"
 
+    # Build meta line (employer + assets) if detected, ensuring lines <= 6
+    meta_parts = []
+    if employer_badge:
+        meta_parts.append(employer_badge)
+    if assets_badges:
+        meta_parts.append(f"📎 {', '.join(assets_badges)}")
+    meta_line = " • ".join(meta_parts)
+
     lines = [
         f"🚀 {title}",
         "",
         f"🛠 Стек: {stack_line}",
     ]
+    if meta_line:
+        lines.append(meta_line)
     if desc_snippet:
         lines.append(desc_snippet)
     lines.extend([
@@ -416,6 +571,8 @@ def save_project_status(
     reason: str,
     score: int | None = None,
     analysis: str = "",
+    employer_info: str | None = None,
+    assets_info: str | None = None,
 ) -> None:
     save_project(
         project_id=project_id,
@@ -428,6 +585,8 @@ def save_project_status(
         status=status,
         score=score,
         reason=reason,
+        employer_info=employer_info,
+        assets_info=assets_info,
     )
 
 
@@ -450,6 +609,12 @@ async def process_and_send_project(
         raw_bids = attributes.get("bids")
     bids_count = raw_bids if raw_bids is not None else "Невідомо"
     url = get_project_url(project, attributes)
+
+    employer = attributes.get("employer") or project.get("employer")
+    emp_eval = evaluate_employer(employer)
+    detected_assets = detect_project_assets(attributes)
+    employer_badge = emp_eval.get("badge", "")
+    assets_summary = ", ".join(detected_assets) if detected_assets else ""
 
     if not project_id:
         if debug_stats is not None:
@@ -476,6 +641,8 @@ async def process_and_send_project(
             url,
             status="skipped",
             reason=reason,
+            employer_info=employer_badge,
+            assets_info=assets_summary,
         )
         logger.info("Filtered by keywords: %s | %s", title, reason)
         return False
@@ -493,6 +660,8 @@ async def process_and_send_project(
             url,
             status="skipped",
             reason=reason,
+            employer_info=employer_badge,
+            assets_info=assets_summary,
         )
         logger.info("Filtered maybe project: %s | %s", title, reason)
         return False
@@ -519,6 +688,8 @@ async def process_and_send_project(
             url,
             status="skipped",
             reason=reason,
+            employer_info=employer_badge,
+            assets_info=assets_summary,
         )
         logger.info("Filtered by max bids: %s | %s", title, reason)
         return False
@@ -536,6 +707,8 @@ async def process_and_send_project(
             url,
             status="skipped",
             reason=reason,
+            employer_info=employer_badge,
+            assets_info=assets_summary,
         )
         logger.info("Filtered by high competition: %s | %s", title, reason)
         return False
@@ -558,6 +731,7 @@ async def process_and_send_project(
 
     score = int(analysis_data.get("success_chance", 0))
     score += learning_bonus(title, stored_description, get_good_bad_keywords())
+    score += emp_eval.get("score_bonus", 0)
     score = max(0, min(100, score))
     min_score = safe_setting_int(get_setting("min_score", str(MIN_SCORE)), MIN_SCORE)
     if analysis_data.get("manual_review"):
@@ -569,6 +743,8 @@ async def process_and_send_project(
         "budget": budget,
         "bids_count": bids_count,
         "url": url,
+        "employer": employer,
+        "attachments": attributes.get("attachments"),
     }
     p_type = project_type(project_dict)
 
@@ -594,6 +770,8 @@ async def process_and_send_project(
             reason=reason,
             score=score,
             analysis=analysis_for_db,
+            employer_info=employer_badge,
+            assets_info=assets_summary,
         )
         logger.info(
             "Filtered by score: %s | score=%s | min_score=%s | reason=%s",
@@ -616,6 +794,8 @@ async def process_and_send_project(
         reason=send_reason,
         score=score,
         analysis=analysis_for_db,
+        employer_info=employer_badge,
+        assets_info=assets_summary,
     )
 
     message = format_project_message(
@@ -631,10 +811,12 @@ async def process_and_send_project(
         project_dict=project_dict,
     )
 
+    is_quiet = is_quiet_hours_now()
     await send_func(
         message[:4000],
         reply_markup=project_keyboard(project_id),
         disable_web_page_preview=True,
+        disable_notification=is_quiet,
     )
 
     if debug_stats is not None:

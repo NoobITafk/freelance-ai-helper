@@ -946,6 +946,19 @@ def extract_project_insights(project: dict) -> dict:
     if any(k in full_text for k in ["характеристик", "опис", "description", "артикул", "sku"]):
         parse_fields.append("характеристики")
 
+    # Project assets & materials
+    assets = []
+    if "figma.com" in full_text or "макет" in full_text or "фігма" in full_text:
+        assets.append("макетом у Figma")
+    if "docs.google.com/document" in full_text or "google doc" in full_text or "гугл док" in full_text:
+        assets.append("ТЗ у Google Docs")
+    elif "drive.google.com" in full_text:
+        assets.append("файлами на Google Drive")
+    if any(ext in full_text for ext in [".pdf", ".docx", ".xlsx"]):
+        assets.append("файлом ТЗ")
+    if "loom.com" in full_text or "youtu" in full_text:
+        assets.append("відео ТЗ")
+
     return {
         "title": title,
         "desc": desc,
@@ -967,6 +980,7 @@ def extract_project_insights(project: dict) -> dict:
         "has_broadcast": has_broadcast,
         "has_antidetect": has_antidetect,
         "parse_fields": parse_fields,
+        "assets": assets,
     }
 
 

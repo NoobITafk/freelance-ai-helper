@@ -315,7 +315,15 @@ python -m compileall freelance_helper
 | `/profile` | показати профіль виконавця |
 | `/profile_set текст` | змінити профіль виконавця |
 | `/portfolio` | показати налаштовані посилання на портфоліо за категоріями |
-| `/portfolio_set <категорія> <посилання>` | встановити кейс під категорію (bot, parsing, backend, web, excel, general) |
+| `/portfolio_set <категорія> <посилання>` | встановити посилання під категорію (bot, parsing, backend, web, mobile, devops, excel, general) |
+| `/cases` | перегляд бази реальних кейсів для ставок |
+| `/case_add <кат> <назва> \| <url> \| <опис>` | додати кейс у портфоліо |
+| `/case_del <id>` | видалити кейс із бази |
+| `/income` (або `/crm`) | воронка заявок, конверсія (Win Rate) та фінансова аналітика |
+| `/quiet` | налаштування тихих годин для нічного режиму без звуку |
+| `/digest` | ранковий звіт найкращих нічних проєктів |
+| `/backup` | миттєве створення та відправка бекапу бази SQLite у чат |
+| `/webapp` | інформація про інтерактивний Telegram Mini App інтерфейс |
 | `/test_ai` | швидкий тест аналізатора на тестовому проєкті |
 | `/recent` | останні проєкти з бази (sent/skipped) |
 | `/last` | alias для `/recent` |
@@ -396,18 +404,20 @@ tail -f logs/bot.log
 
 ```bash
 git status
-git add README.md requirements.txt .env.example .gitignore
+git add README.md requirements.txt .env.example .gitignore Dockerfile docker-compose.yml
 git add freelance_helper/app/main.py
 git add freelance_helper/app/telegram_bot.py
 git add freelance_helper/app/bot/handlers.py
 git add freelance_helper/app/bot/keyboards.py
 git add freelance_helper/app/ai_analyzer.py
 git add freelance_helper/app/config.py
+git add freelance_helper/app/database.py
 git add freelance_helper/app/freelancehunt_api.py
 git add freelance_helper/app/services/project_service.py
 git add freelance_helper/app/rules.py
+git add freelance_helper/web_app/index.html
 git add scripts/check_project_logic.py
-git commit -m "Fix project startup and bot responses"
+git commit -m "Implement full upgrade suite"
 git push
 ```
 
