@@ -182,6 +182,18 @@ def get_stats() -> dict:
     with get_connection() as conn:
         total = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
 
+        sent = conn.execute(
+            "SELECT COUNT(*) FROM projects WHERE status = 'sent'"
+        ).fetchone()[0]
+
+        recent_24h = conn.execute(
+            "SELECT COUNT(*) FROM projects WHERE created_at >= datetime('now', '-1 day')"
+        ).fetchone()[0]
+
+        recent_sent_24h = conn.execute(
+            "SELECT COUNT(*) FROM projects WHERE status = 'sent' AND created_at >= datetime('now', '-1 day')"
+        ).fetchone()[0]
+
         rows = conn.execute("""
             SELECT user_rating, COUNT(*) AS count
             FROM projects
@@ -192,6 +204,9 @@ def get_stats() -> dict:
 
         return {
             "total": total,
+            "sent": sent,
+            "recent_24h": recent_24h,
+            "recent_sent_24h": recent_sent_24h,
             "great": ratings.get("great", 0),
             "good": ratings.get("good", 0),
             "maybe": ratings.get("maybe", 0),

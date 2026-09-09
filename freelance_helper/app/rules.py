@@ -124,6 +124,16 @@ GOOD_KEYWORDS = [
     "telebot",
     "веб-додаток",
     "веб додаток",
+    "flutter",
+    "react native",
+    "android",
+    "ios",
+    "swift",
+    "kotlin",
+    "nginx",
+    "vps",
+    "деплой",
+    "deploy",
 ]
 
 HARD_BAD_KEYWORDS = [
@@ -387,6 +397,8 @@ def parse_budget_info(budget) -> tuple[int | None, str, int | None]:
             currency = "USD"
         elif "€" in text or "eur" in text or "євр" in text:
             currency = "EUR"
+        elif "pln" in text or "злот" in text or "zł" in text:
+            currency = "PLN"
         elif "грн" in text or "uah" in text:
             currency = "UAH"
 
@@ -406,6 +418,8 @@ def parse_budget_info(budget) -> tuple[int | None, str, int | None]:
         rate = 41.0
     elif currency == "EUR":
         rate = 44.0
+    elif currency == "PLN":
+        rate = 10.5
 
     amount_uah = int(amount * rate)
     return amount, currency, amount_uah

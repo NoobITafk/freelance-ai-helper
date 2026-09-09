@@ -107,6 +107,15 @@ def release_single_instance_lock() -> None:
         _lock_fd = None
 
 
+async def _on_shutdown(app: Application) -> None:
+    from .freelancehunt_api import close_http_client
+    try:
+        await close_http_client()
+        logger.info("HTTP client closed cleanly on bot shutdown")
+    except Exception as e:
+        logger.warning("Error closing HTTP client on shutdown: %s", e)
+
+
 def run_bot() -> None:
     setup_logger()
     init_db()
@@ -116,7 +125,12 @@ def run_bot() -> None:
 
     acquire_single_instance_lock()
 
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    app = (
+        Application.builder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .post_shutdown(_on_shutdown)
+        .build()
+    )
 
     if TELEGRAM_CHAT_ID:
         try:

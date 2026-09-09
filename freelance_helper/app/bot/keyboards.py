@@ -1,11 +1,13 @@
 from telegram import CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def project_keyboard(project_id: str):
+def project_keyboard(project_id: str, current_rating: str | None = None):
+    good_label = "✅ Добрий" + (" ✔️" if current_rating == "good" else "")
+    bad_label = "❌ Поганий" + (" ✔️" if current_rating == "bad" else "")
     keyboard = [
         [
-            InlineKeyboardButton("✅ Добрий", callback_data=f"good:{project_id}"),
-            InlineKeyboardButton("❌ Поганий", callback_data=f"bad:{project_id}"),
+            InlineKeyboardButton(good_label, callback_data=f"good:{project_id}"),
+            InlineKeyboardButton(bad_label, callback_data=f"bad:{project_id}"),
         ],
         [
             InlineKeyboardButton("📝 Ставка", callback_data=f"bid:{project_id}"),

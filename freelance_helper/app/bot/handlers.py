@@ -23,7 +23,7 @@ from ..ai_analyzer import (
     unsuitable_project_text,
 )
 from ..rules import parse_budget_info
-from .keyboards import bid_keyboard, confirm_publish_keyboard, questions_keyboard, unsuitable_project_keyboard
+from .keyboards import bid_keyboard, confirm_publish_keyboard, project_keyboard, questions_keyboard, unsuitable_project_keyboard
 from ..config import (
     AI_ANALYSIS_ENABLED,
     AI_TIMEOUT_SECONDS,
@@ -479,23 +479,31 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     stats = get_stats()
     min_score = get_setting("min_score", str(MIN_SCORE))
     ai_enabled = get_setting("AI_ANALYSIS_ENABLED", str(AI_ANALYSIS_ENABLED)).lower()
+    interval_min = AUTO_CHECK_INTERVAL_SECONDS // 60 if AUTO_CHECK_INTERVAL_SECONDS >= 60 else AUTO_CHECK_INTERVAL_SECONDS
 
-    text = f"""
-📊 Статистика
+    text = f"""📊 Статистика роботи бота
 
-Усього проєктів у базі: {stats["total"]}
+⏱ За останні 24 години:
+• Оброблено проєктів: {stats.get("recent_24h", 0)}
+• Надіслано у Telegram: {stats.get("recent_sent_24h", 0)}
 
-🔥 Дуже підходять: {stats["great"]}
-✅ Добрі: {stats["good"]}
-🤔 Можливо: {stats["maybe"]}
-❌ Погані: {stats["bad"]}
-🚫 Не моє: {stats["not_mine"]}
-⏭ Пропущені: {stats["skip"]}
-⚪ Без оцінки: {stats["unrated"]}
+📦 За весь час:
+• Усього в базі: {stats["total"]}
+• Надіслано користувачу: {stats.get("sent", 0)}
 
-🎯 Мінімальний score: {min_score}
-🤖 AI-аналіз: {ai_enabled}
-"""
+👍 Оцінки та якість:
+• 🔥 Дуже підходять: {stats["great"]}
+• ✅ Добрі: {stats["good"]}
+• 🤔 Можливо: {stats["maybe"]}
+• ❌ Погані: {stats["bad"]}
+• 🚫 Не моє: {stats["not_mine"]}
+• ⏭ Пропущені: {stats["skip"]}
+• ⚪ Без оцінки: {stats["unrated"]}
+
+⚙️ Поточні параметри:
+• 🎯 Поріг score: {min_score}
+• 🤖 AI-аналіз: {ai_enabled}
+• 🔄 Інтервал автопошуку: {interval_min} хв"""
 
     await reply_text(update, text)
 
@@ -770,6 +778,12 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "not_mine": "🚫 Збережено: не твоє.",
             "skip": "⏭ Проєкт пропущено.",
         }
+        try:
+            await query.edit_message_reply_markup(
+                reply_markup=project_keyboard(project_id, current_rating=action)
+            )
+        except Exception:
+            pass
         await message.reply_text(labels[action])
 
     elif action in ["bid", "rebid"]:

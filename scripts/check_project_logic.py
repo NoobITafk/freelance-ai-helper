@@ -447,18 +447,20 @@ def main() -> int:
     total_checks += 1
     b_dict = parse_budget_info({"amount": 5000, "currency": "UAH"})
     b_usd = parse_budget_info("$300")
+    b_pln = parse_budget_info("500 PLN")
     b_high = budget_score_adjustment("20 000 грн")
     b_tiny = budget_score_adjustment("200 грн")
     budget_ok_test = (
         b_dict == (5000, "UAH", 5000)
         and b_usd == (300, "USD", 12300)
+        and b_pln == (500, "PLN", 5250)
         and b_high[1] == "yes"  # 20 000 грн is recognized as good budget!
         and b_tiny[0] < 0       # 200 грн is penalized!
     )
     if not budget_ok_test:
         failed += 1
         print("=" * 80)
-        print(f"Budget & currency evaluation: FAIL | dict={b_dict} | usd={b_usd} | high={b_high} | tiny={b_tiny}")
+        print(f"Budget & currency evaluation: FAIL | dict={b_dict} | usd={b_usd} | pln={b_pln} | high={b_high} | tiny={b_tiny}")
     else:
         print("=" * 80)
         print("Budget & currency evaluation: OK")
