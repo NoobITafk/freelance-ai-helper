@@ -108,6 +108,22 @@ TECHNICAL_KEYWORDS = {
     "адмінка",
     "dashboard",
     "crm",
+    "flutter",
+    "react native",
+    "android",
+    "ios",
+    "swift",
+    "kotlin",
+    "docker",
+    "деплой",
+    "deploy",
+    "nginx",
+    "сервер",
+    "vps",
+    "linux",
+    "devops",
+    "хостинг",
+    "домен",
 }
 
 NON_TECHNICAL_KEYWORDS = {
@@ -587,10 +603,19 @@ def project_type(project: dict) -> str:
     if any(contains_keyword(text, word) for word in ["telegram", "телеграм", "bot", "бот"]):
         return "telegram_bot"
 
+    if any(word in text for word in ["flutter", "react native", "react-native", "android", "ios", "swift", "kotlin", "мобільний додаток", "мобільні додатки", "мобильное приложение"]):
+        return "mobile"
+
     if any(word in text for word in ["openai", "chatgpt", "llm", "ai", "штучний інтелект"]):
         return "ai_integration"
 
-    if any(word in text for word in ["fastapi", "django", "flask", "backend", "sql", "база дан", "бази дан", "базы дан", "database", "postgres", "mysql", "mongodb", "redis"]):
+    if any(word in text for word in ["fastapi", "django", "flask", "backend"]):
+        return "backend"
+
+    if any(word in text for word in ["docker", "деплой", "deploy", "nginx", "сервер", "vps", "linux", "devops", "хостинг", "домен"]):
+        return "devops"
+
+    if any(word in text for word in ["sql", "база дан", "бази дан", "базы дан", "database", "postgres", "mysql", "mongodb", "redis"]):
         return "backend"
 
     if any(word in text for word in ["react", "vue", "next", "next.js", "nextjs", "nuxt", "angular", "svelte", "frontend", "фронтенд"]):
@@ -651,6 +676,8 @@ def preliminary_bid_estimate(project: dict) -> str:
     estimates = {
         "telegram_bot": "Орієнтовно: 3-7 днів, від 4000-12000 грн залежно від сценаріїв, бази даних, адмін-функцій і деплою.",
         "ai_integration": "Орієнтовно: 2-6 днів, від 4000-12000 грн залежно від AI-сервісу, промптів, інтеграції та тестування якості.",
+        "mobile": "Орієнтовно: 4-12 днів, від 6000-20000 грн залежно від кількості екранів, логіки та API.",
+        "devops": "Орієнтовно: 1-3 дні, від 2000-6000 грн залежно від конфігурації сервера, Docker та доменів.",
         "backend": "Орієнтовно: 3-8 днів, від 5000-15000 грн залежно від API, бази даних, авторизації та деплою.",
         "frontend": "Орієнтовно: 2-6 днів, від 3000-10000 грн залежно від макета, станів інтерфейсу, адаптиву та інтеграції з API.",
         "wordpress": "Орієнтовно: 1-4 дні, від 1500-6000 грн залежно від кількості правок, доступів і теми.",
@@ -710,6 +737,12 @@ def determine_tech_stack(kind: str, tech_list: list[str]) -> str:
     if kind == "excel":
         return "Google Sheets / Excel (автоматичні формули, очищення даних)"
 
+    if kind == "mobile":
+        return "Flutter / React Native (або нативний Android/iOS), швидка робота та адаптивний UI"
+
+    if kind == "devops":
+        return "Linux, Docker, Nginx, Systemd (надійний деплой та автоперезапуск)"
+
     if tech_list:
         clean_tech = ", ".join(tech_list[:3])
         return f"{clean_tech} (надійний та перевірений код)"
@@ -748,6 +781,12 @@ def determine_tech_stack_en(kind: str, tech_list: list[str]) -> str:
 
     if kind == "excel":
         return "Google Sheets / Excel (automated formulas & data cleaning)"
+
+    if kind == "mobile":
+        return "Flutter / React Native (or native Android/iOS), fast performance & clean UI"
+
+    if kind == "devops":
+        return "Linux, Docker, Nginx, Systemd (reliable deployment & auto-restarts)"
 
     if tech_list:
         clean_tech = ", ".join(tech_list[:3])
@@ -1012,6 +1051,16 @@ def build_project_deliverables(insights: dict) -> tuple[str, str]:
         post_support = "Налаштую формули та надам просту покрокову інструкцію, як користуватися таблицею."
         return deliverable, post_support
 
+    if kind == "mobile":
+        deliverable = "Розроблю швидкий, стабільний мобільний додаток із сучасним та зручним інтерфейсом."
+        post_support = "Підготую релізний білд та допоможу з публікацією або тестуванням на реальних пристроях."
+        return deliverable, post_support
+
+    if kind == "devops":
+        deliverable = "Повністю налаштую серверне оточення, контейнеризацію (Docker) та автозапуск з моніторингом."
+        post_support = "Перевірю безпеку портів, роботу сервісу та надам просту інструкцію з керування."
+        return deliverable, post_support
+
     deliverable = "Якісно та в обумовлений термін виконаю завдання згідно з вашими вимогами з повною перевіркою результату."
     post_support = "Залишаюся на зв'язку після здачі для відповідей на запитання або дрібних правок."
     return deliverable, post_support
@@ -1088,6 +1137,16 @@ def build_project_deliverables_en(insights: dict) -> tuple[str, str]:
         post_support = "Set up foolproof formulas and provide clear step-by-step guidance."
         return deliverable, post_support
 
+    if kind == "mobile":
+        deliverable = "Develop a high-performance, stable mobile app with a modern, intuitive user interface."
+        post_support = "Prepare release builds and assist with real-device testing and deployment."
+        return deliverable, post_support
+
+    if kind == "devops":
+        deliverable = "Configure the server environment, Docker containerization, and automated restart services."
+        post_support = "Verify network security/firewall and provide clean instructions for maintenance."
+        return deliverable, post_support
+
     deliverable = "Deliver high-quality work strictly matching your requirements and test everything thoroughly before delivery."
     post_support = "Remain available after completion for questions or minor adjustments."
     return deliverable, post_support
@@ -1146,6 +1205,16 @@ def smart_project_questions(insights: dict) -> list[str]:
         questions.append("які саме завдання має вирішувати штучний інтелект (відповіді клієнтам, аналіз чи допомога в чаті)?")
         questions.append("чи є вже створений акаунт OpenAI (ChatGPT), чи допомогти налаштувати новий?")
 
+    elif kind == "mobile":
+        questions.append("під які платформи потрібен додаток (Android, iOS чи обидві)?")
+        questions.append("чи є вже готовий дизайн (макет у Figma) або серверний API?")
+        questions.append("чи планується публікація в Google Play / App Store?")
+
+    elif kind == "devops":
+        questions.append("яка операційна система на сервері (Ubuntu/Debian) та чи є root-доступ?")
+        questions.append("чи потрібна контейнеризація в Docker та налаштування SSL-сертифікатів?")
+        questions.append("який саме додаток/сервіс потрібно розгорнути?")
+
     else:
         questions.append("який кінцевий результат очікується на виході?")
         questions.append("чи є готові початкові матеріали або доступи?")
@@ -1201,6 +1270,16 @@ def smart_project_questions_en(insights: dict) -> list[str]:
         questions.append("What specific tasks should the AI handle (customer support, data analysis, or chat assistance)?")
         questions.append("Do you have an existing OpenAI API key, or do you need assistance getting one configured?")
 
+    elif kind == "mobile":
+        questions.append("Which platforms are targeted (Android, iOS, or cross-platform)?")
+        questions.append("Do you have existing Figma mockups or a backend API ready?")
+        questions.append("Will the app be published to Google Play / App Store?")
+
+    elif kind == "devops":
+        questions.append("What OS is on the server (e.g. Ubuntu/Debian) and do you have root access?")
+        questions.append("Do you require Docker containerization and free SSL (HTTPS) setup?")
+        questions.append("Which specific service or application needs to be deployed?")
+
     else:
         questions.append("What is the expected final deliverable for this project?")
         questions.append("Do you have initial assets, credentials, or API documentation ready?")
@@ -1221,6 +1300,10 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
     # Dynamic realistic timeline
     if kind == "telegram_bot":
         time_estimate = "3-5 days" if (insights.get("has_payment") or insights.get("has_admin")) else "1-2 days"
+    elif kind == "mobile":
+        time_estimate = "4-10 days"
+    elif kind == "devops":
+        time_estimate = "1-2 days"
     elif kind in {"backend", "api"}:
         time_estimate = "3-6 days" if (insights.get("has_auth") or insights.get("has_payment")) else "2-4 days"
     elif kind == "parsing":
@@ -1248,6 +1331,8 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
 
     hooks_en = {
         "telegram_bot": hook_bot,
+        "mobile": f"Hello! I am ready to develop a fast and reliable mobile application for {task_name}.",
+        "devops": f"Hello! I can professionally configure your server and deploy {task_name} with automated restarts.",
         "parsing": f"Hello! I can set up clean and automated data scraping{src_mention} with structured export{fmt_mention}.",
         "backend": f"Hello! I will build a secure and well-architected backend for {task_name}.",
         "api": f"Hello! I can reliably integrate and configure the API for {task_name} with proper error handling.",
@@ -1267,6 +1352,8 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
     else:
         estimates = {
             "telegram_bot": "$80 - $220 (depending on features and database)",
+            "mobile": "$150 - $450 (depending on screens count and API)",
+            "devops": "$50 - $150 (depending on server setup and Docker)",
             "parsing": "$50 - $160 (depending on volume and target anti-bot protection)",
             "backend": "$100 - $300 (depending on scope and API endpoints)",
             "api": "$60 - $180 (depending on integrations required)",
@@ -1288,6 +1375,18 @@ def fallback_bid_en(project: dict, variant: str = "short") -> str:
                 bot_step2,
                 bot_step3,
                 "4. Free server deployment for 24/7 uninterrupted uptime.",
+            ],
+            "mobile": [
+                "1. Confirm screen designs/mockups and backend API requirements.",
+                "2. Develop mobile UI components with smooth state management.",
+                "3. Integrate APIs, local storage, and notification handling.",
+                "4. Test on devices and provide signed release build.",
+            ],
+            "devops": [
+                "1. Audit server OS, ports, and software requirements.",
+                "2. Configure Docker containers, environment files, and dependencies.",
+                "3. Set up Nginx reverse proxy, SSL encryption, and systemd services.",
+                "4. Verify health checks and provide quick admin cheat sheet.",
             ],
             "parsing": [
                 f"1. Inspect website structure{src_mention} and confirm column requirements.",
@@ -1429,6 +1528,10 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
     # Dynamic realistic timeline
     if kind == "telegram_bot":
         time_estimate = "3-5 днів" if (insights.get("has_payment") or insights.get("has_admin")) else "1-2 дні"
+    elif kind == "mobile":
+        time_estimate = "4-10 днів"
+    elif kind == "devops":
+        time_estimate = "1-2 дні"
     elif kind in {"backend", "api"}:
         time_estimate = "3-6 днів" if (insights.get("has_auth") or insights.get("has_payment")) else "2-4 дні"
     elif kind == "parsing":
@@ -1473,6 +1576,8 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
 
     hooks_uk = {
         "telegram_bot": hook_bot,
+        "mobile": f"Вітаю! Розроблю якісний мобільний додаток для {clean_target} зі стабільною роботою на смартфонах.",
+        "devops": f"Вітаю! Професійно налаштую сервер та розгорну {clean_target} з автозапуском і захистом.",
         "parsing": f"Вітаю! Налаштую стабільний та швидкий збір даних{src_mention} з вивантаженням{fmt_mention}.",
         "backend": f"Вітаю! Розроблю чисту серверну частину для {clean_target} з валідацією даних та безпечною базою.",
         "api": f"Вітаю! Надійно підключу та налаштую API для {clean_target} з коректною обробкою запитів.",
@@ -1496,6 +1601,8 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
     else:
         estimates = {
             "telegram_bot": "від 3 000 - 8 000 грн (залежно від кількості кнопок та бази)",
+            "mobile": "від 6 000 - 18 000 грн (залежно від кількості екранів та API)",
+            "devops": "від 2 000 - 6 000 грн (залежно від конфігурації та задач)",
             "parsing": "від 2 000 - 6 000 грн (залежно від обсягу даних та сайту)",
             "backend": "від 4 000 - 12 000 грн (залежно від функціоналу)",
             "api": "від 2 500 - 7 000 грн (залежно від кількості методів)",
@@ -1519,6 +1626,18 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
                 bot_step2,
                 bot_step3,
                 "4. Безкоштовний запуск на сервері для роботи 24/7 та передача вам результату.",
+            ],
+            "mobile": [
+                "1. Узгодження екранів, структури переходів та API бекенду.",
+                "2. Розробка інтерфейсу додатку зі швидким та плавним відгуком.",
+                "3. Інтеграція серверної логіки, збереження даних та сповіщень.",
+                "4. Тестування на смартфонах та надання готового релізного білду.",
+            ],
+            "devops": [
+                "1. Аналіз серверного оточення, портів та необхідних пакетів.",
+                "2. Налаштування Docker-контейнерів, змінних середовища та конфігурацій.",
+                "3. Конфігурація Nginx веб-сервера, SSL-сертифікатів та автозапуску через systemd.",
+                "4. Перевірка доступності, захисту та надання зрозумілої інструкції для керування.",
             ],
             "parsing": [
                 f"1. Аналіз сайту{src_mention} та погодження списку колонок для збору.",
@@ -1670,6 +1789,8 @@ def generate_chat_pitch(project: dict) -> str:
             "wordpress": f"Hello! I can safely and promptly apply the required WordPress fixes for {task_en} with a backup made prior to work. Ready to begin!",
             "excel": f"Hello! I can fully automate calculations and reports in Excel/Google Sheets for {task_en} to eliminate manual routine. Let's discuss details!",
             "ai_integration": f"Hello! I can integrate OpenAI/ChatGPT into {task_en} with customized prompt instructions and reliable API handling. Happy to discuss!",
+            "mobile": f"Hello! I can develop a fast and reliable mobile app for {task_en} with clean UI and API integration. Let's discuss details in chat!",
+            "devops": f"Hello! I can professionally configure your Linux server, Docker setup, and Nginx deployment for {task_en}. Ready to start!",
         }
         return pitches_en.get(kind, f"Hello! I reviewed your project and have experience with similar tasks. Ready to take on {task_en} professionally. Let's discuss details in chat!")
 
@@ -1697,6 +1818,8 @@ def generate_chat_pitch(project: dict) -> str:
         "wordpress": f"Вітаю! Акуратно та безпечно внесу всі необхідні правки у WordPress під {task_name} (з обов'язковим бекапом перед стартом). На зв'язку в чаті!",
         "excel": f"Вітаю! Повністю автоматизую розрахунки та звітність у Excel/Google Таблицях для {task_name}, щоб прибрати рутину. Обговоримо деталі?",
         "ai_integration": f"Вітаю! Підключу штучний інтелект (OpenAI/ChatGPT) під ваше завдання з точними інструкціями для відповідей. Напишіть у чат — розпочнемо!",
+        "mobile": f"Вітаю! Розробляю швидкі та зручні мобільні додатки. Готовий якісно реалізувати додаток для {task_name}. Напишіть у чат — обговоримо деталі!",
+        "devops": f"Вітаю! Професійно налаштовую Linux-сервери, Docker та Nginx. Готовий надійно розгорнути {task_name}. Напишіть у чат для старту!",
     }
     return pitches_uk.get(kind, f"Вітаю! Ознайомився із завданням, маю практичний досвід у таких проєктах. Готовий якісно виконати {task_name}. Напишіть у чат для обговорення деталей!")
 

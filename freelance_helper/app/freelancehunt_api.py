@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 
 from .config import FREELANCEHUNT_TOKEN
@@ -40,15 +41,22 @@ async def get_projects(timeout: float = 20.0) -> list[dict]:
     }
     params = {"page[size]": 50}
 
-    client = await get_http_client(timeout=timeout)
-    try:
-        response = await client.get(API_URL, headers=headers, params=params)
-    except httpx.RequestError as error:
-        await close_http_client()
-        logger.exception("Freelancehunt API request failed")
-        raise FreelancehuntAPIError(
-            f"Не вдалося підключитися до Freelancehunt API: {error}"
-        ) from error
+    retries = 2
+    response = None
+    for attempt in range(retries + 1):
+        try:
+            client = await get_http_client(timeout=timeout)
+            response = await client.get(API_URL, headers=headers, params=params)
+            break
+        except (httpx.RequestError, httpx.TimeoutException) as error:
+            await close_http_client()
+            if attempt == retries:
+                logger.exception("Freelancehunt API request failed after %s retries", retries)
+                raise FreelancehuntAPIError(
+                    f"Не вдалося підключитися до Freelancehunt API: {error}"
+                ) from error
+            logger.warning("Freelancehunt API connection glitch (%s/%s), retrying in 2s...", attempt + 1, retries)
+            await asyncio.sleep(2.0)
 
     if response.status_code == 429:
         logger.warning("Freelancehunt API rate limit exceeded (HTTP 429)")

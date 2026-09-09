@@ -248,6 +248,8 @@ def get_portfolio_link_for_kind(kind: str) -> str | None:
         "wordpress": "web",
         "excel": "excel",
         "ai_integration": "bot",
+        "mobile": "mobile",
+        "devops": "devops",
     }
     cat = mapping.get(kind, kind)
     specific = get_setting(f"portfolio_{cat}")
@@ -314,4 +316,10 @@ def cleanup_old_projects(days: int = 30) -> int:
             """,
             (cutoff_date,),
         )
-        return cursor.rowcount
+        rowcount = cursor.rowcount
+        try:
+            conn.execute("PRAGMA optimize;")
+            conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
+        except Exception:
+            pass
+        return rowcount

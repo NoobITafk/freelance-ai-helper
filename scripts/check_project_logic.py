@@ -265,6 +265,30 @@ CASES = [
         expected_type="html_css",
         expected_technical=True,
     ),
+    Case(
+        name="Mobile Flutter app",
+        project={
+            "title": "Мобільний додаток на Flutter для каталогу",
+            "description": "Потрібно розробити мобільний додаток на Flutter для iOS та Android з підключенням REST API.",
+            "budget": "15000 грн",
+            "bids_count": 4,
+            "url": "https://example.com/flutter-app",
+        },
+        expected_type="mobile",
+        expected_technical=True,
+    ),
+    Case(
+        name="DevOps Docker Nginx",
+        project={
+            "title": "Налаштування сервера Ubuntu, Docker та Nginx",
+            "description": "Потрібен деплой проекту на VPS сервер, налаштування Docker контейнерів, Nginx та SSL.",
+            "budget": "4000 грн",
+            "bids_count": 2,
+            "url": "https://example.com/devops-docker",
+        },
+        expected_type="devops",
+        expected_technical=True,
+    ),
 ]
 
 

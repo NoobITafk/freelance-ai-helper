@@ -290,6 +290,7 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if was_sent:
             sent_count += 1
+            await asyncio.sleep(0.35)
 
         if sent_count >= 3:
             break
@@ -365,6 +366,7 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
 
         if was_sent:
             sent_count += 1
+            await asyncio.sleep(0.35)
 
         if sent_count >= 3:
             break
