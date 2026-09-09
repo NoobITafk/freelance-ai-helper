@@ -85,7 +85,7 @@ def create_web_app() -> web.Application:
     return app
 
 
-async def start_background_web_server(host: str = "0.0.0.0", port: int = 8080) -> web.AppRunner | None:
+async def start_background_web_server(host: str = "0.0.0.0", port: int = 8088) -> web.AppRunner | None:
     try:
         app = create_web_app()
         runner = web.AppRunner(app)

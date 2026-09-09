@@ -272,7 +272,7 @@ journalctl -u freelance-helper -f
 
 ### 4. Налаштування Telegram Mini App з власним доменом (Nginx + SSL)
 
-Вбудований веб-сервер Mini App автоматично запускається разом із ботом на порту `8080` (ендпоінти: `/`, `/api/stats`, `/api/projects`, `/api/pipeline`).
+Вбудований веб-сервер Mini App автоматично запускається разом із ботом на порту `8088` (налаштовується через `WEB_APP_PORT`, ендпоінти: `/`, `/api/stats`, `/api/projects`, `/api/pipeline`).
 Для роботи як Telegram Mini App потрібен HTTPS-домен:
 
 1. Створіть DNS **A-запис** для вашого домену або субдомену (наприклад, `app.yourdomain.com`), спрямований на IP вашого VPS.
