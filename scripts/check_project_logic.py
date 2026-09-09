@@ -826,6 +826,23 @@ def main() -> int:
         print("=" * 80)
         print(f"Quiet hours & Backup check: OK (night={is_quiet_night}, day={is_quiet_day}, backup={backup_ok})")
 
+    # 17. One-click Excel/CSV Export
+    total_checks += 1
+    from freelance_helper.app.database import export_crm_data_csv
+    csv_content = export_crm_data_csv()
+    csv_ok = (
+        csv_content.startswith("\ufeff")
+        and "ID проєкту;Дата створення;Назва проєкту;Статус воронки" in csv_content
+        and "Завершено" in csv_content
+    )
+    if not csv_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"CSV Export check: FAIL | bom={csv_content.startswith(chr(0xFEFF))} | length={len(csv_content)}")
+    else:
+        print("=" * 80)
+        print(f"CSV Export check: OK (UTF-8 BOM present, length={len(csv_content)} chars)")
+
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")
     return 1 if failed else 0

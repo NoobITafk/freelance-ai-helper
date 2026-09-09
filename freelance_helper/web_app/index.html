@@ -281,63 +281,40 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">💼 Заявки & Win Rate</div>
-        <div class="stat-value">25%</div>
-        <div class="stat-sub">3 завершено з 12 ставок</div>
+        <div class="stat-value" id="statWinRate">25%</div>
+        <div class="stat-sub" id="statWinSub">3 завершено з 12 ставок</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">💰 Дохід за місяць</div>
-        <div class="stat-value">18,500 ₴</div>
-        <div class="stat-sub">+3,500 ₴ цього тижня</div>
+        <div class="stat-value" id="statIncome">18,500 ₴</div>
+        <div class="stat-sub" id="statIncomeSub">онлайн статистика</div>
       </div>
     </div>
 
     <div class="section-title">Стрічка гарячих замовлень</div>
-
-    <!-- Project 1 -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Розробка Telegram-бота для бронювання послуг</div>
-        <div class="card-score">88/100</div>
-      </div>
-      <div class="card-meta">
-        <span class="meta-tag">🛠 Telegram-бот (Python, SQLite)</span>
-        <span class="meta-tag">👤 ⭐ Топ-замовник (14 робіт, 100% 👍)</span>
-        <span class="meta-tag">📎 Figma макет</span>
-      </div>
-      <div class="card-desc">
-        Потрібен зручний Telegram-бот для запису клієнтів з календарем слотів, сповіщеннями адміністратора та панеллю керування.
-      </div>
-      <div class="btn-group">
-        <button class="btn-primary" onclick="copyBid('Вітаю! Створю швидкого та надійного Telegram-бота для бронювання послуг. Ознайомився з макетом у Figma...')">
-          📋 Скопіювати ставку
-        </button>
-        <button class="btn-secondary" onclick="markPlaced('123')">
-          💼 Подав ставку
-        </button>
-      </div>
-    </div>
-
-    <!-- Project 2 -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">FastAPI сервіс для синхронізації замовлень з CRM</div>
-        <div class="card-score">92/100</div>
-      </div>
-      <div class="card-meta">
-        <span class="meta-tag">🛠 Backend / API (FastAPI, PostgreSQL)</span>
-        <span class="meta-tag">👤 ✅ Надійний (5 робіт)</span>
-        <span class="meta-tag">📎 Google Docs ТЗ</span>
-      </div>
-      <div class="card-desc">
-        Необхідно реалізувати REST API бекенд з авторизацією через JWT, чергами завдань та інтеграцією з базою даних.
-      </div>
-      <div class="btn-group">
-        <button class="btn-primary" onclick="copyBid('Вітаю! Розроблю чисту серверну частину для синхронізації замовлень з CRM на FastAPI. Ознайомився з ТЗ у Google Docs...')">
-          📋 Скопіювати ставку
-        </button>
-        <button class="btn-secondary" onclick="markPlaced('124')">
-          💼 Подав ставку
-        </button>
+    <div id="projectsContainer">
+      <!-- Project 1 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Розробка Telegram-бота для бронювання послуг</div>
+          <div class="card-score">88/100</div>
+        </div>
+        <div class="card-meta">
+          <span class="meta-tag">🛠 Telegram-бот (Python, SQLite)</span>
+          <span class="meta-tag">👤 ⭐ Топ-замовник (14 робіт, 100% 👍)</span>
+          <span class="meta-tag">📎 Figma макет</span>
+        </div>
+        <div class="card-desc">
+          Потрібен зручний Telegram-бот для запису клієнтів з календарем слотів, сповіщеннями адміністратора та панеллю керування.
+        </div>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="copyBid('Вітаю! Створю швидкого та надійного Telegram-бота для бронювання послуг. Ознайомився з макетом у Figma...')">
+            📋 Скопіювати ставку
+          </button>
+          <button class="btn-secondary" onclick="markPlaced('123')">
+            💼 Подав ставку
+          </button>
+        </div>
       </div>
     </div>
 
@@ -389,12 +366,81 @@
       });
     }
 
-    function markPlaced(id) {
+    async function markPlaced(id) {
       showToast('💼 Статус: Ставку подано!');
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
       }
+      try {
+        await fetch('/api/pipeline', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({project_id: id, status: 'bid_placed'})
+        });
+      } catch(e) {}
     }
+
+    function renderProjects(projects) {
+      const container = document.getElementById('projectsContainer');
+      if (!container || !projects.length) return;
+      container.innerHTML = projects.map(p => {
+        const scoreBadge = p.score ? `<div class="card-score">${p.score}/100</div>` : '';
+        const budgetBadge = p.budget ? `<span class="meta-tag">💰 ${p.budget}</span>` : '';
+        const empBadge = p.employer_info ? `<span class="meta-tag">${p.employer_info}</span>` : '';
+        const assetsBadge = p.assets_info ? `<span class="meta-tag">📎 ${p.assets_info}</span>` : '';
+        const descSnippet = (p.description || '').substring(0, 150) + '...';
+        const bidDraft = `Вітаю! Ознайомився із проєктом «${p.title}» та готовий якісно реалізувати задачу.`;
+
+        return `
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">${p.title}</div>
+              ${scoreBadge}
+            </div>
+            <div class="card-meta">
+              ${budgetBadge}
+              ${empBadge}
+              ${assetsBadge}
+            </div>
+            <div class="card-desc">${descSnippet}</div>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="copyBid('${bidDraft.replace(/'/g, "\\'")}')">
+                📋 Скопіювати ставку
+              </button>
+              <button class="btn-secondary" onclick="markPlaced('${p.project_id}')">
+                💼 Подав ставку
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadLiveData() {
+      try {
+        const statsRes = await fetch('/api/stats');
+        if (statsRes.ok) {
+          const s = await statsRes.json();
+          if (s.success && s.stats) {
+            document.getElementById('statWinRate').textContent = `${Math.round(s.stats.win_rate)}%`;
+            document.getElementById('statWinSub').textContent = `${s.stats.completed} завершено з ${s.stats.bids_placed} заявок`;
+            document.getElementById('statIncome').textContent = `${Math.round(s.stats.income_month).toLocaleString()} ₴`;
+          }
+        }
+      } catch(e) {}
+
+      try {
+        const pRes = await fetch('/api/projects');
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          if (pData.success && pData.projects && pData.projects.length) {
+            renderProjects(pData.projects);
+          }
+        }
+      } catch(e) {}
+    }
+
+    loadLiveData();
   </script>
 </body>
 </html>

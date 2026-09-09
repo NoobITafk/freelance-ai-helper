@@ -3,7 +3,7 @@ import errno
 import os
 from pathlib import Path
 
-from telegram.ext import Application, CallbackQueryHandler, CommandHandler
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 from .bot.handlers import (
     ai_off,
@@ -19,7 +19,9 @@ from .bot.handlers import (
     check_projects,
     crm_command,
     digest_command,
+    export_command,
     handle_button,
+    handle_text_message,
     health_command,
     help_command,
     income_command,
@@ -117,7 +119,24 @@ def release_single_instance_lock() -> None:
         _lock_fd = None
 
 
+_web_runner = None
+
+
+async def _on_startup(app: Application) -> None:
+    global _web_runner
+    from .web_server import start_background_web_server
+    _web_runner = await start_background_web_server(host="0.0.0.0", port=8080)
+
+
 async def _on_shutdown(app: Application) -> None:
+    global _web_runner
+    if _web_runner:
+        try:
+            await _web_runner.cleanup()
+            logger.info("Mini App web server stopped cleanly on bot shutdown")
+        except Exception as e:
+            logger.warning("Error stopping web server: %s", e)
+
     from .freelancehunt_api import close_http_client
     try:
         await close_http_client()
@@ -138,6 +157,7 @@ def run_bot() -> None:
     app = (
         Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
+        .post_init(_on_startup)
         .post_shutdown(_on_shutdown)
         .build()
     )
@@ -191,12 +211,14 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("digest", digest_command))
     app.add_handler(CommandHandler("backup", backup_command))
     app.add_handler(CommandHandler("webapp", webapp_command))
+    app.add_handler(CommandHandler("export", export_command))
     app.add_handler(CommandHandler("ai_on", ai_on))
     app.add_handler(CommandHandler("ai_off", ai_off))
     app.add_handler(CommandHandler("last", last_command))
     app.add_handler(CommandHandler("recent", recent_command))
     app.add_handler(CommandHandler("why", why_command))
     app.add_handler(CallbackQueryHandler(handle_button))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
 
     logger.info("Bot started | run: python -m freelance_helper.app.main")
     if TELEGRAM_CHAT_ID:

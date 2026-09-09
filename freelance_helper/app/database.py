@@ -593,3 +593,63 @@ def create_database_backup(backup_dir: Path | None = None) -> Path:
             src.backup(dst)
 
     return backup_file
+
+
+def export_crm_data_csv() -> str:
+    import csv
+    import io
+
+    output = io.StringIO()
+    output.write("\ufeff")  # UTF-8 BOM for Microsoft Excel
+    writer = csv.writer(output, delimiter=";")
+    writer.writerow([
+        "ID проєкту",
+        "Дата створення",
+        "Назва проєкту",
+        "Статус воронки",
+        "Сума угоди",
+        "Валюта",
+        "Бюджет біржі",
+        "Score",
+        "Замовник",
+        "Посилання",
+    ])
+
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT project_id, created_at, title, pipeline_status, deal_amount,
+                   deal_currency, budget, score, employer_info, url
+            FROM projects
+            WHERE (pipeline_status IS NOT NULL AND pipeline_status != 'new')
+               OR status = 'sent'
+            ORDER BY created_at DESC
+            """
+        ).fetchall()
+
+        status_labels = {
+            "bid_placed": "Ставку подано",
+            "replied": "Замовник відповів",
+            "in_progress": "В роботі",
+            "completed": "Завершено",
+            "declined": "Відхилено",
+            "sent": "Отримано в стрічку",
+        }
+
+        for r in rows:
+            p_status = r["pipeline_status"] or "sent"
+            deal_val = f"{r['deal_amount']:.2f}" if r["deal_amount"] is not None else ""
+            writer.writerow([
+                r["project_id"],
+                r["created_at"] or "",
+                r["title"] or "",
+                status_labels.get(p_status, p_status),
+                deal_val,
+                r["deal_currency"] or "UAH",
+                r["budget"] or "",
+                r["score"] if r["score"] is not None else "",
+                r["employer_info"] or "",
+                r["url"] or "",
+            ])
+
+    return output.getvalue()

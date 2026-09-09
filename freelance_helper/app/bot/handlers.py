@@ -2,7 +2,7 @@ import asyncio
 import time
 from datetime import datetime
 
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest, Forbidden, TelegramError
 from telegram.ext import ContextTypes
 
@@ -44,6 +44,7 @@ from ..database import (
     cleanup_old_projects,
     create_database_backup,
     delete_portfolio_case,
+    export_crm_data_csv,
     get_crm_stats,
     get_night_projects,
     get_portfolio_cases,
@@ -1006,16 +1007,12 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not query or not query.data:
         return
 
-    try:
-        await query.answer()
-    except BadRequest as b_err:
-        if "query is too old" not in str(b_err).lower() and "message is not modified" not in str(b_err).lower():
-            logger.warning("Callback query answer failed: %s", b_err)
-    except Exception:
-        pass
-
     if ":" not in query.data:
         logger.warning("Invalid callback data: %s", query.data)
+        try:
+            await query.answer()
+        except Exception:
+            pass
         return
 
     action, project_id = query.data.split(":", 1)
@@ -1027,8 +1024,18 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if not project:
+        try:
+            await query.answer("Проєкт не знайдено в базі.", show_alert=True)
+        except Exception:
+            pass
         await message.reply_text("Проєкт не знайдено в базі.")
         return
+
+    if not action.startswith("crm_") and action not in {"great", "good", "maybe", "bad", "not_mine", "skip"}:
+        try:
+            await query.answer()
+        except Exception:
+            pass
 
     if action in {"great", "good", "maybe", "bad", "not_mine", "skip"}:
         set_project_rating(project_id, action)
@@ -1043,60 +1050,122 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "skip": "⏭ Проєкт пропущено.",
         }
         try:
+            await query.answer(labels[action], show_alert=False)
+        except Exception:
+            pass
+
+        try:
             await query.edit_message_reply_markup(
                 reply_markup=project_keyboard(project_id, current_rating=action)
             )
         except Exception:
             pass
-        await message.reply_text(labels[action])
 
     elif action == "crm_bid":
         update_project_pipeline(project_id, "bid_placed")
-        await message.reply_text(
-            f"💼 <b>Статус: Заявку подано!</b>\n\n"
-            f"📌 {project.get('title')}\n"
-            f"Замовлення додано до воронки активних заявок.\n"
-            f"Коли замовник відповість, оновіть статус нижче:",
-            parse_mode="HTML",
-            reply_markup=crm_pipeline_keyboard(project_id, current_status="bid_placed"),
-        )
+        try:
+            await query.answer("💼 Заявку додано у воронку CRM!", show_alert=False)
+        except Exception:
+            pass
+        try:
+            await query.edit_message_reply_markup(
+                reply_markup=crm_pipeline_keyboard(project_id, current_status="bid_placed")
+            )
+        except Exception:
+            await message.reply_text(
+                f"💼 <b>Статус: Заявку подано!</b>\n\n"
+                f"📌 {project.get('title')}\n"
+                f"Замовлення додано до воронки активних заявок.\n"
+                f"Коли замовник відповість, оновіть статус нижче:",
+                parse_mode="HTML",
+                reply_markup=crm_pipeline_keyboard(project_id, current_status="bid_placed"),
+            )
 
     elif action == "crm_reply":
         update_project_pipeline(project_id, "replied")
-        await message.reply_text(
-            f"💬 <b>Статус: Замовник відповів!</b>\n\n"
-            f"📌 {project.get('title')}\n"
-            f"Конверсія у відповідь зафіксована. Успішних переговорів!",
-            parse_mode="HTML",
-            reply_markup=crm_pipeline_keyboard(project_id, current_status="replied"),
-        )
+        try:
+            await query.answer("💬 Статус: Замовник відповів!", show_alert=False)
+        except Exception:
+            pass
+        try:
+            await query.edit_message_reply_markup(
+                reply_markup=crm_pipeline_keyboard(project_id, current_status="replied")
+            )
+        except Exception:
+            pass
 
     elif action == "crm_work":
         update_project_pipeline(project_id, "in_progress")
-        await message.reply_text(
-            f"🤝 <b>Статус: Проєкт у роботі!</b>\n\n"
-            f"📌 {project.get('title')}\n"
-            f"Проєкт переведено в активне виконання. Продуктивної роботи!",
-            parse_mode="HTML",
-            reply_markup=crm_pipeline_keyboard(project_id, current_status="in_progress"),
-        )
+        try:
+            await query.answer("🤝 Статус: Проєкт у роботі!", show_alert=False)
+        except Exception:
+            pass
+        try:
+            await query.edit_message_reply_markup(
+                reply_markup=crm_pipeline_keyboard(project_id, current_status="in_progress")
+            )
+        except Exception:
+            pass
 
     elif action == "crm_done":
+        try:
+            await query.answer("💰 Вкажіть суму угоди", show_alert=False)
+        except Exception:
+            pass
+        amount, currency, _ = parse_budget_info(project.get("budget"))
+        val = float(amount or 0)
+        curr = currency or "UAH"
+        context.user_data["pending_crm_done"] = {
+            "project_id": project_id,
+            "default_amount": val,
+            "currency": curr,
+        }
+        confirm_markup = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"💰 Зарахувати бюджет ({val:,.0f} {curr})", callback_data=f"crm_done_def:{project_id}")],
+            [InlineKeyboardButton("❌ Скасувати", callback_data=f"crm_cancel:{project_id}")],
+        ])
+        await message.reply_text(
+            f"💰 <b>Фіксація завершення проєкту:</b>\n"
+            f"📌 <b>{project.get('title')}</b>\n\n"
+            f"Бюджет біржі: <b>{val:,.0f} {curr}</b>\n\n"
+            f"👉 <b>Надішліть фактичну суму угоди</b> повідомленням у чат (наприклад: <code>4500</code> або <code>150$</code>),\n"
+            f"або натисніть кнопку нижче для зарахування бюджету біржі:",
+            parse_mode="HTML",
+            reply_markup=confirm_markup,
+        )
+
+    elif action == "crm_done_def":
         amount, currency, _ = parse_budget_info(project.get("budget"))
         val = float(amount or 0)
         curr = currency or "UAH"
         update_project_pipeline(project_id, "completed", deal_amount=val, currency=curr)
+        context.user_data.pop("pending_crm_done", None)
+        try:
+            await query.answer(f"💰 Зараховано {val:,.0f} {curr}!", show_alert=False)
+        except Exception:
+            pass
         await message.reply_text(
-            f"🏆 <b>Вітаємо! Проєкт успішно завершено!</b>\n\n"
+            f"🏆 <b>Проєкт успішно завершено!</b>\n\n"
             f"📌 {project.get('title')}\n"
             f"💰 Зараховано в дохід: <b>{val:,.0f} {curr}</b>\n"
-            f"Статистика та Win Rate оновлені у /income!",
+            f"Статистика оновлена у /income та /crm!",
             parse_mode="HTML",
-            reply_markup=crm_pipeline_keyboard(project_id, current_status="completed"),
         )
+
+    elif action == "crm_cancel":
+        context.user_data.pop("pending_crm_done", None)
+        try:
+            await query.answer("Скасовано", show_alert=False)
+        except Exception:
+            pass
+        await message.reply_text("❌ Фіксацію завершення проєкту скасовано.")
 
     elif action == "crm_declined":
         update_project_pipeline(project_id, "declined")
+        try:
+            await query.answer("❌ Проєкт відхилено", show_alert=False)
+        except Exception:
+            pass
         await message.reply_text(
             f"❌ <b>Статус: Проєкт відхилено/архівовано.</b>\n📌 {project.get('title')}",
             parse_mode="HTML",
@@ -1289,3 +1358,96 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"❌ <b>Непередбачена помилка:</b> {exc}",
                 parse_mode="HTML",
             )
+
+
+async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.effective_message
+    if not message or not message.text:
+        return
+
+    pending = context.user_data.get("pending_crm_done")
+    if not pending:
+        return
+
+    text = message.text.strip()
+    if text.lower() in {"/cancel_deal", "відміна", "скасувати", "cancel"}:
+        context.user_data.pop("pending_crm_done", None)
+        await message.reply_text("❌ Фіксацію завершення проєкту скасовано.")
+        return
+
+    import re
+    cleaned = text.replace(" ", "")
+    match = re.search(r"(\d+(?:[.,]\d+)?)", cleaned)
+    if not match:
+        await message.reply_text(
+            "⚠️ Не вдалося розпізнати суму. Введіть число (наприклад: <code>4500</code> або <code>150$</code>) "
+            "або відправте <b>скасувати</b> для виходу.",
+            parse_mode="HTML",
+        )
+        return
+
+    amount_str = match.group(1).replace(",", ".")
+    try:
+        amount = float(amount_str)
+    except ValueError:
+        return
+
+    currency = pending.get("currency", "UAH")
+    lower_text = text.lower()
+    if "$" in text or "usd" in lower_text:
+        currency = "USD"
+    elif "€" in text or "eur" in lower_text:
+        currency = "EUR"
+    elif "грн" in lower_text or "uah" in lower_text:
+        currency = "UAH"
+
+    project_id = pending["project_id"]
+    project = get_project(project_id) or {}
+    title = project.get("title", f"ID {project_id}")
+
+    update_project_pipeline(project_id, "completed", deal_amount=amount, currency=currency)
+    context.user_data.pop("pending_crm_done", None)
+
+    await message.reply_text(
+        f"🏆 <b>Проєкт успішно завершено!</b>\n\n"
+        f"📌 <b>{title}</b>\n"
+        f"💰 Фактичний дохід: <b>{amount:,.0f} {currency}</b>\n\n"
+        f"Дані зафіксовані у воронці CRM та враховані в /income та /crm!",
+        parse_mode="HTML",
+    )
+
+
+async def export_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.effective_message
+    if not message:
+        return
+
+    try:
+        csv_data = export_crm_data_csv()
+        import io
+        bio = io.BytesIO(csv_data.encode("utf-8"))
+        filename = f"crm_export_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+        bio.name = filename
+
+        stats = get_crm_stats()
+        win_rate = stats.get("win_rate", 0.0)
+        total_income = stats.get("total_income", {})
+        income_str = "  •  ".join(f"{v:,.0f} {k}" for k, v in total_income.items()) or "0 UAH"
+
+        caption = (
+            f"📊 <b>Експорт CRM та фінансової звітності</b>\n\n"
+            f"📈 Win Rate: <b>{win_rate:.1f}%</b>\n"
+            f"💰 Загальний дохід: <b>{income_str}</b>\n\n"
+            f"📁 Файл <code>{filename}</code> готовий для відкриття в Excel або Google Sheets."
+        )
+
+        await message.reply_document(
+            document=bio,
+            filename=filename,
+            caption=caption,
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.exception("Export command error: %s", e)
+        await message.reply_text(f"❌ Помилка експорту даних: {e}")
+

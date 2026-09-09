@@ -270,6 +270,26 @@ sudo systemctl status freelance-helper
 journalctl -u freelance-helper -f
 ```
 
+### 4. Налаштування Telegram Mini App з власним доменом (Nginx + SSL)
+
+Вбудований веб-сервер Mini App автоматично запускається разом із ботом на порту `8080` (ендпоінти: `/`, `/api/stats`, `/api/projects`, `/api/pipeline`).
+Для роботи як Telegram Mini App потрібен HTTPS-домен:
+
+1. Створіть DNS **A-запис** для вашого домену або субдомену (наприклад, `app.yourdomain.com`), спрямований на IP вашого VPS.
+2. Скопіюйте конфігурацію Nginx:
+   ```bash
+   sudo cp deploy/nginx-webapp.conf /etc/nginx/sites-available/webapp.conf
+   sudo sed -i 's/webapp.yourdomain.com/app.yourdomain.com/g' /etc/nginx/sites-available/webapp.conf
+   sudo ln -s /etc/nginx/sites-available/webapp.conf /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+3. Отримайте безкоштовний SSL-сертифікат Let's Encrypt:
+   ```bash
+   sudo certbot --nginx -d app.yourdomain.com
+   ```
+4. Увімкніть кнопку Web App в `@BotFather`:
+   `/setmenubutton` -> оберіть вашого бота -> вкажіть назву кнопки (наприклад, `🚀 CRM App`) та URL: `https://app.yourdomain.com`.
+
 ---
 
 ## Як перевірити, що бот працює
@@ -320,6 +340,7 @@ python -m compileall freelance_helper
 | `/case_add <кат> <назва> \| <url> \| <опис>` | додати кейс у портфоліо |
 | `/case_del <id>` | видалити кейс із бази |
 | `/income` (або `/crm`) | воронка заявок, конверсія (Win Rate) та фінансова аналітика |
+| `/export` | експорт усієї CRM-воронки та фінансової історії у файл CSV для Excel |
 | `/quiet` | налаштування тихих годин для нічного режиму без звуку |
 | `/digest` | ранковий звіт найкращих нічних проєктів |
 | `/backup` | миттєве створення та відправка бекапу бази SQLite у чат |
