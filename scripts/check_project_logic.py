@@ -632,6 +632,68 @@ def main() -> int:
         print("=" * 80)
         print("No warranty / support check: OK")
 
+    # 11. POSIX flock concurrency lock test
+    total_checks += 1
+    from freelance_helper.app.telegram_bot import acquire_single_instance_lock, release_single_instance_lock, LOCK_PATH
+    import os, fcntl
+    release_single_instance_lock()
+    acquire_single_instance_lock()
+    # Try to open second lock descriptor
+    second_blocked = False
+    test_fd = os.open(LOCK_PATH, os.O_RDWR)
+    try:
+        fcntl.flock(test_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (BlockingIOError, OSError):
+        second_blocked = True
+    finally:
+        os.close(test_fd)
+        release_single_instance_lock()
+
+    if not second_blocked:
+        failed += 1
+        print("=" * 80)
+        print("POSIX flock concurrency lock: FAIL (second process was not blocked)")
+    else:
+        print("=" * 80)
+        print("POSIX flock concurrency lock: OK")
+
+    # 12. Bidirectional learning bonus test
+    total_checks += 1
+    from freelance_helper.app.rules import learning_bonus
+    good_dataset = [("Розробка бота на Python", "Потрібно створити Telegram-бота на Python з базою")]
+    bad_dataset = [("Монтаж та озвучка відео", "Потрібен відеомонтаж та диктор")]
+    pos_bonus = learning_bonus("Telegram бот", "Потрібен бот", (good_dataset, []))
+    neg_bonus = learning_bonus("Монтаж ролика", "Потрібен відеомонтаж", ([], bad_dataset))
+    learning_ok = pos_bonus > 0 and neg_bonus < 0
+    if not learning_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Bidirectional learning bonus: FAIL | pos={pos_bonus} | neg={neg_bonus}")
+    else:
+        print("=" * 80)
+        print(f"Bidirectional learning bonus: OK (pos={pos_bonus}, neg={neg_bonus})")
+
+    # 13. Natural grammar & budget negotiation test
+    total_checks += 1
+    micro_budget_proj = {
+        "title": "Створення сайту каталогу",
+        "description": "Потрібен простий сайт каталогу продукції",
+        "budget": "500 грн",
+        "bids_count": 2,
+        "url": "https://example.com/site",
+    }
+    sample_bid = fallback_bid(micro_budget_proj, variant="short")
+    no_tautology = "під створення" not in sample_bid and "під розробку" not in sample_bid
+    has_smart_budget = "базової версії" in sample_bid or "500 грн" in sample_bid
+    grammar_ok = no_tautology and has_smart_budget
+    if not grammar_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Natural grammar & budget negotiation: FAIL | bid:\n{sample_bid}")
+    else:
+        print("=" * 80)
+        print("Natural grammar & budget negotiation: OK")
+
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")
     return 1 if failed else 0

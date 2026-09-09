@@ -703,6 +703,29 @@ async def why_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply_text(update, text[:4000])
 
 
+async def reply_safe_markdown(message, text: str, reply_markup=None):
+    """
+    Sends message with Markdown parse_mode, automatically falling back to plain text
+    if Telegram raises a Markdown entity parsing error.
+    """
+    try:
+        return await message.reply_text(
+            text,
+            parse_mode="Markdown",
+            reply_markup=reply_markup,
+        )
+    except BadRequest as error:
+        err_lower = str(error).lower()
+        if "entity" in err_lower or "can't find end" in err_lower or "parse" in err_lower:
+            logger.warning("Markdown parsing failed, falling back to plain text: %s", error)
+            return await message.reply_text(
+                text,
+                parse_mode=None,
+                reply_markup=reply_markup,
+            )
+        raise
+
+
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
 
@@ -711,6 +734,9 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         await query.answer()
+    except BadRequest as b_err:
+        if "query is too old" not in str(b_err).lower() and "message is not modified" not in str(b_err).lower():
+            logger.warning("Callback query answer failed: %s", b_err)
     except Exception:
         pass
 
@@ -778,9 +804,9 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"```\n{escaped_bid}\n```"
         )
 
-        await message.reply_text(
+        await reply_safe_markdown(
+            message,
             response_text,
-            parse_mode="Markdown",
             reply_markup=bid_keyboard(project_id, url=project.get("url")),
         )
 
@@ -800,9 +826,9 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"```\n{escaped_pitch}\n```"
         )
 
-        await message.reply_text(
+        await reply_safe_markdown(
+            message,
             response_text,
-            parse_mode="Markdown",
             reply_markup=bid_keyboard(project_id, url=project.get("url")),
         )
 

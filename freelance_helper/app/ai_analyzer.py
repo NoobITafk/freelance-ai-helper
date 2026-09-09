@@ -7,7 +7,7 @@ import requests
 
 from .config import OLLAMA_MODEL, OLLAMA_URL, PROJECT_ROOT, USER_PROFILE
 from .database import get_portfolio_link_for_kind
-from .rules import format_budget_display
+from .rules import format_budget_display, parse_budget_info
 
 ANALYSIS_NUM_PREDICT = 500
 TEXT_NUM_PREDICT = 500
@@ -1445,33 +1445,42 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
     src_mention = f" з сайту {insights['sources'][0]}" if insights["sources"] else " із сайту"
     fmt_mention = f" у {insights['formats'][0]}" if insights["formats"] else " у зручну таблицю"
 
+    def clean_target_phrase(raw: str) -> str:
+        s = str(raw or "").strip()
+        for red in ["розробку", "створення", "написання", "налаштування", "підключення", "верстку"]:
+            if s.lower().startswith(red):
+                s = s[len(red):].strip()
+        s = re.sub(r"^(для|під|по|з|в|на)\s+", "", s, flags=re.IGNORECASE).strip()
+        return s or raw
+
+    clean_target = clean_target_phrase(task_name)
+
     # Category-specific personalized action hooks
     hook_bot = "Вітаю! Створю швидкого та надійного Telegram-бота під ваше завдання."
-    # Clean redundant wording if title repeats bot creation
     clean_bot_target = re.sub(
         r"(?i)^(розробку|створення|написання)\s+(telegram[- ]?бота|телеграм[- ]?бота|бота)\s*(для|під)?\s*",
         "",
-        task_name
+        clean_target
     ).strip()
-    if clean_bot_target and clean_bot_target != task_name and clean_bot_target != "це завдання":
+    if clean_bot_target and clean_bot_target != "це завдання":
         hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота для {clean_bot_target}."
     elif "розробку Telegram-бота" in task_name:
         sub_task = task_name.replace("розробку Telegram-бота", "").strip()
         if sub_task:
             hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота {sub_task}."
-    elif task_name and task_name != "це завдання":
-        hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота для {task_name}."
+    elif clean_target and clean_target != "це завдання":
+        hook_bot = f"Вітаю! Створю швидкого та надійного Telegram-бота для {clean_target}."
 
     hooks_uk = {
         "telegram_bot": hook_bot,
         "parsing": f"Вітаю! Налаштую стабільний та швидкий збір даних{src_mention} з вивантаженням{fmt_mention}.",
-        "backend": f"Вітаю! Розроблю чисту серверну частину під {task_name} з валідацією даних та безпечною базою.",
-        "api": f"Вітаю! Надійно підключу та налаштую API для {task_name} з коректною обробкою запитів.",
-        "frontend": f"Вітаю! Зроблю якісну, швидку та адаптивну фронтенд-частину для {task_name}.",
-        "html_css": f"Вітаю! Зроблю чисту, адаптивну верстку для {task_name}, яка ідеально відкривається на смартфонах і комп'ютерах.",
-        "wordpress": f"Вітаю! Акуратно та безпечно внесу всі необхідні правки для {task_name}.",
-        "excel": f"Вітаю! Автоматизую розрахунки та звіти для {task_name}, щоб прибрати ручну рутину.",
-        "ai_integration": f"Вітаю! Підключу та налаштую штучний інтелект для {task_name} під ваші завдання.",
+        "backend": f"Вітаю! Розроблю чисту серверну частину для {clean_target} з валідацією даних та безпечною базою.",
+        "api": f"Вітаю! Надійно підключу та налаштую API для {clean_target} з коректною обробкою запитів.",
+        "frontend": f"Вітаю! Зроблю якісну, швидку та адаптивну фронтенд-частину для {clean_target}.",
+        "html_css": f"Вітаю! Зроблю чисту, адаптивну верстку для {clean_target}, яка ідеально відкривається на смартфонах і комп'ютерах.",
+        "wordpress": f"Вітаю! Акуратно та безпечно внесу всі необхідні правки для {clean_target}.",
+        "excel": f"Вітаю! Автоматизую розрахунки та звіти для {clean_target}, щоб прибрати ручну рутину.",
+        "ai_integration": f"Вітаю! Підключу та налаштую штучний інтелект для {clean_target} під ваші завдання.",
     }
     hook_default = f"Вітаю! Ознайомився із завданням — готовий якісно виконати {task_name}."
     hook_uk = hooks_uk.get(kind, hook_default)
@@ -1479,7 +1488,11 @@ def fallback_bid(project: dict, variant: str = "short") -> str:
     deliverables, post_support = build_project_deliverables(insights)
 
     if has_fixed:
-        budget_line = f"орієнтуюся на ваш бюджет {budget} (готовий виконати в цих межах)"
+        _, _, amount_uah = parse_budget_info(project.get("budget"))
+        if amount_uah and amount_uah < 1200:
+            budget_line = f"орієнтуюся на ваш бюджет {budget} для базової версії (або узгодимо оптимальний обсяг робіт)"
+        else:
+            budget_line = f"орієнтуюся на ваш бюджет {budget} (готовий виконати в цих межах)"
     else:
         estimates = {
             "telegram_bot": "від 3 000 - 8 000 грн (залежно від кількості кнопок та бази)",

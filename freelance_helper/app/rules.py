@@ -100,6 +100,30 @@ GOOD_KEYWORDS = [
     "crm",
     "bootstrap",
     "tailwind",
+    "веб-розробка",
+    "розробка сайту",
+    "розробка сайтів",
+    "створення сайту",
+    "створення сайтів",
+    "інтернет-магазин",
+    "інтернет магазин",
+    "вебсайт",
+    "веб-сайт",
+    "телеграм-бот",
+    "телеграм бот",
+    "telegram-bot",
+    "бот для",
+    "парсинг даних",
+    "збір даних",
+    "програміст",
+    "программист",
+    "розробник",
+    "разработчик",
+    "aiogram",
+    "pytelegrambotapi",
+    "telebot",
+    "веб-додаток",
+    "веб додаток",
 ]
 
 HARD_BAD_KEYWORDS = [
@@ -551,23 +575,29 @@ def learning_bonus(title: str, description: str, good_bad_keywords) -> int:
     text = f"{title or ''} {description or ''}".lower()
     good_rows, bad_rows = good_bad_keywords
 
-    matched_keywords = {word for word in GOOD_KEYWORDS if keyword_in_text(word, text)}
+    good_matched = {word for word in GOOD_KEYWORDS if keyword_in_text(word, text)}
+    bad_matched = {word for word in SOFT_BAD_KEYWORDS if keyword_in_text(word, text)}
 
-    if not matched_keywords:
+    if not good_matched and not bad_matched:
         return 0
 
     bonus = 0
 
-    for good_title, good_description in good_rows:
-        good_text = f"{good_title or ''} {good_description or ''}".lower()
+    if good_matched:
+        for good_title, good_description in good_rows:
+            good_text = f"{good_title or ''} {good_description or ''}".lower()
+            if any(keyword_in_text(word, good_text) for word in good_matched):
+                bonus += 3
 
-        if any(keyword_in_text(word, good_text) for word in matched_keywords):
-            bonus += 3
+        for bad_title, bad_description in bad_rows:
+            bad_text = f"{bad_title or ''} {bad_description or ''}".lower()
+            if any(keyword_in_text(word, bad_text) for word in good_matched):
+                bonus -= 3
 
-    for bad_title, bad_description in bad_rows:
-        bad_text = f"{bad_title or ''} {bad_description or ''}".lower()
+    if bad_matched:
+        for bad_title, bad_description in bad_rows:
+            bad_text = f"{bad_title or ''} {bad_description or ''}".lower()
+            if any(keyword_in_text(word, bad_text) for word in bad_matched):
+                bonus -= 4
 
-        if any(keyword_in_text(word, bad_text) for word in matched_keywords):
-            bonus -= 3
-
-    return max(-15, min(15, bonus))
+    return max(-20, min(15, bonus))
