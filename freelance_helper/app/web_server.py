@@ -153,7 +153,8 @@ async def handle_export_csv(request: web.Request) -> web.Response:
         filename = f"crm_export_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
         return web.Response(
             text=csv_text,
-            content_type="text/csv; charset=utf-8",
+            content_type="text/csv",
+            charset="utf-8",
             headers={
                 "Content-Disposition": f'attachment; filename="{filename}"',
                 "Access-Control-Allow-Origin": "*",
