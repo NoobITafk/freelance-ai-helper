@@ -873,14 +873,26 @@ def main() -> int:
     has_userscript_route = "/freelancehunt_helper.user.js" in routes
     has_bid_draft_route = "/api/bid_draft" in routes
 
-    assistant_ok = userscript_ok and has_userscript_route and has_bid_draft_route
+    # Invoke handle_bid_draft with mock request
+    from aiohttp.test_utils import make_mocked_request
+    import asyncio
+    import json
+    from freelance_helper.app.web_server import handle_bid_draft
+    mock_req = make_mocked_request("GET", "/api/bid_draft?project_id=mock99&title=Telegram-бот&budget=3500+грн", app=test_app)
+    loop = asyncio.new_event_loop()
+    resp = loop.run_until_complete(handle_bid_draft(mock_req))
+    loop.close()
+    draft_data = json.loads(resp.text)
+    draft_ok = draft_data.get("success") is True and "Telegram" in draft_data.get("bid_short", "") and draft_data.get("recommended_amount") == 3500
+
+    assistant_ok = userscript_ok and has_userscript_route and has_bid_draft_route and draft_ok
     if not assistant_ok:
         failed += 1
         print("=" * 80)
-        print(f"Browser Assistant check: FAIL | file={userscript_ok} | userjs_route={has_userscript_route} | draft_route={has_bid_draft_route}")
+        print(f"Browser Assistant check: FAIL | file={userscript_ok} | userjs_route={has_userscript_route} | draft_route={has_bid_draft_route} | draft_api={draft_ok}")
     else:
         print("=" * 80)
-        print(f"Browser Assistant & Userscript check: OK (10-browser userscript present, API routes registered)")
+        print(f"Browser Assistant & Userscript check: OK (10-browser userscript present, API routes & bid draft payload verified)")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

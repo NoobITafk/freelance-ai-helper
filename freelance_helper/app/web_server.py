@@ -228,14 +228,16 @@ async def handle_bid_draft(request: web.Request) -> web.Response:
                 "url": url,
             }
             full_text = f"{title} {description}"
-            cat = classify_project(full_text)
+            filter_res = classify_project(title, description)
             is_tech = is_technical_project(project)
-            good_matches, _ = count_good_keyword_matches(full_text)
+            good_matches = count_good_keyword_matches(title, description)
             score = 65 if is_tech else 20
+            if filter_res.category == "good":
+                score += 10
             if good_matches:
-                score += min(len(good_matches) * 5, 25)
+                score += min(len(good_matches) * 5, 20)
             project["score"] = min(score, 99)
-            project["reason"] = f"Категорія: {cat}" if is_tech else "Не відповідає профілю"
+            project["reason"] = filter_res.reason or (f"Категорія: {filter_res.category}" if is_tech else "Не відповідає профілю")
             project["pipeline_status"] = "new"
 
         try:
