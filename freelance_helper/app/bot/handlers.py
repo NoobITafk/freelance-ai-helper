@@ -264,7 +264,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args and context.args[0].startswith("ref_"):
         referrer_id = context.args[0][4:].strip()
         if referrer_id and referrer_id != str(user_id):
-            rewarded = process_referral(referrer_id, user_id, bonus_days=7)
+            rewarded = process_referral(referrer_id, user_id, bonus_days=3)
             if rewarded:
                 try:
                     await context.bot.send_message(
@@ -272,7 +272,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         text=(
                             f"🎉 <b>Новий реферал!</b>\n"
                             f"За вашим запрошенням до бота приєднався новий користувач ({full_name or username or user_id}).\n"
-                            f"🎁 Вам нараховано <b>+7 днів безкоштовної підписки</b>!"
+                            f"🎁 Вам нараховано <b>+3 дні безкоштовної підписки</b>!"
                         ),
                         parse_mode="HTML",
                     )
@@ -322,7 +322,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update,
         f"Бот працює ✅\n"
         f"{sub_info}\n\n"
-        f"💡 Натисніть /help для переліку команд, /ref для отримання реферального посилання (+7 днів за друга) або /webapp для відкриття Mini App.",
+        f"💡 Натисніть /help для переліку команд, /ref для отримання реферального посилання (+3 дні за друга) або /webapp для відкриття Mini App.",
     )
 
 
@@ -332,7 +332,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 /start — запуск бота
 /help — список команд
-/ref — реферальне посилання (+7 днів за кожного запрошеного друга)
+/ref — реферальне посилання (+3 дні за кожного запрошеного друга)
 /check — перевірити проєкти зараз
 /subscribe — оформити або подовжити підписку
 /subscription — перевірити статус підписки
@@ -392,7 +392,7 @@ async def ref_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         f"🎁 <b>Партнерська програма (Реферали)</b>\n\n"
-        f"Запрошуйте знайомих фрілансерів і отримуйте <b>+7 днів безкоштовної підписки</b> за кожного нового користувача!\n\n"
+        f"Запрошуйте знайомих фрілансерів і отримуйте <b>+3 дні безкоштовної підписки</b> за кожного нового користувача!\n\n"
         f"🔗 <b>Ваше персональне посилання:</b>\n"
         f"<code>{ref_link}</code>\n\n"
         f"📊 <b>Ваша статистика:</b>\n"
@@ -629,10 +629,10 @@ async def share_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     share_url = f"https://t.me/share/url?url={ref_link}&text={quote(share_text)}"
 
     text = (
-        f"📢 <b>Поділитися ботом із колегами (+7 днів за кожного)</b>\n\n"
+        f"📢 <b>Поділитися ботом із колегами (+3 дні за кожного)</b>\n\n"
         f"Натисніть кнопку нижче, щоб надіслати рекомендацію у свої чати фрілансерів або друзям.\n\n"
         f"🔗 <b>Ваше партнерське посилання:</b>\n<code>{ref_link}</code>\n\n"
-        f"🎁 За кожного, хто приєднається, ви автоматично отримуєте <b>+7 днів повної підписки</b>!"
+        f"🎁 За кожного, хто приєднається, ви автоматично отримуєте <b>+3 дні повної підписки</b>!"
     )
     keyboard = [
         [InlineKeyboardButton("📢 Надіслати в чат / другу", url=share_url)],

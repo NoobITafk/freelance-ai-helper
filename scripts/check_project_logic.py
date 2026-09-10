@@ -1012,8 +1012,8 @@ def main() -> int:
     # Self-referral must fail
     self_ok = not process_referral(u_ref_host, u_ref_host)
 
-    # Valid referral gives +7 days
-    ref_ok = process_referral(u_ref_host, u_ref_guest, bonus_days=7)
+    # Valid referral gives +3 days
+    ref_ok = process_referral(u_ref_host, u_ref_guest, bonus_days=3)
     sub_after = get_user_subscription(u_ref_host)
     stats_ref = get_referral_stats(u_ref_host)
 
@@ -1025,7 +1025,7 @@ def main() -> int:
         and ref_ok
         and dup_ok
         and stats_ref["invited_count"] >= 1
-        and sub_after["days_left"] >= sub_before["days_left"] + 6
+        and sub_after["days_left"] >= sub_before["days_left"] + 2
     )
 
     if not referral_passed:

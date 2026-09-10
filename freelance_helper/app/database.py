@@ -1161,7 +1161,7 @@ def get_active_subscribers() -> list[dict]:
     return [s for s in all_subs if s.get("is_active")]
 
 
-def process_referral(referrer_id: str | int, new_user_id: str | int, bonus_days: int = 7) -> bool:
+def process_referral(referrer_id: str | int, new_user_id: str | int, bonus_days: int = 3) -> bool:
     ref_id = str(referrer_id).strip()
     new_id = str(new_user_id).strip()
     if not ref_id or not new_id or ref_id == new_id:
@@ -1200,7 +1200,7 @@ def get_referral_stats(user_id: str | int) -> dict:
     with get_connection() as conn:
         row = conn.execute("SELECT COUNT(*) AS c FROM referrals WHERE referrer_id = ?", (uid,)).fetchone()
         count = row["c"] if row else 0
-    return {"invited_count": count, "bonus_days_earned": count * 7}
+    return {"invited_count": count, "bonus_days_earned": count * 3}
 
 
 def is_project_broadcast(project_id: str | int) -> bool:
