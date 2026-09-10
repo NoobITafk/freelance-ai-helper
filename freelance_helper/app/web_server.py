@@ -1,8 +1,16 @@
+import re
 from datetime import datetime
 from pathlib import Path
 from aiohttp import web
 
-from .ai_analyzer import generate_bid, generate_questions
+from .ai_analyzer import (
+    calculate_score,
+    extract_project_insights,
+    generate_bid,
+    generate_questions,
+    is_technical_project,
+    project_type,
+)
 from .config import MIN_SCORE, PROJECT_ROOT
 from .database import (
     add_portfolio_case,
@@ -13,11 +21,14 @@ from .database import (
     get_crm_stats,
     get_feed_projects,
     get_portfolio_cases,
+    get_project,
     get_recent_projects,
     get_setting,
     update_project_pipeline,
 )
 from .logger import logger
+from .rules import classify_project, count_good_keyword_matches, parse_budget_info
+from .services.project_service import calculate_sweet_spot
 
 WEB_APP_DIR = PROJECT_ROOT / "freelance_helper" / "web_app"
 
@@ -165,9 +176,128 @@ async def handle_export_csv(request: web.Request) -> web.Response:
         return web.Response(text=f"Export error: {e}", status=500)
 
 
+async def handle_userscript(request: web.Request) -> web.Response:
+    script_file = WEB_APP_DIR / "freelancehunt_helper.user.js"
+    if not script_file.is_file():
+        return web.Response(text="// Userscript not found", status=404, content_type="application/javascript")
+    content = script_file.read_text(encoding="utf-8")
+    return web.Response(
+        text=content,
+        content_type="application/javascript",
+        charset="utf-8",
+        headers={
+            "Cache-Control": "no-cache, must-revalidate",
+            "Access-Control-Allow-Origin": "*",
+        },
+    )
+
+
+async def handle_bid_draft(request: web.Request) -> web.Response:
+    try:
+        data = {}
+        if request.method == "POST":
+            try:
+                data = await request.json()
+            except Exception:
+                data = {}
+
+        project_id = request.query.get("project_id") or data.get("project_id", "")
+        project_id = str(project_id).strip()
+
+        project = None
+        if project_id:
+            project = get_project(project_id)
+
+        if not project:
+            title = request.query.get("title") or data.get("title", "")
+            description = request.query.get("description") or data.get("description", "")
+            budget = request.query.get("budget") or data.get("budget", "")
+            bids_count = request.query.get("bids_count") or data.get("bids_count", 0)
+            url = request.query.get("url") or data.get("url", "")
+            try:
+                bids_count = int(bids_count)
+            except (ValueError, TypeError):
+                bids_count = 0
+
+            project = {
+                "project_id": project_id or "temp",
+                "title": title,
+                "description": description,
+                "budget": budget,
+                "bids_count": bids_count,
+                "url": url,
+            }
+            full_text = f"{title} {description}"
+            cat = classify_project(full_text)
+            is_tech = is_technical_project(project)
+            good_matches, _ = count_good_keyword_matches(full_text)
+            score = 65 if is_tech else 20
+            if good_matches:
+                score += min(len(good_matches) * 5, 25)
+            project["score"] = min(score, 99)
+            project["reason"] = f"Категорія: {cat}" if is_tech else "Не відповідає профілю"
+            project["pipeline_status"] = "new"
+
+        try:
+            bid_short = generate_bid(project, variant="short")
+        except Exception:
+            bid_short = f"Вітаю! Ознайомився із завданням «{project.get('title', '')}» та готовий якісно реалізувати."
+
+        try:
+            bid_full = generate_bid(project, variant="full")
+        except Exception:
+            bid_full = bid_short
+
+        try:
+            questions = generate_questions(project)
+        except Exception:
+            questions = ""
+
+        budget_info = parse_budget_info(project.get("budget"))
+        amount, currency, _ = budget_info
+        bids_cnt = int(project.get("bids_count") or 0)
+        sweet_spot = calculate_sweet_spot(budget_info, bids_cnt)
+
+        rec_days = 2
+        try:
+            insights = extract_project_insights(project)
+            time_est = insights.get("time_estimate", "1-2 дні")
+            days_match = re.findall(r"\d+", time_est)
+            if days_match:
+                rec_days = int(days_match[-1])
+        except Exception:
+            rec_days = 2
+
+        rec_amount = amount if amount else None
+        if amount and bids_cnt > 10:
+            rec_amount = int(amount * 0.95 / 50) * 50
+
+        return web.json_response({
+            "success": True,
+            "project_id": project.get("project_id"),
+            "title": project.get("title"),
+            "score": project.get("score", 70),
+            "reason": project.get("reason", ""),
+            "pipeline_status": project.get("pipeline_status", "new"),
+            "recommended_amount": rec_amount,
+            "recommended_currency": currency or "UAH",
+            "recommended_days": rec_days,
+            "sweet_spot": sweet_spot or (f"{amount} {currency}" if amount else "За домовленістю"),
+            "bid_short": bid_short,
+            "bid_full": bid_full,
+            "questions": questions,
+        })
+    except Exception as e:
+        logger.error("API bid draft error: %s", e)
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
 def create_web_app() -> web.Application:
     app = web.Application()
     app.router.add_get("/", handle_index)
+    app.router.add_get("/freelancehunt_helper.user.js", handle_userscript)
+    app.router.add_get("/api/bid_draft", handle_bid_draft)
+    app.router.add_post("/api/bid_draft", handle_bid_draft)
     app.router.add_get("/api/stats", handle_stats)
     app.router.add_get("/api/projects", handle_projects)
     app.router.add_post("/api/pipeline", handle_update_pipeline)

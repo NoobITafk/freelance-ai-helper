@@ -857,6 +857,31 @@ def main() -> int:
         print("=" * 80)
         print(f"Feed & CRM queries check: OK (feed={len(feed)}, crm={len(crm)})")
 
+    # 19. Browser Assistant Userscript & Bid Draft API
+    total_checks += 1
+    from freelance_helper.app.web_server import create_web_app, WEB_APP_DIR
+    userscript_path = WEB_APP_DIR / "freelancehunt_helper.user.js"
+    userscript_ok = (
+        userscript_path.is_file()
+        and "// ==UserScript==" in userscript_path.read_text(encoding="utf-8")
+        and "Freelancehunt AI Assistant" in userscript_path.read_text(encoding="utf-8")
+        and "fhai-root" in userscript_path.read_text(encoding="utf-8")
+    )
+
+    test_app = create_web_app()
+    routes = [r.resource.canonical for r in test_app.router.routes() if hasattr(r, "resource") and r.resource]
+    has_userscript_route = "/freelancehunt_helper.user.js" in routes
+    has_bid_draft_route = "/api/bid_draft" in routes
+
+    assistant_ok = userscript_ok and has_userscript_route and has_bid_draft_route
+    if not assistant_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Browser Assistant check: FAIL | file={userscript_ok} | userjs_route={has_userscript_route} | draft_route={has_bid_draft_route}")
+    else:
+        print("=" * 80)
+        print(f"Browser Assistant & Userscript check: OK (10-browser userscript present, API routes registered)")
+
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")
     return 1 if failed else 0
