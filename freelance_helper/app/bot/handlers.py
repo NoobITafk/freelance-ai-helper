@@ -1086,11 +1086,13 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
             except (ValueError, TypeError):
                 pass
 
+    recipient_skills_map = {cid: get_user_skills(cid) for cid in recipient_chats if cid > 0}
+
     async def send_func(text, reply_markup=None, **kwargs):
         p_type = kwargs.pop("project_type", None)
         for cid in recipient_chats:
             if p_type and cid > 0:
-                user_skills = get_user_skills(cid)
+                user_skills = recipient_skills_map.get(cid) or ALL_SKILL_CODES
                 if not is_project_matching_skills(p_type, user_skills):
                     continue
             try:

@@ -17,7 +17,8 @@ _client: httpx.AsyncClient | None = None
 async def get_http_client(timeout: float = 20.0) -> httpx.AsyncClient:
     global _client
     if _client is None or _client.is_closed:
-        _client = httpx.AsyncClient(timeout=timeout)
+        limits = httpx.Limits(max_keepalive_connections=10, max_connections=20, keepalive_expiry=30.0)
+        _client = httpx.AsyncClient(timeout=timeout, limits=limits)
     return _client
 
 

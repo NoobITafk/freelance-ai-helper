@@ -1,4 +1,5 @@
 import ast
+import functools
 import re
 from dataclasses import dataclass
 
@@ -283,9 +284,14 @@ class FilterResult:
     reason: str
 
 
+@functools.lru_cache(maxsize=1024)
+def _compile_keyword_regex(keyword: str) -> re.Pattern:
+    return re.compile(rf"(?<!\w){re.escape(keyword)}(?!\w)")
+
+
 def keyword_in_text(word: str, text_lower: str) -> bool:
     keyword = word.lower()
-    return re.search(rf"(?<!\w){re.escape(keyword)}(?!\w)", text_lower) is not None
+    return _compile_keyword_regex(keyword).search(text_lower) is not None
 
 
 def classify_project(title: str, description: str, extra_text: str = "") -> FilterResult:

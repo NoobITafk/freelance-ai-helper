@@ -1,3 +1,4 @@
+import functools
 import json
 import re
 from pathlib import Path
@@ -474,11 +475,16 @@ def project_text(project: dict) -> str:
     return f"{project.get('title', '')} {project.get('description', '')} {tags}".lower()
 
 
+@functools.lru_cache(maxsize=1024)
+def _compile_contains_regex(keyword: str) -> re.Pattern:
+    return re.compile(rf"(?<!\w){re.escape(keyword)}(?!\w)")
+
+
 def contains_keyword(text: str, keyword: str) -> bool:
     if " " in keyword:
         return keyword in text
 
-    return re.search(rf"(?<!\w){re.escape(keyword)}(?!\w)", text) is not None
+    return _compile_contains_regex(keyword).search(text) is not None
 
 
 def has_technical_keyword(text: str) -> bool:

@@ -30,6 +30,9 @@ def get_connection() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA synchronous = NORMAL;")
+    conn.execute("PRAGMA temp_store = MEMORY;")
+    conn.execute("PRAGMA cache_size = -16000;")
+    conn.execute("PRAGMA mmap_size = 67108864;")
     return conn
 
 
@@ -127,6 +130,16 @@ def init_db() -> None:
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_projects_status_created
             ON projects(status, created_at)
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_projects_score
+            ON projects(score)
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_user_projects_pid
+            ON user_projects(project_id)
         """)
 
         conn.execute("""
@@ -273,16 +286,28 @@ def save_project(
                 datetime.now().isoformat(timespec="seconds"),
             ),
         )
+    _seen_cache.add(str(project_id))
+
+
+_seen_cache: set[str] = set()
 
 
 def is_seen(project_id: str) -> bool:
+    pid = str(project_id)
+    if pid in _seen_cache:
+        return True
+
     with get_connection() as conn:
         cursor = conn.execute(
             "SELECT 1 FROM projects WHERE project_id = ? LIMIT 1",
-            (str(project_id),),
+            (pid,),
         )
-
-        return cursor.fetchone() is not None
+        found = cursor.fetchone() is not None
+        if found:
+            if len(_seen_cache) > 5000:
+                _seen_cache.clear()
+            _seen_cache.add(pid)
+        return found
 
 
 def get_project(project_id: str) -> Optional[dict]:

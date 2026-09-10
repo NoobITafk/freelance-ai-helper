@@ -59,6 +59,9 @@ async def handle_stats(request: web.Request) -> web.Response:
         return web.json_response({"success": False, "error": str(e)}, status=500)
 
 
+_project_meta_cache: dict[str, dict] = {}
+
+
 async def handle_projects(request: web.Request) -> web.Response:
     try:
         user_id = request.query.get("user_id")
@@ -71,15 +74,34 @@ async def handle_projects(request: web.Request) -> web.Response:
             projects = get_feed_projects(limit=limit, user_id=user_id)
 
         for p in projects:
-            p["project_type"] = project_type(p)
-            try:
-                p["bid_text"] = generate_bid(p, variant="short")
-            except Exception:
-                p["bid_text"] = f"Вітаю! Ознайомився із завданням «{p.get('title', '')}» та готовий реалізувати якісно."
-            try:
-                p["questions"] = generate_questions(p)
-            except Exception:
-                p["questions"] = ""
+            pid = str(p.get("project_id", ""))
+            cached = _project_meta_cache.get(pid) if pid else None
+            if cached is not None:
+                p["project_type"] = cached["project_type"]
+                p["bid_text"] = cached["bid_text"]
+                p["questions"] = cached["questions"]
+            else:
+                p_type = project_type(p)
+                p["project_type"] = p_type
+                try:
+                    bid_text = generate_bid(p, variant="short")
+                except Exception:
+                    bid_text = f"Вітаю! Ознайомився із завданням «{p.get('title', '')}» та готовий реалізувати якісно."
+                try:
+                    questions = generate_questions(p)
+                except Exception:
+                    questions = ""
+                p["bid_text"] = bid_text
+                p["questions"] = questions
+                if pid:
+                    if len(_project_meta_cache) > 500:
+                        _project_meta_cache.clear()
+                    _project_meta_cache[pid] = {
+                        "project_type": p_type,
+                        "bid_text": bid_text,
+                        "questions": questions,
+                    }
+
             if not p.get("url"):
                 p["url"] = f"https://freelancehunt.com/project/{p.get('project_id')}.html"
 
