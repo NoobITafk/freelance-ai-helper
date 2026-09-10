@@ -175,28 +175,20 @@ async def handle_add_feedback(request: web.Request) -> web.Response:
 
         fid = add_feedback(user_id=user_id or "anonymous", text=text, username=username, full_name=full_name)
 
-        # Grant +3 bonus days to the user
-        if user_id and user_id != "anonymous":
-            try:
-                add_bonus_days(user_id, days=3, reason="feedback")
-            except Exception as bonus_err:
-                logger.debug("Failed adding feedback bonus days: %s", bonus_err)
-
         bot = request.app.get("bot")
         if bot and TELEGRAM_CHAT_ID:
             try:
                 user_label = f"@{username}" if username else (full_name or f"ID: {user_id}")
                 admin_msg = (
                     f"💡 <b>Нова пропозиція / відгук від користувача!</b>\n\n"
-                    f"👤 Від: <b>{html.escape(user_label)}</b> (<code>{user_id}</code>)\n"
-                    f"🎁 Нараховано бонус: +3 дні підписки\n\n"
+                    f"👤 Від: <b>{html.escape(user_label)}</b> (<code>{user_id}</code>)\n\n"
                     f"📝 <i>{html.escape(text)}</i>"
                 )
                 await bot.send_message(chat_id=int(TELEGRAM_CHAT_ID), text=admin_msg, parse_mode="HTML")
             except Exception as notify_err:
                 logger.debug("Failed notifying admin about feedback: %s", notify_err)
 
-        return web.json_response({"success": True, "id": fid, "bonus_days": 3})
+        return web.json_response({"success": True, "id": fid})
     except Exception as e:
         logger.error("API feedback error: %s", e)
         return web.json_response({"success": False, "error": str(e)}, status=500)

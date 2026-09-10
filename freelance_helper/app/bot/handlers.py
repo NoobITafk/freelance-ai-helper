@@ -577,10 +577,10 @@ async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text:
         await reply_text(
             update,
-            f"💡 <b>Маєте ідею, як покращити бота, або помітили баг?</b>\n\n"
-            f"Напишіть нам прямо зараз:\n"
+            f"💡 <b>Маєте ідею, як покращити бота, або помітили помилку?</b>\n\n"
+            f"Напишіть нам:\n"
             f"<code>/feedback Текст вашої ідеї або зауваження</code>\n\n"
-            f"🎁 <b>Бонус:</b> За кожну змістовну пропозицію ми автоматично нараховуємо <b>+3 дні безкоштовної підписки</b> до вашого акаунту!\n\n"
+            f"Кожне повідомлення особисто переглядає розробник. Дякуємо за допомогу в розвитку бота!\n"
             f"Також можна надіслати ідею через Mini App у розділі «Параметри».",
             parse_mode="HTML",
         )
@@ -594,18 +594,12 @@ async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     full_name = user.full_name or ""
     add_feedback(user_id=user_id, text=text, username=username, full_name=full_name)
 
-    try:
-        add_bonus_days(user_id, days=3, reason="feedback")
-    except Exception as bonus_err:
-        logger.debug("Failed adding feedback bonus days: %s", bonus_err)
-
     if TELEGRAM_CHAT_ID:
         try:
             user_label = f"@{username}" if username else (full_name or f"ID: {user_id}")
             admin_msg = (
                 f"💡 <b>Нова пропозиція / ідея від користувача!</b>\n\n"
-                f"👤 Від: <b>{html.escape(user_label)}</b> (<code>{user_id}</code>)\n"
-                f"🎁 Нараховано бонус: +3 дні підписки\n\n"
+                f"👤 Від: <b>{html.escape(user_label)}</b> (<code>{user_id}</code>)\n\n"
                 f"📝 <i>{html.escape(text)}</i>"
             )
             await context.bot.send_message(chat_id=int(TELEGRAM_CHAT_ID), text=admin_msg, parse_mode="HTML")
@@ -614,8 +608,7 @@ async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply_msg = (
         f"🎉 <b>Дякуємо за ваш відгук!</b>\n\n"
-        f"Вашу пропозицію успішно збережено та передано розробнику.\n"
-        f"🎁 Вам нараховано <b>+3 дні повної підписки</b> як подяку за допомогу в розвитку бота!"
+        f"Вашу пропозицію успішно збережено та передано розробнику на розгляд."
     )
     await reply_text(update, reply_msg, parse_mode="HTML")
 
