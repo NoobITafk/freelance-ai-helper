@@ -189,6 +189,14 @@
 
     state.loading = false;
     updateWidgetUI();
+
+    // Automatic fill on page load: enabled by default, or triggered by #autofill in URL
+    const isAutoFillEnabled = localStorage.getItem('fhai_autofill') !== 'false' || window.location.hash.includes('autofill');
+    if (isAutoFillEnabled) {
+      setTimeout(() => {
+        fillNativeBidForm(true);
+      }, 400);
+    }
   }
 
   // Create or update the floating widget in DOM
@@ -461,7 +469,7 @@
   }
 
   // Auto-fill Freelancehunt native bid form fields with authentic human events
-  function fillNativeBidForm() {
+  function fillNativeBidForm(quiet = false) {
     const textToFill = getCurrentBidText();
 
     // 1. Textarea comment
@@ -513,12 +521,12 @@
     }
 
     if (filledCount > 0) {
-      showToast('✨ Поля форми заповнено! Перевірте і натисніть «Зробити ставку»');
+      showToast('✨ Форму автоматично заповнено! Перевірте і натисніть «Зробити ставку»');
       if (commentEl) {
         commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         commentEl.focus();
       }
-    } else {
+    } else if (!quiet) {
       showToast('⚠️ Форму ставки не знайдено (можливо, ви не авторизовані)');
       copyTextToClipboard(textToFill);
     }
@@ -699,3 +707,4 @@
     init();
   }
 })();
+
