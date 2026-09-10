@@ -3,7 +3,7 @@ from pathlib import Path
 from aiohttp import web
 
 from .ai_analyzer import generate_bid
-from .config import MIN_SCORE, PROJECT_ROOT
+from .config import MIN_SCORE, PROJECT_ROOT, SUBSCRIPTION_MONTH_PRICE, TELEGRAM_CHAT_ID
 from .database import (
     add_portfolio_case,
     check_database,
@@ -16,6 +16,8 @@ from .database import (
     get_project,
     get_recent_projects,
     get_setting,
+    get_user_subscription,
+    is_user_subscribed,
     update_project_pipeline,
 )
 from .logger import logger
@@ -166,6 +168,25 @@ async def handle_export_csv(request: web.Request) -> web.Response:
         return web.Response(text=f"Export error: {e}", status=500)
 
 
+async def handle_subscription_status(request: web.Request) -> web.Response:
+    try:
+        user_id = request.query.get("user_id")
+        if not user_id:
+            user_id = TELEGRAM_CHAT_ID or ""
+
+        sub = get_user_subscription(user_id) if user_id else None
+        price = int(get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE)))
+        return web.json_response({
+            "success": True,
+            "subscription": sub,
+            "price": price,
+            "currency": "UAH",
+        })
+    except Exception as e:
+        logger.error("API subscription error: %s", e)
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
 def create_web_app(bot=None) -> web.Application:
     app = web.Application()
     app["bot"] = bot
@@ -178,6 +199,7 @@ def create_web_app(bot=None) -> web.Application:
     app.router.add_delete("/api/cases/{id}", handle_delete_case)
     app.router.add_get("/api/health", handle_health)
     app.router.add_get("/api/export", handle_export_csv)
+    app.router.add_get("/api/subscription", handle_subscription_status)
 
     # Allow CORS so Mini App can call API from any client
     @web.middleware

@@ -859,10 +859,10 @@ def main() -> int:
 
     # 19. Mini App Web Server & CRM API routes check
     total_checks += 1
-    from freelance_helper.app.web_server import create_web_app, handle_health, handle_index
+    from freelance_helper.app.web_server import create_web_app, handle_health, handle_index, handle_subscription_status
     test_app = create_web_app()
     routes = [r.resource.canonical for r in test_app.router.routes() if hasattr(r, "resource") and r.resource]
-    expected_routes = ["/", "/api/stats", "/api/projects", "/api/pipeline", "/api/cases", "/api/cases/{id}", "/api/health", "/api/export"]
+    expected_routes = ["/", "/api/stats", "/api/projects", "/api/pipeline", "/api/cases", "/api/cases/{id}", "/api/health", "/api/export", "/api/subscription"]
     has_all_routes = all(r in routes for r in expected_routes)
 
     from aiohttp.test_utils import make_mocked_request
@@ -873,20 +873,77 @@ def main() -> int:
     resp_health = loop.run_until_complete(handle_health(mock_health_req))
     mock_index_req = make_mocked_request("GET", "/", app=test_app)
     resp_index = loop.run_until_complete(handle_index(mock_index_req))
+    mock_sub_req = make_mocked_request("GET", "/api/subscription", app=test_app)
+    resp_sub = loop.run_until_complete(handle_subscription_status(mock_sub_req))
     loop.close()
 
     health_data = json.loads(resp_health.text)
+    sub_data = json.loads(resp_sub.text)
     api_health_ok = health_data.get("success") is True and health_data.get("status") == "online" and "database" in health_data
+    sub_api_ok = sub_data.get("success") is True and "price" in sub_data
     index_ok = resp_index.status == 200
 
-    webapp_ok = has_all_routes and api_health_ok and index_ok
+    webapp_ok = has_all_routes and api_health_ok and sub_api_ok and index_ok
     if not webapp_ok:
         failed += 1
         print("=" * 80)
-        print(f"Mini App Web Server check: FAIL | routes={has_all_routes} | health={api_health_ok} | index={index_ok}")
+        print(f"Mini App Web Server check: FAIL | routes={has_all_routes} | health={api_health_ok} | sub_api={sub_api_ok} | index={index_ok}")
     else:
         print("=" * 80)
-        print(f"Mini App Web Server & CRM API check: OK (routes={len(routes)}, health=ok, index=200)")
+        print(f"Mini App Web Server & CRM API check: OK (routes={len(routes)}, health=ok, sub=ok, index=200)")
+
+    # 20. Subscription, 7-day Trial, Admin Lifetime & Automated Issuance Check
+    total_checks += 1
+    from freelance_helper.app.database import (
+        activate_user_subscription,
+        get_active_subscribers,
+        get_user_subscription,
+        init_user_subscription,
+        is_user_subscribed,
+    )
+    from freelance_helper.app.config import TELEGRAM_CHAT_ID
+
+    # 20a. New user gets 7-day free trial
+    test_uid = "test_user_777"
+    trial_sub = init_user_subscription(test_uid, username="tester", full_name="Test User", trial_days=7)
+    trial_ok = (
+        trial_sub is not None
+        and trial_sub.get("status") == "trial"
+        and trial_sub.get("is_active") is True
+        and trial_sub.get("days_left", 0) in {7, 8}
+        and is_user_subscribed(test_uid) is True
+    )
+
+    # 20b. Admin lifetime access
+    admin_ok = False
+    if TELEGRAM_CHAT_ID:
+        admin_sub = get_user_subscription(TELEGRAM_CHAT_ID)
+        admin_ok = admin_sub is not None and admin_sub.get("is_active") is True and is_user_subscribed(TELEGRAM_CHAT_ID) is True
+    else:
+        admin_ok = True
+
+    # 20c. Automated 30-day activation
+    paid_sub = activate_user_subscription(test_uid, days=30, amount=99.0, provider="telegram_payment")
+    paid_ok = (
+        paid_sub is not None
+        and paid_sub.get("status") == "active"
+        and paid_sub.get("is_active") is True
+        and paid_sub.get("days_left", 0) >= 36  # 7 trial + 30 paid
+        and is_user_subscribed(test_uid) is True
+    )
+
+    # 20d. Active subscribers query contains test_uid
+    active_list = get_active_subscribers()
+    list_ok = any(s.get("user_id") == test_uid for s in active_list)
+
+    subs_all_ok = trial_ok and admin_ok and paid_ok and list_ok
+    if not subs_all_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Subscription system check: FAIL | trial={trial_ok} | admin={admin_ok} | paid={paid_ok} | list={list_ok}")
+    else:
+        print("=" * 80)
+        print(f"Subscription & Trial check: OK (trial=7d, admin=lifetime, paid=+30d, active_subs={len(active_list)})")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

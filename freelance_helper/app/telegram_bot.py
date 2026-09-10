@@ -3,7 +3,14 @@ import errno
 import os
 from pathlib import Path
 
-from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    CommandHandler,
+    MessageHandler,
+    PreCheckoutQueryHandler,
+    filters,
+)
 
 from .bot.handlers import (
     ai_off,
@@ -20,6 +27,7 @@ from .bot.handlers import (
     crm_command,
     digest_command,
     export_command,
+    grant_sub_command,
     handle_button,
     handle_text_message,
     health_command,
@@ -28,13 +36,19 @@ from .bot.handlers import (
     last_command,
     portfolio_command,
     portfolio_set_command,
+    pre_checkout_handler,
     profile_command,
     profile_set_command,
     quiet_command,
     recent_command,
+    set_price_command,
     settings_command,
     start,
     stats_command,
+    subscribers_command,
+    subscribe_command,
+    subscription_command,
+    successful_payment_handler,
     test_ai,
     threshold_command,
     webapp_command,
@@ -218,6 +232,14 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("last", last_command))
     app.add_handler(CommandHandler("recent", recent_command))
     app.add_handler(CommandHandler("why", why_command))
+    app.add_handler(CommandHandler("subscribe", subscribe_command))
+    app.add_handler(CommandHandler("subscription", subscription_command))
+    app.add_handler(CommandHandler("sub", subscription_command))
+    app.add_handler(CommandHandler("grant_sub", grant_sub_command))
+    app.add_handler(CommandHandler("subscribers", subscribers_command))
+    app.add_handler(CommandHandler("set_price", set_price_command))
+    app.add_handler(PreCheckoutQueryHandler(pre_checkout_handler))
+    app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_handler))
     app.add_handler(CallbackQueryHandler(handle_button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
 

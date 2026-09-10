@@ -869,6 +869,19 @@
         </div>
       </div>
 
+      <div class="card" id="subscriptionCard">
+        <div class="card-header">
+          <div class="card-title">Підписка та доступ</div>
+          <span class="badge-status" id="subStatusBadge" style="color: #4ade80;">Активна</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px;" id="subDetailsText">
+          Перевірка статусу підписки...
+        </div>
+        <button class="btn-primary" id="btnRenewSub" style="display: none; padding: 10px 14px; font-size: 0.84rem;" onclick="promptRenewSubscription()">
+          Оформити підписку на 1 місяць (<span id="subPriceDisplay">99</span> грн)
+        </button>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <div class="card-title">Параметри системи</div>
@@ -1131,7 +1144,7 @@
       if (tabId === 'tabFeed') loadFeedProjects();
       else if (tabId === 'tabCrm') loadCrmProjects();
       else if (tabId === 'tabCases') loadCases();
-      else if (tabId === 'tabSettings') loadHealth();
+      else if (tabId === 'tabSettings') { loadHealth(); loadSubscription(); }
     }
 
     function refreshCurrentTab() {
@@ -1143,7 +1156,7 @@
         if (activeTab.id === 'tabFeed') loadFeedProjects();
         else if (activeTab.id === 'tabCrm') loadCrmProjects();
         else if (activeTab.id === 'tabCases') loadCases();
-        else if (activeTab.id === 'tabSettings') loadHealth();
+        else if (activeTab.id === 'tabSettings') { loadHealth(); loadSubscription(); }
       }
       setTimeout(() => {
         if (btn) btn.classList.remove('spinning');
@@ -1620,6 +1633,52 @@
       } catch(e) {}
     }
 
+    async function loadSubscription() {
+      try {
+        let uid = '';
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+          uid = window.Telegram.WebApp.initDataUnsafe.user.id;
+        }
+        const res = await fetch(`/api/subscription?user_id=${uid}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && data.subscription) {
+          const s = data.subscription;
+          const badge = document.getElementById('subStatusBadge');
+          const text = document.getElementById('subDetailsText');
+          const btn = document.getElementById('btnRenewSub');
+          const priceSpan = document.getElementById('subPriceDisplay');
+          if (priceSpan && data.price) priceSpan.textContent = data.price;
+
+          if (s.status === 'lifetime') {
+            if (badge) { badge.textContent = 'Безстроково'; badge.style.color = 'var(--primary)'; }
+            if (text) text.textContent = 'Власник бота — довічний безлімітний доступ (VIP/Admin).';
+            if (btn) btn.style.display = 'none';
+          } else if (s.status === 'trial' && s.is_active) {
+            if (badge) { badge.textContent = `Тріал (${s.days_left} дн.)`; badge.style.color = '#4ade80'; }
+            if (text) text.textContent = `Безкоштовний пробний період діє до ${s.expires_at.substring(0, 10)}.`;
+            if (btn) btn.style.display = 'block';
+          } else if (s.status === 'active' && s.is_active) {
+            if (badge) { badge.textContent = `Активна (${s.days_left} дн.)`; badge.style.color = '#4ade80'; }
+            if (text) text.textContent = `Підписка на 1 місяць діє до ${s.expires_at.substring(0, 10)}.`;
+            if (btn) btn.style.display = s.days_left <= 5 ? 'block' : 'none';
+          } else {
+            if (badge) { badge.textContent = 'Закінчилася'; badge.style.color = '#f87171'; }
+            if (text) text.textContent = 'Термін дії підписки або тріалу вичерпано. Оформіть підписку для відновлення доступу.';
+            if (btn) btn.style.display = 'block';
+          }
+        }
+      } catch (e) {}
+    }
+
+    function promptRenewSubscription() {
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.close) {
+        window.Telegram.WebApp.close();
+      } else {
+        showToast('Надішліть /subscribe у чат бота');
+      }
+    }
+
     function downloadCsvExport() {
       haptic('impact');
       showToast('Формування CSV...');
@@ -1664,6 +1723,7 @@
     initTelegramUser();
     loadStats();
     loadFeedProjects();
+    loadSubscription();
   </script>
 </body>
 </html>

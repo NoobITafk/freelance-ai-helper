@@ -3,7 +3,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from .config import MIN_SCORE, PROJECT_ROOT
+from .config import (
+    MIN_SCORE,
+    PROJECT_ROOT,
+    SUBSCRIPTION_MONTH_PRICE,
+    SUBSCRIPTION_REQUIRED,
+    TELEGRAM_CHAT_ID,
+    TRIAL_DAYS,
+)
 
 DB_PATH = PROJECT_ROOT / "data" / "projects.db"
 DEFAULT_MIN_SCORE = str(MIN_SCORE)
@@ -86,12 +93,39 @@ def init_db() -> None:
             ON projects(status, created_at)
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                user_id TEXT PRIMARY KEY,
+                chat_id TEXT,
+                username TEXT,
+                full_name TEXT,
+                status TEXT DEFAULT 'trial',
+                plan TEXT DEFAULT 'month',
+                started_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                payment_provider TEXT DEFAULT 'telegram',
+                payment_id TEXT,
+                amount REAL DEFAULT 0.0,
+                currency TEXT DEFAULT 'UAH',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_subs_status_expires ON subscriptions(status, expires_at)")
+
         conn.execute(
             """
             INSERT OR IGNORE INTO settings (key, value)
             VALUES ('min_score', ?)
         """,
             (DEFAULT_MIN_SCORE,),
+        )
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO settings (key, value)
+            VALUES ('sub_price', ?)
+        """,
+            (str(SUBSCRIPTION_MONTH_PRICE),),
         )
 
 
@@ -690,3 +724,228 @@ def export_crm_data_csv() -> str:
             ])
 
     return output.getvalue()
+
+
+def init_user_subscription(
+    user_id: str | int,
+    chat_id: str | int | None = None,
+    username: str | None = None,
+    full_name: str | None = None,
+    trial_days: int = TRIAL_DAYS,
+) -> dict:
+    user_id_str = str(user_id)
+    chat_id_str = str(chat_id or user_id)
+    now_iso = datetime.now().isoformat(timespec="seconds")
+
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM subscriptions WHERE user_id = ?", (user_id_str,)).fetchone()
+        if row:
+            conn.execute(
+                """
+                UPDATE subscriptions
+                SET chat_id = COALESCE(?, chat_id),
+                    username = COALESCE(?, username),
+                    full_name = COALESCE(?, full_name),
+                    updated_at = ?
+                WHERE user_id = ?
+                """,
+                (chat_id_str, username, full_name, now_iso, user_id_str),
+            )
+            return get_user_subscription(user_id_str)
+
+        is_owner = TELEGRAM_CHAT_ID and user_id_str == str(TELEGRAM_CHAT_ID)
+        if is_owner:
+            status = "lifetime"
+            expires_at = "2099-12-31T23:59:59"
+            plan = "admin_lifetime"
+        else:
+            status = "trial"
+            expires_at = (datetime.now() + timedelta(days=trial_days)).isoformat(timespec="seconds")
+            plan = f"trial_{trial_days}d"
+
+        conn.execute(
+            """
+            INSERT INTO subscriptions (
+                user_id, chat_id, username, full_name, status, plan,
+                started_at, expires_at, payment_provider, amount, currency,
+                created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id_str,
+                chat_id_str,
+                username or "",
+                full_name or "",
+                status,
+                plan,
+                now_iso,
+                expires_at,
+                "system",
+                0.0,
+                "UAH",
+                now_iso,
+                now_iso,
+            ),
+        )
+    return get_user_subscription(user_id_str)
+
+
+def get_user_subscription(user_id: str | int) -> dict | None:
+    user_id_str = str(user_id)
+    is_owner = TELEGRAM_CHAT_ID and user_id_str == str(TELEGRAM_CHAT_ID)
+
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM subscriptions WHERE user_id = ?", (user_id_str,)).fetchone()
+        if not row:
+            if is_owner:
+                return {
+                    "user_id": user_id_str,
+                    "chat_id": user_id_str,
+                    "username": "admin",
+                    "full_name": "Administrator",
+                    "status": "lifetime",
+                    "plan": "admin_lifetime",
+                    "is_active": True,
+                    "days_left": 9999,
+                    "expires_at": "2099-12-31T23:59:59",
+                }
+            return None
+
+        sub = dict(row)
+        now = datetime.now()
+        days_left = 0
+
+        if is_owner or sub.get("status") == "lifetime":
+            sub["status"] = "lifetime"
+            sub["is_active"] = True
+            sub["days_left"] = 9999
+            return sub
+
+        try:
+            exp_dt = datetime.fromisoformat(sub["expires_at"])
+            diff = exp_dt - now
+            days_left = max(0, diff.days + (1 if diff.seconds > 0 else 0))
+            is_active = diff.total_seconds() > 0
+        except Exception:
+            is_active = False
+            days_left = 0
+
+        if not is_active and sub.get("status") in {"trial", "active"}:
+            sub["status"] = "expired"
+            conn.execute(
+                "UPDATE subscriptions SET status = 'expired', updated_at = ? WHERE user_id = ?",
+                (now.isoformat(timespec="seconds"), user_id_str),
+            )
+
+        sub["is_active"] = is_active
+        sub["days_left"] = days_left
+        return sub
+
+
+def is_user_subscribed(user_id: str | int) -> bool:
+    if not SUBSCRIPTION_REQUIRED:
+        return True
+    user_id_str = str(user_id)
+    if TELEGRAM_CHAT_ID and user_id_str == str(TELEGRAM_CHAT_ID):
+        return True
+    sub = get_user_subscription(user_id_str)
+    return bool(sub and sub.get("is_active"))
+
+
+def activate_user_subscription(
+    user_id: str | int,
+    days: int = 30,
+    amount: float = 99.0,
+    provider: str = "telegram",
+    payment_id: str | None = None,
+    currency: str = "UAH",
+    chat_id: str | int | None = None,
+    username: str | None = None,
+    full_name: str | None = None,
+) -> dict:
+    user_id_str = str(user_id)
+    chat_id_str = str(chat_id or user_id)
+    now = datetime.now()
+    now_iso = now.isoformat(timespec="seconds")
+
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM subscriptions WHERE user_id = ?", (user_id_str,)).fetchone()
+
+        base_date = now
+        if row:
+            try:
+                curr_exp = datetime.fromisoformat(row["expires_at"])
+                if curr_exp > now:
+                    base_date = curr_exp
+            except Exception:
+                base_date = now
+
+        new_expires_dt = base_date + timedelta(days=days)
+        new_expires_iso = new_expires_dt.isoformat(timespec="seconds")
+
+        conn.execute(
+            """
+            INSERT INTO subscriptions (
+                user_id, chat_id, username, full_name, status, plan,
+                started_at, expires_at, payment_provider, payment_id, amount, currency,
+                created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, 'active', 'month', ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                chat_id = COALESCE(excluded.chat_id, subscriptions.chat_id),
+                username = COALESCE(excluded.username, subscriptions.username),
+                full_name = COALESCE(excluded.full_name, subscriptions.full_name),
+                status = 'active',
+                plan = 'month',
+                expires_at = excluded.expires_at,
+                payment_provider = excluded.payment_provider,
+                payment_id = excluded.payment_id,
+                amount = excluded.amount,
+                currency = excluded.currency,
+                updated_at = excluded.updated_at
+            """,
+            (
+                user_id_str,
+                chat_id_str,
+                username or "",
+                full_name or "",
+                now_iso,
+                new_expires_iso,
+                provider,
+                payment_id or "",
+                amount,
+                currency,
+                now_iso,
+                now_iso,
+            ),
+        )
+
+    return get_user_subscription(user_id_str)
+
+
+def grant_user_subscription(user_id: str | int, days: int = 30, admin_note: str = "admin_grant") -> dict:
+    return activate_user_subscription(
+        user_id=user_id,
+        days=days,
+        amount=0.0,
+        provider="admin_grant",
+        payment_id=admin_note,
+    )
+
+
+def get_all_subscriptions() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT user_id FROM subscriptions ORDER BY expires_at DESC").fetchall()
+        results = []
+        for r in rows:
+            sub = get_user_subscription(r["user_id"])
+            if sub:
+                results.append(sub)
+        return results
+
+
+def get_active_subscribers() -> list[dict]:
+    all_subs = get_all_subscriptions()
+    return [s for s in all_subs if s.get("is_active")]
+

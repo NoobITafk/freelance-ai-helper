@@ -4,7 +4,14 @@ import re
 import time
 from datetime import datetime
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    LabeledPrice,
+    PreCheckoutQuery,
+    Update,
+    WebAppInfo,
+)
 from telegram.error import BadRequest, Forbidden, TelegramError
 from telegram.ext import ContextTypes
 
@@ -43,18 +50,26 @@ from ..config import (
     MIN_SCORE,
     OLLAMA_MODEL,
     OLLAMA_URL,
+    PAYMENT_PROVIDER_TOKEN,
+    SUBSCRIPTION_MONTH_PRICE,
+    SUBSCRIPTION_REQUIRED,
+    SUBSCRIPTION_STARS_PRICE,
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
+    TRIAL_DAYS,
     USER_PROFILE,
 )
 from ..freelancehunt_api import FreelancehuntAPIError, get_projects, submit_project_bid
 from ..database import (
+    activate_user_subscription,
     add_portfolio_case,
     check_database,
     cleanup_old_projects,
     create_database_backup,
     delete_portfolio_case,
     export_crm_data_csv,
+    get_active_subscribers,
+    get_all_subscriptions,
     get_crm_stats,
     get_night_projects,
     get_portfolio_cases,
@@ -63,7 +78,11 @@ from ..database import (
     get_recent_projects,
     get_setting,
     get_stats,
+    get_user_subscription,
+    grant_user_subscription,
+    init_user_subscription,
     is_quiet_hours_now,
+    is_user_subscribed,
     set_portfolio_link,
     set_project_rating,
     set_setting,
@@ -187,13 +206,67 @@ def project_short_description(project: dict, limit: int = 200) -> str:
     return f"{description[:limit].rstrip()}..."
 
 
+async def check_user_access(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    user = update.effective_user
+    user_id = user.id if user else (update.effective_chat.id if update.effective_chat else None)
+    if not user_id:
+        return True
+
+    if is_user_subscribed(user_id):
+        return True
+
+    sub = get_user_subscription(user_id)
+    price = get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE))
+    status_msg = (
+        "Ваш 7-денний безкоштовний пробний період закінчився."
+        if sub and sub.get("status") == "expired"
+        else "Для користування ботом потрібна активна підписка."
+    )
+
+    msg = (
+        f"⛔️ {status_msg}\n\n"
+        f"💎 Вартість підписки: {price} грн / 30 днів.\n"
+        f"У підписку входить: щохвилинний моніторинг Freelancehunt, AI-генератор відгуків, CRM та сповіщення.\n\n"
+        f"👉 Щоб отримати підписку, натисніть: /subscribe"
+    )
+    await reply_text(update, msg)
+    return False
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.effective_chat:
         logger.warning("Cannot start: update has no effective_chat")
         return
 
     chat_id = update.effective_chat.id
-    await reply_text(update, f"Бот працює ✅\nТвій chat_id: {chat_id}")
+    user = update.effective_user
+    user_id = user.id if user else chat_id
+    username = user.username if user else ""
+    full_name = user.full_name if user else ""
+
+    sub = init_user_subscription(
+        user_id=user_id,
+        chat_id=chat_id,
+        username=username,
+        full_name=full_name,
+        trial_days=TRIAL_DAYS,
+    )
+
+    if sub.get("status") == "lifetime":
+        sub_info = "⭐️ Статус: Безстроковий доступ (Адміністратор)"
+    elif sub.get("status") == "trial":
+        sub_info = f"🎁 Вам надано 7 днів безкоштовного пробного доступу (до {sub['expires_at'][:10]}, ще {sub['days_left']} дн.)."
+    elif sub.get("status") == "active":
+        sub_info = f"✅ Ваша підписка активна (до {sub['expires_at'][:10]}, ще {sub['days_left']} дн.)."
+    else:
+        sub_info = "⛔️ Безкоштовний період закінчився. Оформити підписку: /subscribe"
+
+    await reply_text(
+        update,
+        f"Бот працює ✅\n"
+        f"{sub_info}\n\n"
+        f"💡 Натисніть /help для переліку команд або /webapp для відкриття Mini App.",
+    )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -203,6 +276,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /start — запуск бота
 /help — список команд
 /check — перевірити проєкти зараз
+/subscribe — оформити або подовжити підписку
+/subscription — перевірити статус підписки
 /auto_on — увімкнути автопошук
 /auto_off — вимкнути автопошук
 /stats — статистика
@@ -226,6 +301,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /webapp — Telegram Mini App інтерфейс
 /test_ai — тест роботи аналізатора
 /why project_id — показати збережений аналіз
+/subscribers — статистика підписників (адмін)
+/grant_sub ID днів — нарахувати підписку (адмін)
+/set_price сума — змінити ціну підписки (адмін)
 
 📌 Кнопки під проєктом:
 ✅ Добрий | ❌ Поганий
@@ -236,7 +314,212 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply_text(update, text)
 
 
+async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    user = update.effective_user
+    user_id = user.id if user else chat_id
+
+    if TELEGRAM_CHAT_ID and str(user_id) == str(TELEGRAM_CHAT_ID):
+        await reply_text(update, "⭐️ Ви є власником бота! Для вас діє безстроковий безкоштовний доступ (VIP/Admin).")
+        return
+
+    price_uah = int(get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE)))
+    title = "Підписка на Freelance Helper (1 місяць)"
+    description = "30 днів доступу: моніторинг Freelancehunt, AI-генерація пропозицій та CRM."
+    payload = f"sub_month_{user_id}_{int(time.time())}"
+
+    if PAYMENT_PROVIDER_TOKEN:
+        prices = [LabeledPrice("Підписка на 1 місяць (30 днів)", price_uah * 100)]
+        try:
+            await context.bot.send_invoice(
+                chat_id=chat_id,
+                title=title,
+                description=description,
+                payload=payload,
+                provider_token=PAYMENT_PROVIDER_TOKEN,
+                currency="UAH",
+                prices=prices,
+                start_parameter=f"sub_{user_id}",
+            )
+            return
+        except Exception as err:
+            logger.error("Error sending UAH invoice: %s", err)
+
+    # Fallback to Telegram Stars
+    try:
+        stars_price = SUBSCRIPTION_STARS_PRICE
+        prices = [LabeledPrice("Підписка на 1 місяць (30 днів)", stars_price)]
+        await context.bot.send_invoice(
+            chat_id=chat_id,
+            title=title,
+            description=description,
+            payload=payload,
+            provider_token="",
+            currency="XTR",
+            prices=prices,
+            start_parameter=f"sub_{user_id}",
+        )
+    except Exception as e:
+        logger.warning("Could not send Stars invoice: %s", e)
+        await reply_text(
+            update,
+            f"💳 Оформлення підписки на 1 місяць (30 днів)\n\n"
+            f"Вартість: {price_uah} грн.\n"
+            f"Для завершення налаштування еквайрингу підключіть платіжного провайдера в @BotFather або зверніться до адміністратора."
+        )
+
+
+async def pre_checkout_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.pre_checkout_query
+    if query and query.invoice_payload.startswith("sub_"):
+        await query.answer(ok=True)
+    elif query:
+        await query.answer(ok=False, error_message="Недійсний запит оплати.")
+
+
+async def successful_payment_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    sp = update.message.successful_payment
+    user = update.effective_user
+    user_id = user.id if user else update.effective_chat.id
+    amount = sp.total_amount / 100.0 if sp.currency == "UAH" else float(sp.total_amount)
+
+    sub = activate_user_subscription(
+        user_id=user_id,
+        days=30,
+        amount=amount,
+        provider=f"telegram_{sp.currency.lower()}",
+        payment_id=sp.telegram_payment_charge_id,
+        currency=sp.currency,
+        chat_id=update.effective_chat.id,
+        username=user.username if user else "",
+        full_name=user.full_name if user else "",
+    )
+
+    exp_date = sub["expires_at"][:10]
+    await reply_text(
+        update,
+        f"🎉 Оплату успішно зараховано!\n\n"
+        f"✅ Вашу підписку активовано на 30 днів до {exp_date} (ще {sub['days_left']} дн.).\n"
+        f"Всі можливості Freelance Helper розблоковано. Успішних замовлень! 🚀",
+    )
+    logger.info("Automatic subscription activated for user %s (amount: %s %s)", user_id, amount, sp.currency)
+
+
+async def subscription_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    user_id = user.id if user else update.effective_chat.id
+    sub = get_user_subscription(user_id)
+    price = get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE))
+
+    if not sub:
+        await reply_text(update, f"У вас немає активної підписки.\nОформити на 1 місяць ({price} грн): /subscribe")
+        return
+
+    if sub.get("status") == "lifetime":
+        await reply_text(update, "⭐️ Статус: Безстроковий доступ (Адміністратор)")
+        return
+
+    is_act = sub.get("is_active")
+    exp_date = sub.get("expires_at", "")[:10]
+    days_left = sub.get("days_left", 0)
+
+    if is_act:
+        status_name = "Пробний період" if sub.get("status") == "trial" else "Платна підписка"
+        msg = (
+            f"📋 Інформація про підписку:\n\n"
+            f"• Статус: {status_name} ✅\n"
+            f"• Дійсна до: {exp_date}\n"
+            f"• Залишилося: {days_left} дн.\n\n"
+            f"Продовжити на 30 днів ({price} грн): /subscribe"
+        )
+    else:
+        msg = (
+            f"⛔️ Ваша підписка закінчилася ({exp_date}).\n\n"
+            f"Поновити на 30 днів ({price} грн): /subscribe"
+        )
+    await reply_text(update, msg)
+
+
+async def grant_sub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user or str(user.id) != str(TELEGRAM_CHAT_ID):
+        await reply_text(update, "Ця команда доступна лише адміністратору.")
+        return
+
+    args = context.args
+    if not args:
+        await reply_text(update, "Використання: /grant_sub <user_id> [кількість_днів]")
+        return
+
+    target_user_id = args[0].strip()
+    days = int(args[1]) if len(args) > 1 and args[1].isdigit() else 30
+
+    sub = grant_user_subscription(target_user_id, days=days, admin_note=f"granted by {user.id}")
+    await reply_text(
+        update,
+        f"✅ Користувачу {target_user_id} нараховано {days} днів підписки!\n"
+        f"Дійсна до: {sub['expires_at'][:10]} (ще {sub['days_left']} дн.)."
+    )
+    if sub.get("chat_id"):
+        try:
+            await context.bot.send_message(
+                chat_id=int(sub["chat_id"]),
+                text=f"🎁 Адміністратор надав вам {days} днів підписки!\nДійсна до {sub['expires_at'][:10]}.",
+            )
+        except Exception:
+            pass
+
+
+async def subscribers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user or str(user.id) != str(TELEGRAM_CHAT_ID):
+        await reply_text(update, "Ця команда доступна лише адміністратору.")
+        return
+
+    all_subs = get_all_subscriptions()
+    if not all_subs:
+        await reply_text(update, "Поки немає жодного підписника.")
+        return
+
+    active_count = sum(1 for s in all_subs if s.get("is_active"))
+    trial_count = sum(1 for s in all_subs if s.get("status") == "trial" and s.get("is_active"))
+    paid_count = sum(1 for s in all_subs if s.get("status") == "active" and s.get("is_active"))
+
+    lines = [
+        "📊 Підписники бота:\n",
+        f"• Всього зареєстровано: {len(all_subs)}",
+        f"• Активних: {active_count} (платних: {paid_count}, тріал: {trial_count})\n",
+    ]
+
+    for s in all_subs[:20]:
+        uname = f"@{s['username']}" if s.get("username") else s.get("full_name") or s["user_id"]
+        exp = s["expires_at"][:10]
+        status_icon = "✅" if s.get("is_active") else "❌"
+        lines.append(f"{status_icon} {uname} ({s.get('status')}): до {exp} ({s.get('days_left', 0)} дн.)")
+
+    await reply_text(update, "\n".join(lines))
+
+
+async def set_price_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user or str(user.id) != str(TELEGRAM_CHAT_ID):
+        await reply_text(update, "Ця команда доступна лише адміністратору.")
+        return
+
+    args = context.args
+    if not args or not args[0].isdigit():
+        curr_price = get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE))
+        await reply_text(update, f"Поточна вартість підписки: {curr_price} грн.\nЗмінити: /set_price <сума_в_грн>")
+        return
+
+    new_price = int(args[0])
+    set_setting("sub_price", str(new_price))
+    await reply_text(update, f"✅ Вартість підписки на 1 місяць встановлено: {new_price} грн.")
+
+
 async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await check_user_access(update, context):
+        return
     test_project = {
         "title": "Python-скрипт для парсингу товарів із сайту",
         "description": "Потрібен Python-скрипт для парсингу товарів із сайту. Результат зберегти в Excel.",
@@ -277,6 +560,9 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not message:
         logger.warning("Cannot run /check: update has no effective_message")
+        return
+
+    if not await check_user_access(update, context):
         return
 
     await message.reply_text("Шукаю нові проєкти...")
@@ -361,25 +647,38 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
             pass
         return
 
-    async def send_func(text, reply_markup=None, **kwargs):
+    active_subs = get_active_subscribers()
+    recipient_chats = set()
+    if chat_id:
+        recipient_chats.add(chat_id)
+    if TELEGRAM_CHAT_ID:
         try:
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=text,
-                reply_markup=reply_markup,
-                **kwargs,
-            )
-        except BadRequest as b_err:
-            if "chat not found" in str(b_err).lower():
-                logger.warning(
-                    "Chat not found (chat_id=%s). Відкрийте нового бота в Telegram та надішліть йому /start!",
-                    chat_id,
+            recipient_chats.add(int(TELEGRAM_CHAT_ID))
+        except ValueError:
+            pass
+    for s in active_subs:
+        if s.get("chat_id"):
+            try:
+                recipient_chats.add(int(s["chat_id"]))
+            except (ValueError, TypeError):
+                pass
+
+    async def send_func(text, reply_markup=None, **kwargs):
+        for cid in recipient_chats:
+            try:
+                await context.bot.send_message(
+                    chat_id=cid,
+                    text=text,
+                    reply_markup=reply_markup,
+                    **kwargs,
                 )
-                return
-            raise
-        except Forbidden as f_err:
-            logger.warning("Бот заблокований користувачем або немає прав (chat_id=%s): %s", chat_id, f_err)
-            return
+            except BadRequest as b_err:
+                if "chat not found" in str(b_err).lower():
+                    logger.warning("Chat not found (chat_id=%s)", cid)
+            except Forbidden as f_err:
+                logger.warning("Bot blocked by user (chat_id=%s): %s", cid, f_err)
+            except Exception as e:
+                logger.debug("Failed sending to subscriber %s: %s", cid, e)
 
     sent_count = 0
     processed_count = 0
@@ -693,6 +992,9 @@ async def ai_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recent_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await check_user_access(update, context):
+        return
+
     projects = get_recent_projects(limit=LAST_PROJECTS_LIMIT)
 
     if not projects:
@@ -726,6 +1028,9 @@ async def last_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def why_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await check_user_access(update, context):
+        return
+
     if not context.args:
         await reply_text(update, "Вкажи ID проєкту. Наприклад: /why 123456")
         return
@@ -749,6 +1054,9 @@ async def why_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def cases_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await check_user_access(update, context):
+        return
+
     cases = get_portfolio_cases()
     if not cases:
         await reply_text(
@@ -773,6 +1081,9 @@ async def cases_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def case_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await check_user_access(update, context):
+        return
+
     if not context.args:
         await reply_text(
             update,
@@ -813,6 +1124,9 @@ async def case_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def case_del_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await check_user_access(update, context):
+        return
+
     if not context.args or not context.args[0].isdigit():
         await reply_text(update, "Вкажіть числовий ID кейсу для видалення. Наприклад: <code>/case_del 2</code>", parse_mode="HTML")
         return
@@ -830,6 +1144,9 @@ async def crm_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def income_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await check_user_access(update, context):
+        return
+
     stats = get_crm_stats()
     text = (
         f"💼 <b>Freelance CRM & Воронка замовлень</b>\n\n"
@@ -1018,6 +1335,15 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
 
     if not query or not query.data:
+        return
+
+    user = update.effective_user
+    user_id = user.id if user else None
+    if user_id and not is_user_subscribed(user_id):
+        try:
+            await query.answer("⛔️ Термін підписки закінчився. Оформіть підписку: /subscribe", show_alert=True)
+        except Exception:
+            pass
         return
 
     if ":" not in query.data:
