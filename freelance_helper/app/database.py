@@ -170,6 +170,13 @@ def init_db() -> None:
             )
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id)")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS channel_posts (
+                project_id TEXT PRIMARY KEY,
+                channel_id TEXT NOT NULL,
+                posted_at TEXT NOT NULL
+            )
+        """)
 
 
 def ensure_column(
@@ -1183,5 +1190,23 @@ def get_referral_stats(user_id: str | int) -> dict:
         row = conn.execute("SELECT COUNT(*) AS c FROM referrals WHERE referrer_id = ?", (uid,)).fetchone()
         count = row["c"] if row else 0
     return {"invited_count": count, "bonus_days_earned": count * 7}
+
+
+def is_project_broadcast(project_id: str | int) -> bool:
+    pid = str(project_id).strip()
+    with get_connection() as conn:
+        row = conn.execute("SELECT project_id FROM channel_posts WHERE project_id = ?", (pid,)).fetchone()
+        return bool(row)
+
+
+def record_channel_broadcast(project_id: str | int, channel_id: str) -> None:
+    pid = str(project_id).strip()
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO channel_posts (project_id, channel_id, posted_at) VALUES (?, ?, ?)",
+            (pid, str(channel_id), now_iso),
+        )
+
 
 

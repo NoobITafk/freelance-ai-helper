@@ -3,7 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Freelance Helper</title>
+  <title>Freelance AI Helper — Швидкі замовлення та AI-ставки Freelancehunt</title>
+  <meta name="description" content="AI Асистент для біржі Freelancehunt: авто-моніторинг замовлень кожні 3 хвилини, миттєва генерація персоналізованих відгуків, CRM воронка. 7 днів безкоштовно!">
+  <meta name="keywords" content="freelancehunt, фріланс україна, ai бот для фрілансу, telegram бот freelancehunt, швидкі ставки, заробіток на фрілансі">
+  
+  <!-- Open Graph / Telegram / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://freelans.duckdns.org/">
+  <meta property="og:title" content="Freelance AI Helper — AI Помічник для біржі Freelancehunt">
+  <meta property="og:description" content="Моніторинг замовлень 24/7, AI-генератор персональних відгуків за 2 секунди, розрахунок бюджету та CRM. 7 днів безкоштовно!">
+  <meta property="og:site_name" content="Freelance AI Helper">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Freelance AI Helper — AI Помічник для біржі Freelancehunt">
+  <meta name="twitter:description" content="Моніторинг замовлень 24/7, AI-генератор персональних відгуків за 2 секунди, розрахунок бюджету та CRM. 7 днів безкоштовно!">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -756,6 +770,17 @@
   </style>
 </head>
 <body>
+
+  <!-- Promo / Web visitor banner for non-Telegram browsers -->
+  <div id="externalWebBanner" style="display: none; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); color: #ffffff; padding: 12px 16px; border-bottom: 1px solid rgba(99, 102, 241, 0.4); align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,0.5);">
+    <div style="font-size: 0.86rem; line-height: 1.35;">
+      🤖 <b>AI Помічник Freelancehunt</b>: моніторинг проектів 24/7 та готові відгуки за 2 сек!
+      <div style="font-size: 0.76rem; color: #c7d2fe; margin-top: 2px;">🎁 Даруємо 7 днів повного доступу безкоштовно</div>
+    </div>
+    <a href="https://t.me/HUNTua_bot" target="_blank" style="background: #2ea5ff; color: #ffffff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 0.82rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(46, 165, 255, 0.4);">
+      <span>Відкрити в Telegram 🚀</span>
+    </a>
+  </div>
 
   <!-- Header -->
   <header>
@@ -1803,6 +1828,14 @@
         }
       } catch (e) {}
     }
+
+    // Show banner if accessed outside Telegram WebApp
+    try {
+      if (!window.Telegram || !window.Telegram.WebApp || !window.Telegram.WebApp.initData) {
+        const banner = document.getElementById('externalWebBanner');
+        if (banner) banner.style.display = 'flex';
+      }
+    } catch (e) {}
 
     // Initial load
     initTelegramUser();

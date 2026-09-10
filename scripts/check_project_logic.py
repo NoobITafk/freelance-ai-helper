@@ -999,10 +999,12 @@ def main() -> int:
         print(f"Multi-user Isolation check: FAIL | cases={cases_isolated} | crm={crm_isolated}")
     # 22. Referral System Check
     total_checks += 1
+    import time
     from freelance_helper.app.database import get_referral_stats, process_referral, get_user_subscription
 
-    u_ref_host = "test_referrer_999"
-    u_ref_guest = "test_referred_888"
+    ts = int(time.time() * 1000)
+    u_ref_host = f"test_referrer_{ts}"
+    u_ref_guest = f"test_referred_{ts+1}"
 
     init_user_subscription(u_ref_host, chat_id=u_ref_host, status="trial")
     sub_before = get_user_subscription(u_ref_host)

@@ -33,7 +33,7 @@ from ..ai_analyzer import (
     project_type,
     unsuitable_project_text,
 )
-from ..rules import parse_budget_info
+from ..rules import format_budget_display, parse_budget_info
 from .keyboards import (
     MINI_APP_URL,
     bid_keyboard,
@@ -83,9 +83,11 @@ from ..database import (
     get_user_subscription,
     grant_user_subscription,
     init_user_subscription,
+    is_project_broadcast,
     is_quiet_hours_now,
     is_user_subscribed,
     process_referral,
+    record_channel_broadcast,
     set_portfolio_link,
     set_project_rating,
     set_setting,
@@ -274,6 +276,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 except Exception as e:
                     logger.debug("Could not notify referrer %s: %s", referrer_id, e)
 
+    # Check if user came from a channel post for a specific project (e.g. /start bid_12345)
+    if context.args and context.args[0].startswith("bid_"):
+        pid = context.args[0][4:].strip()
+        proj = get_project(pid)
+        if proj:
+            p_title = proj.get("name") or proj.get("title") or "Замовлення"
+            p_budget = proj.get("budget") or "Договірний"
+            p_desc = proj.get("description") or ""
+            p_url = proj.get("url") or ""
+
+            card_text = (
+                f"🎯 <b>Замовлення #{pid}</b>\n\n"
+                f"📌 <b>{html.escape(p_title)}</b>\n"
+                f"💰 <b>Бюджет:</b> {html.escape(str(p_budget))}\n\n"
+                f"📝 {html.escape(p_desc[:250])}...\n\n"
+                f"Оберіть дію нижче для миттєвої генерації відгуку:"
+            )
+            kb = [
+                [
+                    InlineKeyboardButton("📝 Згенерувати ставку", callback_data=f"bid_preview:{pid}"),
+                    InlineKeyboardButton("❓ Питання замовнику", callback_data=f"questions:{pid}"),
+                ],
+                [
+                    InlineKeyboardButton("🔗 На біржу", url=p_url) if p_url else InlineKeyboardButton("💼 В CRM", callback_data=f"crm_save:{pid}"),
+                    InlineKeyboardButton("💼 Подав ставку", callback_data=f"pipeline:applied:{pid}"),
+                ],
+            ]
+            await reply_text(update, card_text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="HTML")
+            return
+
     if sub.get("status") == "lifetime":
         sub_info = "⭐️ Статус: Безстроковий доступ (Адміністратор)"
     elif sub.get("status") == "trial":
@@ -324,9 +356,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /webapp — Telegram Mini App інтерфейс
 /test_ai — тест роботи аналізатора
 /why project_id — показати збережений аналіз
+/hot — топ свіжих замовлень (працює і в групах)
 /subscribers — статистика підписників (адмін)
 /grant_sub ID днів — нарахувати підписку (адмін)
 /set_price сума — змінити ціну підписки (адмін)
+/set_channel @канал [score] — підключити публічний канал для автопостингу (адмін)
+/channel_off — вимкнути автопостинг у канал (адмін)
 
 📌 Кнопки під проєктом:
 ✅ Добрий | ❌ Поганий
@@ -367,6 +402,179 @@ async def ref_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("💎 Оформити підписку", callback_data="sub_open")],
     ]
     await reply_text(update, text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
+
+
+async def broadcast_project_to_channel(bot, channel_id: str, project: dict):
+    attributes = project.get("attributes", {})
+    pid = str(project.get("id", ""))
+    title = attributes.get("name", "Нове замовлення")
+    budget_raw = attributes.get("budget")
+    budget = format_budget_display(budget_raw)
+    url = attributes.get("url") or f"https://freelancehunt.com/project/{pid}.html"
+
+    from ..services.project_service import extract_project_tags
+    tags = extract_project_tags(attributes)
+    stack_text = f"🛠 <b>Стек:</b> {html.escape(tags)}\n" if tags else ""
+
+    desc = attributes.get("description", "")
+    short_desc = " ".join(desc.split())
+    if len(short_desc) > 220:
+        short_desc = short_desc[:220].rstrip() + "..."
+
+    bot_username = bot.username or "HUNTua_bot"
+    deep_link = f"https://t.me/{bot_username}?start=bid_{pid}"
+
+    text = (
+        f"🔥 <b>Нове замовлення на Freelancehunt!</b>\n\n"
+        f"📌 <b>{html.escape(title)}</b>\n"
+        f"💰 <b>Бюджет:</b> {html.escape(budget)}\n"
+        f"{stack_text}"
+        f"📝 <i>{html.escape(short_desc)}</i>\n\n"
+        f"⚡️ <i>Згенеруйте виграшний відгук за 2 секунди за допомогою AI:</i>"
+    )
+
+    keyboard = [
+        [
+            InlineKeyboardButton("🤖 Отримати AI-ставку", url=deep_link),
+            InlineKeyboardButton("🔗 На біржу", url=url),
+        ]
+    ]
+
+    await bot.send_message(
+        chat_id=channel_id,
+        text=text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        disable_web_page_preview=True,
+    )
+
+
+async def set_channel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user or str(user.id) != str(TELEGRAM_CHAT_ID):
+        await reply_text(update, "Ця команда доступна лише адміністратору.")
+        return
+
+    args = context.args
+    if not args:
+        curr = get_setting("public_channel", "")
+        min_s = get_setting("channel_min_score", "50")
+        if curr:
+            await reply_text(
+                update,
+                f"📢 Поточний канал трансляції: <b>{curr}</b>\n"
+                f"Мінімальний Score для каналу: <b>{min_s}</b>\n\n"
+                f"Змінити: <code>/set_channel @channel_username [min_score]</code>\n"
+                f"Вимкнути: <code>/channel_off</code>",
+                parse_mode="HTML",
+            )
+        else:
+            await reply_text(
+                update,
+                f"📢 Трансляція в публічний канал наразі <b>вимкнена</b>.\n\n"
+                f"Щоб підключити канал:\n"
+                f"1. Створіть публічний канал у Telegram та додайте туди бота @HUNTua_bot як адміністратора з правом публікації.\n"
+                f"2. Надішліть: <code>/set_channel @username_каналу</code>",
+                parse_mode="HTML",
+            )
+        return
+
+    chan = args[0].strip()
+    if not chan.startswith("@") and not chan.startswith("-100"):
+        chan = "@" + chan
+
+    min_s = int(args[1]) if len(args) > 1 and args[1].isdigit() else 50
+    set_setting("public_channel", chan)
+    set_setting("channel_min_score", str(min_s))
+
+    try:
+        await context.bot.send_message(
+            chat_id=chan,
+            text="🚀 <b>Freelance AI Helper підключено!</b>\nСюди автоматично публікуватимуться гарячі замовлення з Freelancehunt.",
+            parse_mode="HTML",
+        )
+        ping_res = "Тестове повідомлення успішно надіслано в канал ✅"
+    except Exception as e:
+        ping_res = f"⚠️ Повідомлення не надіслано: {e}.\nПереконайтеся, що бота додано в адміністратори каналу з правом публікації!"
+
+    await reply_text(
+        update,
+        f"✅ Канал трансляції встановлено: <b>{chan}</b> (Score від {min_s})\n\n{ping_res}",
+        parse_mode="HTML",
+    )
+
+
+async def channel_off_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user or str(user.id) != str(TELEGRAM_CHAT_ID):
+        await reply_text(update, "Ця команда доступна лише адміністратору.")
+        return
+
+    set_setting("public_channel", "")
+    await reply_text(update, "⏹ Трансляцію в публічний канал вимкнено.")
+
+
+async def hot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    recent = get_recent_projects(limit=3)
+    if not recent:
+        await reply_text(update, "Наразі немає свіжих замовлень у базі. Зачекайте автоперевірки через кілька хвилин!")
+        return
+
+    bot_username = context.bot.username or "HUNTua_bot"
+    lines = ["🔥 <b>Топ свіжих замовлень Freelancehunt:</b>\n"]
+
+    for idx, p in enumerate(recent, 1):
+        pid = p.get("id", "")
+        title = p.get("name") or p.get("title") or "Замовлення"
+        budget = p.get("budget") or "Договірний"
+        url = p.get("url") or f"https://freelancehunt.com/project/{pid}.html"
+        deep_link = f"https://t.me/{bot_username}?start=bid_{pid}"
+
+        lines.append(f"{idx}. <b>{html.escape(title[:60])}</b>")
+        lines.append(f"   💰 {html.escape(str(budget))}")
+        lines.append(f"   👉 <a href=\"{deep_link}\">Отримати AI-ставку</a> | <a href=\"{url}\">На біржу</a>\n")
+
+    lines.append(f"💡 <i>Щоб моніторити біржу 24/7 та писати відгуки за 2 сек — відкрийте @{bot_username} (7 днів безкоштовно)!</i>")
+
+    keyboard = [
+        [InlineKeyboardButton("🚀 Запустити персонального бота", url=f"https://t.me/{bot_username}?start=group_hot")]
+    ]
+    await reply_text(update, "\n".join(lines), reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def group_added_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.effective_chat
+    if not chat or chat.type not in ("group", "supergroup"):
+        return
+
+    new_members = update.message.new_chat_members if update.message else []
+    bot_id = context.bot.id
+    if not any(m.id == bot_id for m in new_members):
+        return
+
+    bot_username = context.bot.username or "HUNTua_bot"
+    welcome_text = (
+        f"👋 <b>Вітаю, учасники чату!</b>\n\n"
+        f"Я <b>@{bot_username}</b> — AI-асистент для біржі <b>Freelancehunt</b>.\n\n"
+        f"🔍 <b>Чим я корисний:</b>\n"
+        f"• Моніторю нові замовлення кожні 3 хвилини\n"
+        f"• Розраховую адекватний бюджет та оцінюю стек\n"
+        f"• За 2 секунди пишу виграшні відгуки під клієнта\n\n"
+        f"📌 Напишіть <b>/hot</b>, щоб побачити свіжі замовлення прямо тут у чаті.\n\n"
+        f"👉 <a href=\"https://t.me/{bot_username}?start=group_welcome\">Запустити бота особисто</a> (перші 7 днів безкоштовно)!"
+    )
+    keyboard = [
+        [InlineKeyboardButton("🚀 Запустити бота (7 днів безкоштовно)", url=f"https://t.me/{bot_username}?start=group_welcome")]
+    ]
+    try:
+        await context.bot.send_message(
+            chat_id=chat.id,
+            text=welcome_text,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.debug("Could not send group welcome: %s", e)
 
 
 async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -762,6 +970,17 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
         if was_sent:
             sent_count += 1
             await asyncio.sleep(0.35)
+
+            # Broadcast to public showcase channel if configured
+            public_chan = get_setting("public_channel", "").strip()
+            if public_chan:
+                raw_pid = str(project.get("id", ""))
+                if raw_pid and not is_project_broadcast(raw_pid):
+                    try:
+                        await broadcast_project_to_channel(context.bot, public_chan, project)
+                        record_channel_broadcast(raw_pid, public_chan)
+                    except Exception as chan_err:
+                        logger.warning("Channel broadcast error (%s): %s", public_chan, chan_err)
 
         if sent_count >= 3:
             break
