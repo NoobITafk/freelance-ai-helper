@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Freelance AI Helper | Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
@@ -15,6 +15,8 @@
       --card-bg: var(--tg-theme-secondary-bg-color, #1e293b);
       --border-color: rgba(255, 255, 255, 0.08);
       --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
       --accent: #6366f1;
     }
 
@@ -23,22 +25,26 @@
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
-      padding-bottom: 70px;
+      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
       -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
     }
 
+    /* Header */
     header {
-      padding: 16px 20px;
-      background: rgba(30, 41, 59, 0.6);
-      backdrop-filter: blur(12px);
+      padding: 14px 16px;
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 30;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
@@ -48,9 +54,9 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       font-weight: 700;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       letter-spacing: -0.02em;
     }
 
@@ -58,38 +64,71 @@
       color: var(--button-color);
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .badge {
       font-size: 0.72rem;
       padding: 4px 8px;
       border-radius: 20px;
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--button-color);
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: transform 0.2s;
+    }
+
+    .btn-icon.spinning {
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
     }
 
     .container {
-      padding: 16px;
-      max-width: 600px;
+      padding: 14px 16px;
+      max-width: 650px;
       margin: 0 auto;
     }
 
+    /* Stats Grid */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: 10px;
+      margin-bottom: 16px;
     }
 
     .stat-card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 12px 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
     .stat-label {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--hint-color);
       margin-bottom: 4px;
       display: flex;
@@ -98,33 +137,58 @@
     }
 
     .stat-value {
-      font-size: 1.35rem;
+      font-size: 1.3rem;
       font-weight: 700;
       letter-spacing: -0.01em;
     }
 
     .stat-sub {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--success);
       margin-top: 4px;
     }
 
-    .section-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--hint-color);
-      margin: 16px 0 10px 4px;
+    /* Filter Chips */
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 12px 0;
+      scrollbar-width: none;
     }
 
+    .filter-chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--hint-color);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .chip.active {
+      background: var(--button-color);
+      color: var(--button-text);
+      border-color: var(--button-color);
+    }
+
+    /* Cards */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 16px;
       padding: 16px;
       margin-bottom: 12px;
-      transition: transform 0.15s ease;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      transition: transform 0.1s ease;
     }
 
     .card-header {
@@ -132,70 +196,134 @@
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 8px;
+      gap: 8px;
     }
 
     .card-title {
       font-weight: 600;
-      font-size: 1.05rem;
-      line-height: 1.3;
+      font-size: 1.02rem;
+      line-height: 1.35;
       flex: 1;
+      color: var(--text-color);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .card-title:hover {
+      color: var(--button-color);
     }
 
     .card-score {
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--success);
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       padding: 4px 8px;
       border-radius: 8px;
-      margin-left: 10px;
+      white-space: nowrap;
+    }
+
+    .score-high {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .score-med {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--button-color);
+    }
+
+    .score-low {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--hint-color);
     }
 
     .card-meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      font-size: 0.8rem;
+      gap: 6px;
+      font-size: 0.78rem;
       color: var(--hint-color);
-      margin: 10px 0;
+      margin: 8px 0 10px 0;
     }
 
     .meta-tag {
-      background: rgba(255,255,255,0.05);
-      padding: 4px 10px;
+      background: rgba(255,255,255,0.04);
+      padding: 3px 8px;
       border-radius: 6px;
       border: 1px solid var(--border-color);
     }
 
-    .card-desc {
-      font-size: 0.88rem;
-      line-height: 1.45;
-      color: #cbd5e1;
-      margin-bottom: 14px;
+    .meta-tag.status-bid {
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      border-color: rgba(99, 102, 241, 0.4);
     }
 
-    .btn-group {
+    .meta-tag.status-replied {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .meta-tag.status-work {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .meta-tag.status-done {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .card-desc {
+      font-size: 0.85rem;
+      line-height: 1.45;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    .desc-preview {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .desc-toggle {
+      color: var(--button-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .btn-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     button {
-      flex: 1;
-      padding: 10px 14px;
+      padding: 9px 12px;
       border-radius: 10px;
       border: none;
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       justify-content: center;
       align-items: center;
-      gap: 6px;
-      transition: opacity 0.2s;
+      gap: 5px;
+      transition: all 0.15s ease;
+      flex: 1 1 auto;
     }
 
     button:active {
-      opacity: 0.8;
+      transform: scale(0.98);
+      opacity: 0.9;
     }
 
     .btn-primary {
@@ -208,20 +336,40 @@
       color: var(--text-color);
     }
 
-    /* Tab Bar */
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+
+    .btn-success {
+      background: rgba(34, 197, 94, 0.18);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* Tab bar */
     .tabbar {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 60px;
-      background: rgba(30, 41, 59, 0.85);
+      height: calc(60px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: rgba(30, 41, 59, 0.9);
       backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-top: 1px solid var(--border-color);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      z-index: 20;
+      z-index: 50;
     }
 
     .tab-item {
@@ -231,12 +379,14 @@
       font-size: 0.72rem;
       color: var(--hint-color);
       cursor: pointer;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 8px;
+      transition: color 0.15s;
     }
 
     .tab-item.active {
       color: var(--button-color);
+      font-weight: 600;
     }
 
     .tab-icon {
@@ -244,203 +394,875 @@
       margin-bottom: 2px;
     }
 
+    /* Views */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Toast */
     .toast {
       position: fixed;
-      bottom: 75px;
+      bottom: calc(75px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.95);
+      background: rgba(15, 23, 42, 0.96);
       color: #f8fafc;
       padding: 10px 18px;
-      border-radius: 20px;
+      border-radius: 24px;
       border: 1px solid var(--border-color);
       font-size: 0.85rem;
+      font-weight: 500;
       pointer-events: none;
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: opacity 0.2s, transform 0.2s;
       z-index: 100;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      white-space: nowrap;
     }
 
     .toast.show {
       opacity: 1;
+      transform: translate(-50%, -4px);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 150;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--hint-color);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--button-color);
+    }
+
+    .input-label {
+      font-size: 0.78rem;
+      color: var(--hint-color);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--hint-color);
+    }
+
+    .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+    }
+
+    .empty-text {
+      font-size: 0.95rem;
     }
   </style>
 </head>
 <body>
 
+  <!-- Header -->
   <header>
     <div class="brand">
       🚀 Freelance <span>AI Helper</span>
     </div>
-    <div class="badge" id="botStatus">Онлайн 24/7</div>
+    <div class="header-actions">
+      <div class="badge" id="botStatus">🟢 Онлайн</div>
+      <button class="btn-icon" id="btnRefresh" title="Оновити" onclick="refreshCurrentTab()">🔄</button>
+    </div>
   </header>
 
   <div class="container">
-    <!-- Top Stats / CRM overview -->
+    <!-- Top Stats (Visible across all tabs) -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">💼 Заявки & Win Rate</div>
-        <div class="stat-value" id="statWinRate">25%</div>
-        <div class="stat-sub" id="statWinSub">3 завершено з 12 ставок</div>
+        <div class="stat-label">💼 Win Rate воронки</div>
+        <div class="stat-value" id="statWinRate">0%</div>
+        <div class="stat-sub" id="statWinSub">0 завершено з 0 заявок</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">💰 Дохід за місяць</div>
-        <div class="stat-value" id="statIncome">18,500 ₴</div>
-        <div class="stat-sub" id="statIncomeSub">онлайн статистика</div>
+        <div class="stat-value" id="statIncome">0 ₴</div>
+        <div class="stat-sub" id="statIncomeSub">онлайн аналітика</div>
       </div>
     </div>
 
-    <div class="section-title">Стрічка гарячих замовлень</div>
-    <div id="projectsContainer">
-      <!-- Project 1 -->
+    <!-- TAB 1: СТРІЧКА (FEED) -->
+    <div id="tabFeed" class="tab-content active">
+      <div class="filter-chips">
+        <div class="chip active" data-filter="all" onclick="setFeedFilter('all', this)">Всі замовлення</div>
+        <div class="chip" data-filter="hot" onclick="setFeedFilter('hot', this)">🔥 Топ Score (≥70)</div>
+        <div class="chip" data-filter="assets" onclick="setFeedFilter('assets', this)">📎 З макетами / ТЗ</div>
+        <div class="chip" data-filter="budget" onclick="setFeedFilter('budget', this)">💰 Бюджетні (≥4000)</div>
+      </div>
+      <div id="feedProjectsContainer"></div>
+    </div>
+
+    <!-- TAB 2: ВОРОНКА (CRM PIPELINE) -->
+    <div id="tabCrm" class="tab-content">
+      <div class="filter-chips">
+        <div class="chip active" data-crm="all" onclick="setCrmFilter('all', this)">Всі стадії</div>
+        <div class="chip" data-crm="bid_placed" onclick="setCrmFilter('bid_placed', this)">💼 Подано</div>
+        <div class="chip" data-crm="replied" onclick="setCrmFilter('replied', this)">💬 Відповіли</div>
+        <div class="chip" data-crm="in_progress" onclick="setCrmFilter('in_progress', this)">🤝 В роботі</div>
+        <div class="chip" data-crm="completed" onclick="setCrmFilter('completed', this)">💰 Завершено</div>
+      </div>
+      <div id="crmProjectsContainer"></div>
+      <div style="margin-top: 14px;">
+        <button class="btn-outline" style="width: 100%;" onclick="downloadCsvExport()">
+          📥 Завантажити повний звіт Excel / CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 3: КЕЙСИ (PORTFOLIO CASES) -->
+    <div id="tabCases" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-weight: 700; font-size: 0.95rem;">Портфоліо для ставок</div>
+        <button class="btn-primary" style="flex: 0 0 auto; padding: 6px 12px;" onclick="openAddCaseModal()">+ Додати кейс</button>
+      </div>
+      <div class="filter-chips">
+        <div class="chip active" data-case="all" onclick="setCaseFilter('all', this)">Всі</div>
+        <div class="chip" data-case="bot" onclick="setCaseFilter('bot', this)">🤖 Боти</div>
+        <div class="chip" data-case="parser" onclick="setCaseFilter('parser', this)">🕸 Парсери</div>
+        <div class="chip" data-case="backend" onclick="setCaseFilter('backend', this)">⚙️ Backend / API</div>
+        <div class="chip" data-case="web" onclick="setCaseFilter('web', this)">🌐 Web / Верстка</div>
+        <div class="chip" data-case="mobile" onclick="setCaseFilter('mobile', this)">📱 Mobile</div>
+      </div>
+      <div id="casesContainer"></div>
+    </div>
+
+    <!-- TAB 4: ОПЦІЇ (SETTINGS & HEALTH) -->
+    <div id="tabSettings" class="tab-content">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Розробка Telegram-бота для бронювання послуг</div>
-          <div class="card-score">88/100</div>
+          <div class="card-title">⚙️ Стан системи та сервісів</div>
         </div>
-        <div class="card-meta">
-          <span class="meta-tag">🛠 Telegram-бот (Python, SQLite)</span>
-          <span class="meta-tag">👤 ⭐ Топ-замовник (14 робіт, 100% 👍)</span>
-          <span class="meta-tag">📎 Figma макет</span>
-        </div>
-        <div class="card-desc">
-          Потрібен зручний Telegram-бот для запису клієнтів з календарем слотів, сповіщеннями адміністратора та панеллю керування.
-        </div>
-        <div class="btn-group">
-          <button class="btn-primary" onclick="copyBid('Вітаю! Створю швидкого та надійного Telegram-бота для бронювання послуг. Ознайомився з макетом у Figma...')">
-            📋 Скопіювати ставку
-          </button>
-          <button class="btn-secondary" onclick="markPlaced('123')">
-            💼 Подав ставку
-          </button>
+        <div style="font-size: 0.85rem; line-height: 1.8; color: #cbd5e1;">
+          <div><b>База даних:</b> <span id="healthDb" style="color: var(--success);">Перевірка...</span></div>
+          <div><b>Тихі години:</b> <span id="healthQuiet">23:00 - 08:00</span></div>
+          <div><b>Поріг Score:</b> <span id="healthThreshold">35+</span></div>
+          <div><b>Автопошук:</b> <span style="color: var(--success);">🟢 Кожні 3 хвилини</span></div>
+          <div><b>Ранковий дайджест:</b> <span>⏰ Щодня о 08:30</span></div>
+          <div><b>HTTPS Домен:</b> <span style="color: var(--button-color);">freelans.duckdns.org</span></div>
         </div>
       </div>
-    </div>
 
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+        <button class="btn-primary" onclick="refreshCurrentTab()">🔄 Оновити всі дані</button>
+        <button class="btn-secondary" onclick="downloadCsvExport()">📥 Завантажити базу в CSV (Excel)</button>
+        <button class="btn-outline" onclick="closeMiniApp()">💬 Повернутися в чат Telegram</button>
+      </div>
+    </div>
   </div>
 
   <!-- Bottom navigation -->
   <div class="tabbar">
-    <div class="tab-item active">
+    <div class="tab-item active" data-tab="tabFeed" onclick="switchTab('tabFeed', this)">
       <div class="tab-icon">⚡️</div>
       <div>Стрічка</div>
     </div>
-    <div class="tab-item" onclick="showToast('Розділ CRM аналітики')">
+    <div class="tab-item" data-tab="tabCrm" onclick="switchTab('tabCrm', this)">
       <div class="tab-icon">📊</div>
       <div>Воронка</div>
     </div>
-    <div class="tab-item" onclick="showToast('Кейси портфоліо')">
+    <div class="tab-item" data-tab="tabCases" onclick="switchTab('tabCases', this)">
       <div class="tab-icon">💼</div>
       <div>Кейси</div>
     </div>
-    <div class="tab-item" onclick="showToast('Налаштування: /settings')">
+    <div class="tab-item" data-tab="tabSettings" onclick="switchTab('tabSettings', this)">
       <div class="tab-icon">⚙️</div>
       <div>Опції</div>
     </div>
   </div>
 
-  <div class="toast" id="toast">Текст скопійовано!</div>
+  <!-- Toast notification -->
+  <div class="toast" id="toast">Повідомлення</div>
+
+  <!-- Modal: Close Deal with Custom Amount -->
+  <div class="modal-overlay" id="modalCloseDeal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>💰 Фіксація доходу за проєкт</span>
+        <span class="modal-close" onclick="closeDealModal()">&times;</span>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--hint-color); margin-bottom: 12px;" id="dealModalProjectTitle"></div>
+      
+      <label class="input-label">Фактична сума угоди:</label>
+      <input type="number" class="input-field" id="dealAmountInput" placeholder="Наприклад: 4500">
+      
+      <label class="input-label">Валюта:</label>
+      <select class="input-field" id="dealCurrencySelect">
+        <option value="UAH">UAH (грн)</option>
+        <option value="USD">USD ($)</option>
+        <option value="EUR">EUR (€)</option>
+      </select>
+
+      <div class="btn-row" style="margin-top: 10px;">
+        <button class="btn-primary" onclick="confirmDealCompletion()">✅ Зарахувати в дохід</button>
+        <button class="btn-secondary" onclick="closeDealModal()">Скасувати</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Case -->
+  <div class="modal-overlay" id="modalAddCase">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>💼 Додати новий кейс</span>
+        <span class="modal-close" onclick="closeAddCaseModal()">&times;</span>
+      </div>
+      
+      <label class="input-label">Категорія:</label>
+      <select class="input-field" id="newCaseCategory">
+        <option value="bot">Telegram-боти</option>
+        <option value="parser">Парсери та скрапінг</option>
+        <option value="backend">FastAPI / Backend / API</option>
+        <option value="web">Сайти / HTML / CSS / WordPress</option>
+        <option value="mobile">Мобільні додатки</option>
+        <option value="devops">DevOps / Сервери</option>
+        <option value="general">Загальне портфоліо</option>
+      </select>
+
+      <label class="input-label">Назва кейсу:</label>
+      <input type="text" class="input-field" id="newCaseTitle" placeholder="Наприклад: Бот для бронювання столиків">
+
+      <label class="input-label">Посилання на кейс / GitHub / репозиторій:</label>
+      <input type="url" class="input-field" id="newCaseUrl" placeholder="https://github.com/... або https://t.me/...">
+
+      <label class="input-label">Короткий опис результату:</label>
+      <textarea class="input-field" id="newCaseDesc" rows="2" placeholder="Опис функціоналу та стеку..."></textarea>
+
+      <div class="btn-row" style="margin-top: 10px;">
+        <button class="btn-primary" onclick="submitNewCase()">💾 Зберегти кейс</button>
+        <button class="btn-secondary" onclick="closeAddCaseModal()">Скасувати</button>
+      </div>
+    </div>
+  </div>
 
   <script>
+    // State Store
+    window.projectsMap = new Map();
+    window.feedProjects = [];
+    window.crmProjects = [];
+    window.casesList = [];
+    window.activeFeedFilter = 'all';
+    window.activeCrmFilter = 'all';
+    window.activeCaseFilter = 'all';
+    window.activeDealProject = null;
+
+    // Telegram WebApp init
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
+      try {
+        window.Telegram.WebApp.headerColor = '#0f172a';
+        window.Telegram.WebApp.backgroundColor = '#0f172a';
+      } catch(e) {}
+    }
+
+    function haptic(type) {
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        if (type === 'success') window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        else if (type === 'warning') window.Telegram.WebApp.HapticFeedback.notificationOccurred('warning');
+        else window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+      }
     }
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
       toast.textContent = msg;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
+      setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
-    function copyBid(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('✅ Текст пропозиції скопійовано!');
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    // Robust Clipboard Copy
+    async function copyToClipboard(text, successMsg = '✅ Скопійовано в буфер!') {
+      if (!text) return;
+      let copied = false;
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          copied = true;
+        } catch (err) {
+          copied = false;
         }
-      }).catch(() => {
-        showToast('Ставка скопійована!');
-      });
-    }
-
-    async function markPlaced(id) {
-      showToast('💼 Статус: Ставку подано!');
-      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
       }
-      try {
-        await fetch('/api/pipeline', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({project_id: id, status: 'bid_placed'})
-        });
-      } catch(e) {}
+      if (!copied) {
+        // Fallback for webview / iframes
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          copied = true;
+        } catch (e) {
+          copied = false;
+        }
+        textArea.remove();
+      }
+
+      showToast(successMsg);
+      haptic('success');
     }
 
-    function renderProjects(projects) {
-      const container = document.getElementById('projectsContainer');
-      if (!container || !projects.length) return;
-      container.innerHTML = projects.map(p => {
-        const scoreBadge = p.score ? `<div class="card-score">${p.score}/100</div>` : '';
-        const budgetBadge = p.budget ? `<span class="meta-tag">💰 ${p.budget}</span>` : '';
-        const empBadge = p.employer_info ? `<span class="meta-tag">${p.employer_info}</span>` : '';
-        const assetsBadge = p.assets_info ? `<span class="meta-tag">📎 ${p.assets_info}</span>` : '';
-        const descSnippet = (p.description || '').substring(0, 150) + '...';
-        const bidDraft = `Вітаю! Ознайомився із проєктом «${p.title}» та готовий якісно реалізувати задачу.`;
+    function openExternalLink(url) {
+      if (!url) return;
+      haptic('impact');
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+    function closeMiniApp() {
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.close) {
+        window.Telegram.WebApp.close();
+      }
+    }
+
+    // Tab Navigation
+    function switchTab(tabId, element) {
+      document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      
+      if (element) element.classList.add('active');
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+      haptic('impact');
+
+      if (tabId === 'tabFeed') loadFeedProjects();
+      else if (tabId === 'tabCrm') loadCrmProjects();
+      else if (tabId === 'tabCases') loadCases();
+      else if (tabId === 'tabSettings') loadHealth();
+    }
+
+    function refreshCurrentTab() {
+      const btn = document.getElementById('btnRefresh');
+      if (btn) btn.classList.add('spinning');
+      loadStats();
+      const activeTab = document.querySelector('.tab-content.active');
+      if (activeTab) {
+        if (activeTab.id === 'tabFeed') loadFeedProjects();
+        else if (activeTab.id === 'tabCrm') loadCrmProjects();
+        else if (activeTab.id === 'tabCases') loadCases();
+        else if (activeTab.id === 'tabSettings') loadHealth();
+      }
+      setTimeout(() => {
+        if (btn) btn.classList.remove('spinning');
+        showToast('🔄 Дані оновлено');
+      }, 500);
+    }
+
+    // Stats
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && data.stats) {
+          const s = data.stats;
+          document.getElementById('statWinRate').textContent = `${Math.round(s.win_rate)}%`;
+          document.getElementById('statWinSub').textContent = `${s.completed} завершено з ${s.bids_placed} заявок`;
+          document.getElementById('statIncome').textContent = `${Math.round(s.income_month).toLocaleString()} ₴`;
+        }
+      } catch (e) {}
+    }
+
+    // Feed Loading & Filtering
+    async function loadFeedProjects() {
+      try {
+        const res = await fetch('/api/projects?tab=feed');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && Array.isArray(data.projects)) {
+          window.feedProjects = data.projects;
+          data.projects.forEach(p => window.projectsMap.set(String(p.project_id), p));
+          renderFeed();
+        }
+      } catch (e) {}
+    }
+
+    function setFeedFilter(filter, el) {
+      document.querySelectorAll('#tabFeed .chip').forEach(c => c.classList.remove('active'));
+      if (el) el.classList.add('active');
+      window.activeFeedFilter = filter;
+      haptic('impact');
+      renderFeed();
+    }
+
+    function renderFeed() {
+      const container = document.getElementById('feedProjectsContainer');
+      let list = window.feedProjects;
+
+      if (window.activeFeedFilter === 'hot') {
+        list = list.filter(p => (p.score || 0) >= 70);
+      } else if (window.activeFeedFilter === 'assets') {
+        list = list.filter(p => !!p.assets_info);
+      } else if (window.activeFeedFilter === 'budget') {
+        list = list.filter(p => {
+          const b = (p.budget || '').replace(/\D/g, '');
+          return parseInt(b || '0') >= 4000;
+        });
+      }
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-text">Немає замовлень за цим фільтром</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(p => {
+        const pid = String(p.project_id);
+        const score = p.score || 0;
+        const scoreClass = score >= 70 ? 'score-high' : (score >= 50 ? 'score-med' : 'score-low');
+        const scoreIcon = score >= 70 ? '🔥' : '⚡';
+
+        const budgetBadge = p.budget ? `<span class="meta-tag">💰 ${escapeHtml(p.budget)}</span>` : '';
+        const empBadge = p.employer_info ? `<span class="meta-tag">${escapeHtml(p.employer_info)}</span>` : '';
+        const assetsBadge = p.assets_info ? `<span class="meta-tag">📎 ${escapeHtml(p.assets_info)}</span>` : '';
+        
+        let crmBadge = '';
+        if (p.pipeline_status === 'bid_placed') crmBadge = '<span class="meta-tag status-bid">💼 Заявку подано</span>';
+        else if (p.pipeline_status === 'replied') crmBadge = '<span class="meta-tag status-replied">💬 Відповіли</span>';
+        else if (p.pipeline_status === 'in_progress') crmBadge = '<span class="meta-tag status-work">🤝 В роботі</span>';
+        else if (p.pipeline_status === 'completed') crmBadge = '<span class="meta-tag status-done">💰 Завершено</span>';
+
+        const rawDesc = (p.description || '').trim();
+        const hasLongDesc = rawDesc.length > 180;
 
         return `
-          <div class="card">
+          <div class="card" id="card-${pid}">
             <div class="card-header">
-              <div class="card-title">${p.title}</div>
-              ${scoreBadge}
+              <div class="card-title" onclick="openExternalLink('${p.url}')">${escapeHtml(p.title || 'Без назви')}</div>
+              <div class="card-score ${scoreClass}">${scoreIcon} ${score}/100</div>
             </div>
             <div class="card-meta">
               ${budgetBadge}
               ${empBadge}
               ${assetsBadge}
+              ${crmBadge}
             </div>
-            <div class="card-desc">${descSnippet}</div>
-            <div class="btn-group">
-              <button class="btn-primary" onclick="copyBid('${bidDraft.replace(/'/g, "\\'")}')">
-                📋 Скопіювати ставку
-              </button>
-              <button class="btn-secondary" onclick="markPlaced('${p.project_id}')">
-                💼 Подав ставку
-              </button>
+            <div class="card-desc">
+              <div id="desc-${pid}" class="${hasLongDesc ? 'desc-preview' : ''}">${escapeHtml(rawDesc)}</div>
+              ${hasLongDesc ? `<span class="desc-toggle" onclick="toggleDesc('${pid}')">📖 Показати повністю</span>` : ''}
+            </div>
+            <div class="btn-row">
+              <button class="btn-primary" onclick="copyProjectBid('${pid}')">📋 Скопіювати ставку</button>
+              ${p.questions ? `<button class="btn-secondary" onclick="copyProjectQuestions('${pid}')">❓ Питання</button>` : ''}
+              ${p.pipeline_status !== 'bid_placed' && p.pipeline_status !== 'completed' ? 
+                `<button class="btn-outline" id="btn-bid-${pid}" onclick="markProjectPlaced('${pid}')">💼 Подав ставку</button>` : 
+                `<button class="btn-success" disabled>✅ В воронці</button>`
+              }
+              <button class="btn-outline" style="flex: 0 0 auto;" onclick="openExternalLink('${p.url}')">🔗 На біржу</button>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    async function loadLiveData() {
-      try {
-        const statsRes = await fetch('/api/stats');
-        if (statsRes.ok) {
-          const s = await statsRes.json();
-          if (s.success && s.stats) {
-            document.getElementById('statWinRate').textContent = `${Math.round(s.stats.win_rate)}%`;
-            document.getElementById('statWinSub').textContent = `${s.stats.completed} завершено з ${s.stats.bids_placed} заявок`;
-            document.getElementById('statIncome').textContent = `${Math.round(s.stats.income_month).toLocaleString()} ₴`;
-          }
-        }
-      } catch(e) {}
+    function toggleDesc(pid) {
+      const descEl = document.getElementById(`desc-${pid}`);
+      const btn = event.currentTarget;
+      if (!descEl) return;
+      if (descEl.classList.contains('desc-preview')) {
+        descEl.classList.remove('desc-preview');
+        btn.textContent = 'Згорнути';
+      } else {
+        descEl.classList.add('desc-preview');
+        btn.textContent = '📖 Показати повністю';
+      }
+    }
+
+    function copyProjectBid(pid) {
+      const p = window.projectsMap.get(String(pid));
+      if (!p || !p.bid_text) {
+        showToast('Текст ставки недоступний');
+        return;
+      }
+      copyToClipboard(p.bid_text, '📋 Ставку скопійовано в буфер!');
+    }
+
+    function copyProjectQuestions(pid) {
+      const p = window.projectsMap.get(String(pid));
+      if (!p || !p.questions) {
+        showToast('Питання недоступні');
+        return;
+      }
+      copyToClipboard(p.questions, '❓ Питання замовнику скопійовано!');
+    }
+
+    async function markProjectPlaced(pid) {
+      const btn = document.getElementById(`btn-bid-${pid}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Збереження...';
+      }
+      haptic('impact');
 
       try {
-        const pRes = await fetch('/api/projects');
-        if (pRes.ok) {
-          const pData = await pRes.json();
-          if (pData.success && pData.projects && pData.projects.length) {
-            renderProjects(pData.projects);
+        const res = await fetch('/api/pipeline', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({project_id: pid, status: 'bid_placed'})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('💼 Заявку додано до воронки CRM!');
+          haptic('success');
+          const p = window.projectsMap.get(String(pid));
+          if (p) p.pipeline_status = 'bid_placed';
+          if (btn) {
+            btn.className = 'btn-success';
+            btn.textContent = '✅ Подано';
           }
+          loadStats();
+        }
+      } catch (e) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '💼 Подав ставку';
+        }
+      }
+    }
+
+    // CRM Pipeline Loading & Actions
+    async function loadCrmProjects() {
+      try {
+        const res = await fetch('/api/projects?tab=crm');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && Array.isArray(data.projects)) {
+          window.crmProjects = data.projects;
+          data.projects.forEach(p => window.projectsMap.set(String(p.project_id), p));
+          renderCrm();
+        }
+      } catch (e) {}
+    }
+
+    function setCrmFilter(stage, el) {
+      document.querySelectorAll('#tabCrm .chip').forEach(c => c.classList.remove('active'));
+      if (el) el.classList.add('active');
+      window.activeCrmFilter = stage;
+      haptic('impact');
+      renderCrm();
+    }
+
+    function renderCrm() {
+      const container = document.getElementById('crmProjectsContainer');
+      let list = window.crmProjects;
+
+      if (window.activeCrmFilter !== 'all') {
+        list = list.filter(p => p.pipeline_status === window.activeCrmFilter);
+      }
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <div class="empty-text">У воронці поки немає замовлень на цій стадії</div>
+          </div>
+        `;
+        return;
+      }
+
+      const statusLabels = {
+        'bid_placed': '💼 Заявку подано',
+        'replied': '💬 Замовник відповів',
+        'in_progress': '🤝 В роботі',
+        'completed': '💰 Завершено',
+        'declined': '❌ Відхилено'
+      };
+
+      container.innerHTML = list.map(p => {
+        const pid = String(p.project_id);
+        const curStatus = p.pipeline_status || 'bid_placed';
+        const dealStr = p.deal_amount ? `💰 Дохід: <b>${Math.round(p.deal_amount).toLocaleString()} ${p.deal_currency || 'UAH'}</b>` : '';
+
+        return `
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" onclick="openExternalLink('${p.url}')">${escapeHtml(p.title || 'Без назви')}</div>
+              <span class="meta-tag status-${curStatus.replace('_', '')}">${statusLabels[curStatus] || curStatus}</span>
+            </div>
+            <div class="card-meta">
+              ${p.budget ? `<span class="meta-tag">Бюджет: ${escapeHtml(p.budget)}</span>` : ''}
+              ${dealStr ? `<span class="meta-tag status-done">${dealStr}</span>` : ''}
+              <span class="meta-tag">ID: ${pid}</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--hint-color); margin-bottom: 8px;">Змінити стадію воронки:</div>
+            <div class="btn-row">
+              <button class="${curStatus === 'replied' ? 'btn-primary' : 'btn-secondary'}" onclick="updateCrmStage('${pid}', 'replied')">💬 Відповіли</button>
+              <button class="${curStatus === 'in_progress' ? 'btn-primary' : 'btn-secondary'}" onclick="updateCrmStage('${pid}', 'in_progress')">🤝 В роботі</button>
+              <button class="${curStatus === 'completed' ? 'btn-success' : 'btn-primary'}" onclick="openDealModal('${pid}')">💰 Завершено</button>
+              <button class="btn-outline" onclick="openExternalLink('${p.url}')">🔗 Біржа</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateCrmStage(pid, status, amount = null, currency = 'UAH') {
+      haptic('impact');
+      try {
+        const res = await fetch('/api/pipeline', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            project_id: pid,
+            status: status,
+            deal_amount: amount,
+            currency: currency
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Статус оновлено: ${status}`);
+          haptic('success');
+          loadCrmProjects();
+          loadStats();
+        }
+      } catch (e) {}
+    }
+
+    // Deal completion modal
+    function openDealModal(pid) {
+      window.activeDealProject = window.projectsMap.get(String(pid));
+      const modal = document.getElementById('modalCloseDeal');
+      const titleEl = document.getElementById('dealModalProjectTitle');
+      const inputEl = document.getElementById('dealAmountInput');
+      
+      let defaultNum = '';
+      if (window.activeDealProject && window.activeDealProject.budget) {
+        defaultNum = window.activeDealProject.budget.replace(/\D/g, '');
+      }
+      inputEl.value = defaultNum;
+      titleEl.textContent = window.activeDealProject ? window.activeDealProject.title : `Проєкт ID ${pid}`;
+      modal.classList.add('open');
+      haptic('impact');
+    }
+
+    function closeDealModal() {
+      document.getElementById('modalCloseDeal').classList.remove('open');
+      window.activeDealProject = null;
+    }
+
+    async function confirmDealCompletion() {
+      if (!window.activeDealProject) return;
+      const amountVal = parseFloat(document.getElementById('dealAmountInput').value) || 0;
+      const currVal = document.getElementById('dealCurrencySelect').value || 'UAH';
+      const pid = String(window.activeDealProject.project_id);
+
+      closeDealModal();
+      await updateCrmStage(pid, 'completed', amountVal, currVal);
+    }
+
+    // Cases Loading & Adding
+    async function loadCases() {
+      try {
+        const res = await fetch('/api/cases');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && Array.isArray(data.cases)) {
+          window.casesList = data.cases;
+          renderCases();
+        }
+      } catch (e) {}
+    }
+
+    function setCaseFilter(category, el) {
+      document.querySelectorAll('#tabCases .chip').forEach(c => c.classList.remove('active'));
+      if (el) el.classList.add('active');
+      window.activeCaseFilter = category;
+      haptic('impact');
+      renderCases();
+    }
+
+    function renderCases() {
+      const container = document.getElementById('casesContainer');
+      let list = window.casesList;
+
+      if (window.activeCaseFilter !== 'all') {
+        list = list.filter(c => c.category === window.activeCaseFilter);
+      }
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">💼</div>
+            <div class="empty-text">Кейси відсутні. Додайте перший кейс для підвищення конверсії ставок!</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(c => `
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">${escapeHtml(c.title)}</div>
+            <span class="meta-tag">#${escapeHtml(c.category || 'general')}</span>
+          </div>
+          ${c.description ? `<div class="card-desc">${escapeHtml(c.description)}</div>` : ''}
+          <div class="btn-row" style="margin-top: 8px;">
+            ${c.url ? `<button class="btn-primary" onclick="copyToClipboard('${escapeHtml(c.url)}', '🔗 Посилання на кейс скопійовано!')">📋 Копіювати посилання</button>` : ''}
+            ${c.url ? `<button class="btn-outline" onclick="openExternalLink('${escapeHtml(c.url)}')">🔗 Відкрити</button>` : ''}
+            <button class="btn-danger" style="flex: 0 0 auto;" onclick="deleteCase(${c.id})">🗑</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openAddCaseModal() {
+      document.getElementById('modalAddCase').classList.add('open');
+      haptic('impact');
+    }
+
+    function closeAddCaseModal() {
+      document.getElementById('modalAddCase').classList.remove('open');
+    }
+
+    async function submitNewCase() {
+      const cat = document.getElementById('newCaseCategory').value;
+      const title = document.getElementById('newCaseTitle').value.trim();
+      const url = document.getElementById('newCaseUrl').value.trim();
+      const desc = document.getElementById('newCaseDesc').value.trim();
+
+      if (!title) {
+        showToast('Введіть назву кейсу');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/cases', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({category: cat, title, url, description: desc})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Кейс збережено в базу!');
+          haptic('success');
+          closeAddCaseModal();
+          document.getElementById('newCaseTitle').value = '';
+          document.getElementById('newCaseUrl').value = '';
+          document.getElementById('newCaseDesc').value = '';
+          loadCases();
         }
       } catch(e) {}
     }
 
-    loadLiveData();
+    async function deleteCase(id) {
+      if (!confirm('Видалити цей кейс із портфоліо?')) return;
+      try {
+        const res = await fetch(`/api/cases/${id}`, {method: 'DELETE'});
+        const data = await res.json();
+        if (data.success) {
+          showToast('Кейс видалено');
+          haptic('warning');
+          loadCases();
+        }
+      } catch(e) {}
+    }
+
+    // Health Diagnostics
+    async function loadHealth() {
+      try {
+        const res = await fetch('/api/health');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('healthDb').textContent = data.database || 'OK';
+          document.getElementById('healthQuiet').textContent = data.quiet_hours || '23:00 - 08:00';
+          document.getElementById('healthThreshold').textContent = `${data.min_score || 35}+`;
+        }
+      } catch(e) {}
+    }
+
+    function downloadCsvExport() {
+      haptic('impact');
+      showToast('⏳ Формую CSV файл...');
+      window.location.href = '/api/export';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Initial load
+    loadStats();
+    loadFeedProjects();
   </script>
 </body>
 </html>

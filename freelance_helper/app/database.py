@@ -313,6 +313,43 @@ def get_recent_projects(limit: int = 5) -> list[dict]:
         return [dict(row) for row in rows]
 
 
+def get_feed_projects(limit: int = 50) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM projects
+            WHERE status = 'sent' OR score >= 35 OR (pipeline_status IS NOT NULL AND pipeline_status != 'new')
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        results = [dict(row) for row in rows]
+        if not results:
+            fallback = conn.execute(
+                "SELECT * FROM projects ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            results = [dict(row) for row in fallback]
+        return results
+
+
+def get_crm_projects(limit: int = 50) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM projects
+            WHERE pipeline_status IS NOT NULL AND pipeline_status != 'new'
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
 def check_database() -> tuple[bool, str]:
     try:
         with get_connection() as conn:

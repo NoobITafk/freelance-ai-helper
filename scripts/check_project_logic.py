@@ -843,6 +843,20 @@ def main() -> int:
         print("=" * 80)
         print(f"CSV Export check: OK (UTF-8 BOM present, length={len(csv_content)} chars)")
 
+    # 18. Mini App Feed and CRM Queries
+    total_checks += 1
+    from freelance_helper.app.database import get_crm_projects, get_feed_projects
+    feed = get_feed_projects(limit=10)
+    crm = get_crm_projects(limit=10)
+    feed_crm_ok = isinstance(feed, list) and isinstance(crm, list) and len(crm) >= 1
+    if not feed_crm_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Feed & CRM queries check: FAIL | feed_len={len(feed)}, crm_len={len(crm)}")
+    else:
+        print("=" * 80)
+        print(f"Feed & CRM queries check: OK (feed={len(feed)}, crm={len(crm)})")
+
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")
     return 1 if failed else 0
