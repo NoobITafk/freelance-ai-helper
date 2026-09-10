@@ -179,19 +179,16 @@ async def handle_export_csv(request: web.Request) -> web.Response:
 async def handle_userscript(request: web.Request) -> web.Response:
     script_file = WEB_APP_DIR / "freelancehunt_helper.user.js"
     if not script_file.is_file():
-        return web.Response(text="// Userscript not found", status=404, content_type="application/javascript")
+        return web.Response(text="// Userscript not found", status=404, content_type="text/plain")
     content = script_file.read_text(encoding="utf-8")
-    is_download = request.query.get("download") in ("1", "true")
-    content_type = "application/octet-stream" if is_download else "application/javascript"
     headers = {
         "Cache-Control": "no-cache, must-revalidate",
         "Access-Control-Allow-Origin": "*",
+        "Content-Disposition": 'attachment; filename="freelancehunt_helper.user.js"',
     }
-    if is_download:
-        headers["Content-Disposition"] = 'attachment; filename="freelancehunt_helper.user.js"'
     return web.Response(
         text=content,
-        content_type=content_type,
+        content_type="application/octet-stream",
         charset="utf-8",
         headers=headers,
     )

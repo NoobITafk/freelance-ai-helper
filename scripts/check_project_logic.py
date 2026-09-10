@@ -900,10 +900,10 @@ def main() -> int:
         and 'attachment; filename="freelancehunt_helper.user.js"' in resp_dl.headers.get("Content-Disposition", "")
     )
 
-    # Test standard javascript content type without download param
+    # Test userscript always serves as octet-stream attachment
     mock_raw_req = make_mocked_request("GET", "/freelancehunt_helper.user.js", app=test_app)
     resp_raw = loop.run_until_complete(handle_userscript(mock_raw_req))
-    raw_header_ok = resp_raw.content_type == "application/javascript"
+    raw_header_ok = resp_raw.content_type == "application/octet-stream" and 'attachment; filename="freelancehunt_helper.user.js"' in resp_raw.headers.get("Content-Disposition", "")
 
     # Test send script to chat API
     mock_send_req = make_mocked_request("POST", "/api/send_script_to_chat", app=test_app)

@@ -998,18 +998,20 @@ async def copilot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     caption = (
         "🧩 <b>Freelancehunt AI Co-Pilot v1.3.0</b>\n\n"
-        "Скрипт для автоматичного заповнення та 1-клік авто-подачі ставок на Freelancehunt.\n\n"
-        "📥 <b>Як підключити:</b>\n"
-        "1. Встановіть безкоштовне розширення <b>Tampermonkey</b> у ваш браузер (посилання нижче).\n"
-        "2. Натисніть кнопку <b>«⚡️ Встановити скрипт»</b> (або завантажте прикріплений нижче файл).\n"
-        "3. Натисніть <b>«Встановити»</b> — готові оновлення надалі підтягуватимуться автоматично!"
+        "Скрипт для автозаповнення ставок на Freelancehunt.\n\n"
+        "💻 <b>На комп'ютері (ПК / Ноутбук):</b>\n"
+        "1. Встановіть Tampermonkey (посилання нижче).\n"
+        "2. Завантажте прикріплений файл та відкрийте його в Tampermonkey.\n\n"
+        "📱 <b>На телефоні (смартфоні):</b>\n"
+        "• У мобільному Chrome розширення не підтримуються Google.\n"
+        "• <b>Але на телефоні розширення не потрібне:</b> просто торкніться тексту згенерованої ставки у повідомленні (вона скопіюється в 1 дотик) та вставте у замовлення."
     )
 
     markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚡️ Встановити скрипт (1 клік)", url=f"{MINI_APP_URL}/freelancehunt_helper.user.js")],
+        [InlineKeyboardButton("💾 Завантажити файл .user.js", url=f"{MINI_APP_URL}/freelancehunt_helper.user.js?download=1")],
         [
-            InlineKeyboardButton("🦊 Tampermonkey Firefox", url="https://addons.mozilla.org/firefox/addon/tampermonkey/"),
-            InlineKeyboardButton("🌐 Tampermonkey Chrome", url="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo"),
+            InlineKeyboardButton("🌐 Chrome (ПК)", url="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo"),
+            InlineKeyboardButton("🦊 Firefox (ПК / Android)", url="https://addons.mozilla.org/firefox/addon/tampermonkey/"),
         ],
         [
             InlineKeyboardButton("📱 Відкрити Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
