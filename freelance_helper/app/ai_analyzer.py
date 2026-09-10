@@ -40,6 +40,11 @@ TECHNICAL_KEYWORDS = {
     "html",
     "css",
     "wordpress",
+    "opencart",
+    "опенкарт",
+    "shopify",
+    "prestashop",
+    "woocommerce",
     "javascript",
     "typescript",
     "node",
@@ -621,7 +626,7 @@ def project_type(project: dict) -> str:
     if any(word in text for word in ["react", "vue", "next", "next.js", "nextjs", "nuxt", "angular", "svelte", "frontend", "фронтенд"]):
         return "frontend"
 
-    if "wordpress" in text or "вордпрес" in text:
+    if any(k in text for k in ["wordpress", "вордпрес", "opencart", "опенкарт", "shopify", "woocommerce", "prestashop"]):
         return "wordpress"
 
     if any(word in text for word in ["парсинг", "parser", "parsing", "scraping", "scrape"]):

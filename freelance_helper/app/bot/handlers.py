@@ -1,9 +1,10 @@
 import asyncio
+import html
 import re
 import time
 from datetime import datetime
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.error import BadRequest, Forbidden, TelegramError
 from telegram.ext import ContextTypes
 
@@ -25,7 +26,14 @@ from ..ai_analyzer import (
     unsuitable_project_text,
 )
 from ..rules import parse_budget_info
-from .keyboards import bid_keyboard, confirm_publish_keyboard, project_keyboard, questions_keyboard, unsuitable_project_keyboard
+from .keyboards import (
+    MINI_APP_URL,
+    bid_keyboard,
+    confirm_publish_keyboard,
+    project_keyboard,
+    questions_keyboard,
+    unsuitable_project_keyboard,
+)
 from ..config import (
     AI_ANALYSIS_ENABLED,
     AI_TIMEOUT_SECONDS,
@@ -1358,13 +1366,28 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error("Freelancehunt API error submitting bid: %s", err)
             err_text = str(err)
             if "410" in err_text or "deprecation" in err_text.lower():
+                escaped_comment = html.escape(publish_data["comment"])
+                p_url = project.get("url") or f"https://freelancehunt.com/project/{project_id}.html"
+                text_410 = (
+                    f"⚠️ <b>Freelancehunt вимкнув подачу ставок через прямий API (HTTP 410).</b>\n"
+                    f"Біржа вимагає відправки через веб-сайт, але <b>все вже готово для швидкої відправки в 2 кліки:</b>\n\n"
+                    f"💰 <b>Сума:</b> {publish_data['amount']:,} {publish_data['currency']}  •  ⏱ <b>Термін:</b> {publish_data['days']} дн.\n\n"
+                    f"📋 <b>Ваша ставка (натисніть на текст нижче, щоб скопіювати в 1 клік):</b>\n\n"
+                    f"<code>{escaped_comment}</code>\n\n"
+                    f"👉 Відкрийте замовлення, вставте текст і натисніть «Зробити ставку»:"
+                )
+                markup_410 = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🚀 Відкрити сторінку проєкту", url=p_url)],
+                    [
+                        InlineKeyboardButton("💼 Я відправив ставку (в CRM)", callback_data=f"crm_bid:{project_id}"),
+                        InlineKeyboardButton("📱 Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
+                    ],
+                ])
                 await message.reply_text(
-                    f"⚠️ <b>Freelancehunt вимкнув публічне створення ставок через API (HTTP 410).</b>\n\n"
-                    f"Біржа вимагає публікації через сайт для захисту від автоспаму.\n\n"
-                    f"👉 Скопіюйте текст ставки вище (1 клік по тексту) та відправте на сторінці проєкту:\n"
-                    f"🔗 <a href=\"{project.get('url')}\">Відкрити замовлення на Freelancehunt</a>",
+                    text_410,
                     parse_mode="HTML",
                     disable_web_page_preview=True,
+                    reply_markup=markup_410,
                 )
             else:
                 await message.reply_text(
