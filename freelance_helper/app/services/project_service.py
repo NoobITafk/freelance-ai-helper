@@ -812,12 +812,21 @@ async def process_and_send_project(
     )
 
     is_quiet = is_quiet_hours_now()
-    await send_func(
-        message[:4000],
-        reply_markup=project_keyboard(project_id),
-        disable_web_page_preview=True,
-        disable_notification=is_quiet,
-    )
+    try:
+        await send_func(
+            message[:4000],
+            reply_markup=project_keyboard(project_id),
+            disable_web_page_preview=True,
+            disable_notification=is_quiet,
+            project_type=p_type,
+        )
+    except TypeError:
+        await send_func(
+            message[:4000],
+            reply_markup=project_keyboard(project_id),
+            disable_web_page_preview=True,
+            disable_notification=is_quiet,
+        )
 
     if debug_stats is not None:
         debug_stats["sent"] += 1

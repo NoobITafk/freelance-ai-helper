@@ -332,6 +332,7 @@ python -m compileall freelance_helper
 | `/settings` | показати мінімальний score |
 | `/settings 35` | змінити мінімальний score |
 | `/threshold 35` | те саме, що `/settings 35` |
+| `/skills` (або `/filter`) | налаштувати спеціалізацію та фільтр категорій замовлень (Боти, Парсинг, Web, Backend, Mobile, DevOps) |
 | `/profile` | показати профіль виконавця |
 | `/profile_set текст` | змінити профіль виконавця |
 | `/portfolio` | показати налаштовані посилання на портфоліо за категоріями |

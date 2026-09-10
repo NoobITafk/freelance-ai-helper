@@ -95,6 +95,13 @@ from ..database import (
     set_project_rating,
     set_setting,
     update_project_pipeline,
+    ALL_SKILL_CODES,
+    SKILL_LABELS,
+    get_user_skills,
+    set_user_skills,
+    toggle_user_skill,
+    reset_user_skills,
+    is_project_matching_skills,
 )
 from .keyboards import (
     bid_keyboard,
@@ -102,6 +109,7 @@ from .keyboards import (
     crm_pipeline_keyboard,
     project_keyboard,
     questions_keyboard,
+    skills_keyboard,
     unsuitable_project_keyboard,
 )
 from ..services.project_service import format_project_message, process_and_send_project
@@ -1001,13 +1009,17 @@ async def check_projects(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent_count = 0
     processed_count = 0
 
+    async def send_manual(text, reply_markup=None, **kwargs):
+        kwargs.pop("project_type", None)
+        return await message.reply_text(text, reply_markup=reply_markup, **kwargs)
+
     for project in projects:
         if processed_count >= 20:
             break
 
         try:
             was_sent = await process_and_send_project(
-                message.reply_text,
+                send_manual,
                 project,
                 debug_stats=debug_stats,
             )
@@ -1075,7 +1087,12 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
                 pass
 
     async def send_func(text, reply_markup=None, **kwargs):
+        p_type = kwargs.pop("project_type", None)
         for cid in recipient_chats:
+            if p_type and cid > 0:
+                user_skills = get_user_skills(cid)
+                if not is_project_matching_skills(p_type, user_skills):
+                    continue
             try:
                 await context.bot.send_message(
                     chat_id=cid,
@@ -1304,6 +1321,26 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def threshold_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await settings_command(update, context)
+
+
+async def skills_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id if update.effective_user else None
+    if not user_id:
+        return
+    skills = get_user_skills(user_id)
+    text = (
+        "🎯 <b>Налаштування спеціалізації та категорій замовлень</b>\n\n"
+        "Оберіть напрямки, які вас цікавлять. Бот надсилатиме сповіщення "
+        "<b>лише за обраними категоріями</b>:\n\n"
+        "• Натискайте на кнопки, щоб увімкнути (✅) або вимкнути (▫️) напрямок.\n"
+        "• Якщо увімкнено всі — надходитимуть усі технічні замовлення."
+    )
+    if update.effective_message:
+        await update.effective_message.reply_text(
+            text,
+            reply_markup=skills_keyboard(skills),
+            parse_mode="HTML",
+        )
 
 
 async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1779,6 +1816,27 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id and not is_user_subscribed(user_id):
         try:
             await query.answer("⛔️ Термін підписки закінчився. Оформіть підписку: /subscribe", show_alert=True)
+        except Exception:
+            pass
+        return
+
+    if query.data.startswith("toggle_skill:"):
+        skill_code = query.data.split(":", 1)[1]
+        new_skills = toggle_user_skill(user_id, skill_code)
+        label = SKILL_LABELS.get(skill_code, skill_code)
+        is_on = skill_code in new_skills
+        try:
+            await query.answer(f"{'✅ Увімкнено' if is_on else '▫️ Вимкнено'}: {label}")
+            await query.edit_message_reply_markup(reply_markup=skills_keyboard(new_skills))
+        except Exception:
+            pass
+        return
+
+    if query.data == "reset_skills":
+        new_skills = reset_user_skills(user_id)
+        try:
+            await query.answer("🔄 Всі напрямки обрано!")
+            await query.edit_message_reply_markup(reply_markup=skills_keyboard(new_skills))
         except Exception:
             pass
         return

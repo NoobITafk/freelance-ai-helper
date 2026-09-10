@@ -297,6 +297,32 @@
       font-weight: 600;
     }
 
+    .skill-toggle {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .skill-toggle:active {
+      transform: scale(0.98);
+    }
+
+    .skill-toggle.active {
+      background: rgba(37, 99, 235, 0.16);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
     /* Project Cards */
     .card {
       background: var(--card-bg);
@@ -830,10 +856,16 @@
       </div>
 
       <div class="filter-chips">
-        <div class="chip active" data-filter="all" onclick="setFeedFilter('all', this)">Всі замовлення</div>
-        <div class="chip" data-filter="hot" onclick="setFeedFilter('hot', this)">Високий бал (70+)</div>
-        <div class="chip" data-filter="assets" onclick="setFeedFilter('assets', this)">З макетами / ТЗ</div>
-        <div class="chip" data-filter="budget" onclick="setFeedFilter('budget', this)">Бюджет від 4 000 ₴</div>
+        <div class="chip active" data-filter="all" onclick="setFeedFilter('all', this)">Всі</div>
+        <div class="chip" data-filter="cat_bots" onclick="setFeedFilter('cat_bots', this)">🤖 Боти</div>
+        <div class="chip" data-filter="cat_parsing" onclick="setFeedFilter('cat_parsing', this)">📊 Парсинг</div>
+        <div class="chip" data-filter="cat_web" onclick="setFeedFilter('cat_web', this)">🌐 Web</div>
+        <div class="chip" data-filter="cat_backend" onclick="setFeedFilter('cat_backend', this)">⚙️ Backend</div>
+        <div class="chip" data-filter="cat_mobile" onclick="setFeedFilter('cat_mobile', this)">📱 Mobile</div>
+        <div class="chip" data-filter="cat_devops" onclick="setFeedFilter('cat_devops', this)">☁️ DevOps</div>
+        <div class="chip" data-filter="hot" onclick="setFeedFilter('hot', this)">🔥 Топ (70+)</div>
+        <div class="chip" data-filter="assets" onclick="setFeedFilter('assets', this)">📎 З ТЗ</div>
+        <div class="chip" data-filter="budget" onclick="setFeedFilter('budget', this)">💰 від 4 000 ₴</div>
       </div>
       <div id="feedProjectsContainer"></div>
     </div>
@@ -918,6 +950,23 @@
         <button class="btn-secondary" style="padding: 10px 14px; font-size: 0.84rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="copyReferralLink()">
           <span>🔗 Скопіювати реферальне посилання</span>
         </button>
+      </div>
+
+      <div class="card" id="skillsCard">
+        <div class="card-header">
+          <div class="card-title">🎯 Спеціалізація та фільтр</div>
+          <span class="badge-status" style="color: #a78bfa;">Категорії</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px;">
+          Оберіть технологічні напрямки. Бот надсилатиме сповіщення <b>лише за обраними категоріями</b>:
+        </div>
+        <div id="skillsList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+          <!-- Loaded dynamically via loadUserSkills() -->
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-secondary" style="flex: 1; padding: 8px 10px; font-size: 0.8rem;" onclick="toggleAllSkills(true)">Обрати всі</button>
+          <button class="btn-secondary" style="flex: 1; padding: 8px 10px; font-size: 0.8rem;" onclick="toggleAllSkills(false)">Зняти всі</button>
+        </div>
       </div>
 
       <div class="card" id="feedbackCard">
@@ -1214,7 +1263,7 @@
       if (tabId === 'tabFeed') loadFeedProjects();
       else if (tabId === 'tabCrm') loadCrmProjects();
       else if (tabId === 'tabCases') loadCases();
-      else if (tabId === 'tabSettings') { loadHealth(); loadSubscription(); }
+      else if (tabId === 'tabSettings') { loadHealth(); loadSubscription(); loadUserSkills(); }
     }
 
     function refreshCurrentTab() {
@@ -1226,7 +1275,7 @@
         if (activeTab.id === 'tabFeed') loadFeedProjects();
         else if (activeTab.id === 'tabCrm') loadCrmProjects();
         else if (activeTab.id === 'tabCases') loadCases();
-        else if (activeTab.id === 'tabSettings') { loadHealth(); loadSubscription(); }
+        else if (activeTab.id === 'tabSettings') { loadHealth(); loadSubscription(); loadUserSkills(); }
       }
       setTimeout(() => {
         if (btn) btn.classList.remove('spinning');
@@ -1296,6 +1345,18 @@
           const b = (p.budget || '').replace(/\D/g, '');
           return parseInt(b || '0') >= 4000;
         });
+      } else if (window.activeFeedFilter && window.activeFeedFilter.startsWith('cat_')) {
+        const cat = window.activeFeedFilter.replace('cat_', '');
+        const catMap = {
+          'bots': ['telegram_bot', 'ai_integration'],
+          'parsing': ['parsing', 'excel'],
+          'web': ['wordpress', 'html_css', 'frontend'],
+          'backend': ['backend', 'api', 'development'],
+          'mobile': ['mobile'],
+          'devops': ['devops']
+        };
+        const allowed = catMap[cat] || [];
+        list = list.filter(p => allowed.includes(p.project_type));
       }
 
       if (window.feedSearchQuery) {
@@ -1920,11 +1981,91 @@
       }
     } catch (e) {}
 
+    // Skills & Category Filters Management
+    window.userSkills = [];
+    window.availableSkills = [
+      { code: 'bots', label: '🤖 Боти та AI' },
+      { code: 'parsing', label: '📊 Парсинг та скрапінг' },
+      { code: 'web', label: '🌐 Сайти / Web / WP' },
+      { code: 'backend', label: '⚙️ Backend / Python' },
+      { code: 'mobile', label: '📱 Мобільні додатки' },
+      { code: 'devops', label: '☁️ DevOps / Сервери' }
+    ];
+
+    async function loadUserSkills() {
+      try {
+        const uid = getTelegramUserId();
+        const res = await fetch(`/api/skills?user_id=${encodeURIComponent(uid)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success) {
+          window.userSkills = Array.isArray(data.skills) ? data.skills : [];
+          if (Array.isArray(data.available) && data.available.length) {
+            window.availableSkills = data.available;
+          }
+          renderSkillsUI();
+        }
+      } catch (e) {
+        renderSkillsUI();
+      }
+    }
+
+    function renderSkillsUI() {
+      const container = document.getElementById('skillsList');
+      if (!container) return;
+      container.innerHTML = window.availableSkills.map(s => {
+        const active = window.userSkills.includes(s.code);
+        return `
+          <div class="skill-toggle ${active ? 'active' : ''}" onclick="toggleSkill('${s.code}')">
+            <span>${active ? '✅' : '▫️'}</span>
+            <span style="font-size: 0.76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(s.label)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function toggleSkill(code) {
+      haptic('impact');
+      if (window.userSkills.includes(code)) {
+        window.userSkills = window.userSkills.filter(c => c !== code);
+      } else {
+        window.userSkills.push(code);
+      }
+      renderSkillsUI();
+      await saveUserSkills();
+    }
+
+    async function toggleAllSkills(all) {
+      haptic('impact');
+      if (all) {
+        window.userSkills = window.availableSkills.map(s => s.code);
+      } else {
+        window.userSkills = [];
+      }
+      renderSkillsUI();
+      await saveUserSkills();
+    }
+
+    async function saveUserSkills() {
+      try {
+        const uid = getTelegramUserId();
+        await fetch('/api/skills', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: uid,
+            skills: window.userSkills
+          })
+        });
+      } catch (e) {}
+    }
+
     // Initial load
     initTelegramUser();
     loadStats();
     loadFeedProjects();
     loadSubscription();
+    loadUserSkills();
   </script>
 </body>
 </html>

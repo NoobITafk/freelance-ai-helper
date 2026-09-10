@@ -51,6 +51,7 @@ from .bot.handlers import (
     set_price_command,
     settings_command,
     share_command,
+    skills_command,
     start,
     stats_command,
     subscribers_command,
@@ -223,6 +224,8 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("stats", stats_command))
     app.add_handler(CommandHandler("settings", settings_command))
     app.add_handler(CommandHandler("threshold", threshold_command))
+    app.add_handler(CommandHandler("skills", skills_command))
+    app.add_handler(CommandHandler("filter", skills_command))
     app.add_handler(CommandHandler("profile", profile_command))
     app.add_handler(CommandHandler("profile_set", profile_set_command))
     app.add_handler(CommandHandler("portfolio", portfolio_command))

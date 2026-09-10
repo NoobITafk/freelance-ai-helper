@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -97,6 +98,14 @@ def init_db() -> None:
             FROM projects
             WHERE (pipeline_status IS NOT NULL AND pipeline_status != 'new') OR user_rating IS NOT NULL
         """, (owner_id,))
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_skills (
+                user_id TEXT PRIMARY KEY,
+                skills TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS settings (
@@ -1273,6 +1282,100 @@ def get_recent_feedback(limit: int = 20) -> list[dict]:
             (limit,),
         ).fetchall()
         return [dict(r) for r in rows]
+
+
+ALL_SKILL_CODES = ["bots", "parsing", "web", "backend", "mobile", "devops"]
+
+SKILL_LABELS = {
+    "bots": "🤖 Боти та AI",
+    "parsing": "📊 Парсинг та скрапінг",
+    "web": "🌐 Сайти / Web / WP",
+    "backend": "⚙️ Backend / Python",
+    "mobile": "📱 Мобільні додатки",
+    "devops": "☁️ DevOps / Сервери",
+}
+
+PROJECT_TYPE_TO_SKILLS = {
+    "telegram_bot": {"bots"},
+    "ai_integration": {"bots"},
+    "parsing": {"parsing"},
+    "excel": {"parsing"},
+    "wordpress": {"web"},
+    "html_css": {"web"},
+    "frontend": {"web"},
+    "backend": {"backend"},
+    "api": {"backend"},
+    "development": {"backend", "web"},
+    "mobile": {"mobile"},
+    "devops": {"devops"},
+}
+
+
+def get_user_skills(user_id: int | str) -> list[str]:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT skills FROM user_skills WHERE user_id = ?",
+            (str(user_id),),
+        ).fetchone()
+        if not row or not row["skills"]:
+            return list(ALL_SKILL_CODES)
+        try:
+            skills = json.loads(row["skills"])
+            if isinstance(skills, list):
+                valid = [s for s in ALL_SKILL_CODES if s in skills]
+                return valid
+        except Exception:
+            parts = [p.strip() for p in row["skills"].split(",") if p.strip()]
+            valid = [s for s in ALL_SKILL_CODES if s in parts]
+            return valid
+    return list(ALL_SKILL_CODES)
+
+
+def set_user_skills(user_id: int | str, skills: list[str]) -> None:
+    valid = [s for s in ALL_SKILL_CODES if s in skills]
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO user_skills (user_id, skills, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                skills = excluded.skills,
+                updated_at = excluded.updated_at
+            """,
+            (str(user_id), json.dumps(valid), now_iso),
+        )
+
+
+def toggle_user_skill(user_id: int | str, skill_code: str) -> list[str]:
+    if skill_code not in ALL_SKILL_CODES:
+        return get_user_skills(user_id)
+    current = get_user_skills(user_id)
+    if skill_code in current:
+        current.remove(skill_code)
+    else:
+        current.append(skill_code)
+    set_user_skills(user_id, current)
+    return current
+
+
+def reset_user_skills(user_id: int | str) -> list[str]:
+    set_user_skills(user_id, list(ALL_SKILL_CODES))
+    return list(ALL_SKILL_CODES)
+
+
+def is_project_matching_skills(project_type: str, user_skills: list[str]) -> bool:
+    if not user_skills:
+        return False
+    if set(ALL_SKILL_CODES).issubset(set(user_skills)):
+        return True
+
+    needed = PROJECT_TYPE_TO_SKILLS.get(project_type)
+    if needed:
+        return bool(needed.intersection(user_skills))
+
+    return "backend" in user_skills or "web" in user_skills
+
 
 
 

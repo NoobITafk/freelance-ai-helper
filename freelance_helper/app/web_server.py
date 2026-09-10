@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from aiohttp import web
 
-from .ai_analyzer import generate_bid
+from .ai_analyzer import generate_bid, generate_questions, project_type
 from .config import (
     MIN_SCORE,
     PAYMENT_PROVIDER_TOKEN,
@@ -15,6 +15,8 @@ from .config import (
     TELEGRAM_CHAT_ID,
 )
 from .database import (
+    ALL_SKILL_CODES,
+    SKILL_LABELS,
     add_bonus_days,
     add_feedback,
     add_portfolio_case,
@@ -28,9 +30,11 @@ from .database import (
     get_project,
     get_recent_projects,
     get_setting,
+    get_user_skills,
     get_user_subscription,
     init_user_subscription,
     is_user_subscribed,
+    set_user_skills,
     update_project_pipeline,
 )
 from .logger import logger
@@ -67,6 +71,7 @@ async def handle_projects(request: web.Request) -> web.Response:
             projects = get_feed_projects(limit=limit, user_id=user_id)
 
         for p in projects:
+            p["project_type"] = project_type(p)
             try:
                 p["bid_text"] = generate_bid(p, variant="short")
             except Exception:
@@ -322,12 +327,46 @@ async def handle_create_invoice(request: web.Request) -> web.Response:
         return web.json_response({"success": False, "error": str(e)}, status=500)
 
 
+async def handle_get_skills(request: web.Request) -> web.Response:
+    try:
+        user_id = request.query.get("user_id") or TELEGRAM_CHAT_ID or "default"
+        skills = get_user_skills(user_id)
+        available = [{"code": code, "label": SKILL_LABELS.get(code, code)} for code in ALL_SKILL_CODES]
+        return web.json_response({
+            "success": True,
+            "skills": skills,
+            "available": available,
+        })
+    except Exception as e:
+        logger.error("API get skills error: %s", e)
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_update_skills(request: web.Request) -> web.Response:
+    try:
+        data = await request.json()
+        user_id = str(data.get("user_id") or request.query.get("user_id") or TELEGRAM_CHAT_ID or "").strip()
+        skills = data.get("skills", [])
+        if not isinstance(skills, list):
+            return web.json_response({"success": False, "error": "skills must be an array"}, status=400)
+        set_user_skills(user_id, skills)
+        return web.json_response({
+            "success": True,
+            "skills": get_user_skills(user_id),
+        })
+    except Exception as e:
+        logger.error("API update skills error: %s", e)
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
 def create_web_app(bot=None) -> web.Application:
     app = web.Application()
     app["bot"] = bot
     app.router.add_get("/", handle_index)
     app.router.add_get("/api/stats", handle_stats)
     app.router.add_get("/api/projects", handle_projects)
+    app.router.add_get("/api/skills", handle_get_skills)
+    app.router.add_post("/api/skills", handle_update_skills)
     app.router.add_post("/api/pipeline", handle_update_pipeline)
     app.router.add_get("/api/cases", handle_cases)
     app.router.add_post("/api/cases", handle_add_case)

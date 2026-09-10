@@ -1,5 +1,7 @@
 from telegram import CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 
+from ..database import ALL_SKILL_CODES, SKILL_LABELS
+
 MINI_APP_URL = "https://freelans.duckdns.org"
 
 
@@ -102,3 +104,27 @@ def unsuitable_project_keyboard(project_id: str):
     ]
 
     return InlineKeyboardMarkup(keyboard)
+
+
+def skills_keyboard(user_skills: list[str]) -> InlineKeyboardMarkup:
+    keyboard = []
+    # Build 2-column grid of skills
+    current_row = []
+    for code in ALL_SKILL_CODES:
+        is_active = code in user_skills
+        label = f"{'✅' if is_active else '▫️'} {SKILL_LABELS.get(code, code)}"
+        current_row.append(InlineKeyboardButton(label, callback_data=f"toggle_skill:{code}"))
+        if len(current_row) == 2:
+            keyboard.append(current_row)
+            current_row = []
+    if current_row:
+        keyboard.append(current_row)
+
+    keyboard.append([
+        InlineKeyboardButton("🔄 Обрати всі напрямки", callback_data="reset_skills"),
+    ])
+    keyboard.append([
+        InlineKeyboardButton("📱 Відкрити Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
+    ])
+    return InlineKeyboardMarkup(keyboard)
+
