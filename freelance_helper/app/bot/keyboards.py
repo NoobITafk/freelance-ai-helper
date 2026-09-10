@@ -1,4 +1,6 @@
-from telegram import CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+
+MINI_APP_URL = "https://freelans.duckdns.org"
 
 
 def project_keyboard(project_id: str, current_rating: str | None = None):
@@ -11,10 +13,14 @@ def project_keyboard(project_id: str, current_rating: str | None = None):
         ],
         [
             InlineKeyboardButton("📝 Ставка", callback_data=f"bid:{project_id}"),
-            InlineKeyboardButton("💬 Відгук у чат", callback_data=f"pitch:{project_id}"),
+            InlineKeyboardButton("🚀 Подати через бота", callback_data=f"publish_bid:{project_id}"),
         ],
         [
+            InlineKeyboardButton("💬 Відгук у чат", callback_data=f"pitch:{project_id}"),
             InlineKeyboardButton("❓ Уточнення", callback_data=f"questions:{project_id}"),
+        ],
+        [
+            InlineKeyboardButton("📱 Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
             InlineKeyboardButton("⏭ Пропустити", callback_data=f"skip:{project_id}"),
         ],
     ]
@@ -27,6 +33,7 @@ def bid_keyboard(project_id: str, url: str | None = None):
     keyboard = [
         [
             InlineKeyboardButton("🚀 Зробити ставку", url=project_url),
+            InlineKeyboardButton("⚡️ Подати через бота", callback_data=f"publish_bid:{project_id}"),
         ],
         [
             InlineKeyboardButton("🔁 Нова ставка", callback_data=f"rebid:{project_id}"),
@@ -38,6 +45,7 @@ def bid_keyboard(project_id: str, url: str | None = None):
         ],
         [
             InlineKeyboardButton("💼 Я подав ставку", callback_data=f"crm_bid:{project_id}"),
+            InlineKeyboardButton("📱 Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
         ],
     ]
 

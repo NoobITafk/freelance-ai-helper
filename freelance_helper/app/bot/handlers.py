@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 from datetime import datetime
 
@@ -12,6 +13,7 @@ from ..ai_analyzer import (
     check_ollama_available,
     format_analysis,
     calculate_score,
+    extract_project_insights,
     fallback_bid,
     fallback_questions,
     generate_bid,
@@ -1259,7 +1261,21 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         currency = currency or "UAH"
 
         kind = project_type(project)
-        days = 3 if kind in {"telegram_bot", "backend"} else 2
+        days = 2
+        try:
+            insights = extract_project_insights(project)
+            time_est = insights.get("time_estimate", "1-2 дні")
+            days_match = re.findall(r"\d+", time_est)
+            if days_match:
+                days = int(days_match[-1])
+        except Exception:
+            days = 3 if kind in {"telegram_bot", "backend"} else 2
+
+        # Sweet spot pricing
+        bids_cnt = int(project.get("bids_count") or 0)
+        rec_amount = amount
+        if amount and bids_cnt > 10:
+            rec_amount = int(amount * 0.95 / 50) * 50
 
         active_bids = context.user_data.setdefault("active_bids", {})
         bid_text = active_bids.get(project_id)
@@ -1270,7 +1286,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pending = context.user_data.setdefault("pending_publish", {})
         pending[project_id] = {
             "days": days,
-            "amount": amount,
+            "amount": rec_amount,
             "currency": currency,
             "comment": bid_text,
             "title": project.get("title", "Без назви"),
@@ -1280,7 +1296,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         prompt = (
             f"🚀 <b>Підтвердження публікації ставки</b>\n\n"
             f"📌 <b>Проєкт:</b> {project.get('title')}\n"
-            f"💰 <b>Сума ставки:</b> {amount:,} {currency}\n"
+            f"💰 <b>Сума ставки:</b> {rec_amount:,} {currency}\n"
             f"⏱ <b>Термін виконання:</b> {days} дн.\n"
             f"🛡 <b>Тип безпечної угоди:</b> Робота з резервуванням (employer)\n\n"
             f"📝 <b>Текст пропозиції:</b>\n"
@@ -1327,13 +1343,16 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 comment=publish_data["comment"],
             )
             logger.info("Bid posted for project %s: %s", project_id, res)
+            update_project_pipeline(project_id, "bid_placed", deal_amount=float(publish_data["amount"]), currency=publish_data["currency"])
             await message.reply_text(
                 f"✅ <b>Ставку успішно опубліковано на Freelancehunt!</b>\n\n"
                 f"📌 {project.get('title')}\n"
                 f"💰 {publish_data['amount']:,} {publish_data['currency']}  •  ⏱ {publish_data['days']} дн.\n"
+                f"💼 Проєкт автоматично додано до вашої воронки CRM.\n\n"
                 f"🔗 <a href=\"{project.get('url')}\">Переглянути проєкт на біржі</a>",
                 parse_mode="HTML",
                 disable_web_page_preview=True,
+                reply_markup=crm_pipeline_keyboard(project_id, current_status="bid_placed"),
             )
         except FreelancehuntAPIError as err:
             logger.error("Freelancehunt API error submitting bid: %s", err)
