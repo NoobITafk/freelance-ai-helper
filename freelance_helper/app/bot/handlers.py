@@ -224,6 +224,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /digest — ранковий дайджест проєктів за ніч
 /backup — надіслати бекап бази даних у чат
 /webapp — Telegram Mini App інтерфейс
+/copilot (або /extension) — завантажити скрипт авто-ставок у чат
 /test_ai — тест роботи аналізатора
 /why project_id — показати збережений аналіз
 
@@ -986,6 +987,51 @@ async def webapp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Ви можете відкрити його локально або підключити як WebApp меню в @BotFather через команду <code>/setmenubutton</code>."
     )
     await reply_text(update, text, parse_mode="HTML")
+
+
+async def copilot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update):
+        return
+
+    from ..web_server import WEB_APP_DIR
+    script_path = WEB_APP_DIR / "freelancehunt_helper.user.js"
+
+    caption = (
+        "🧩 <b>Freelancehunt AI Co-Pilot v1.3.0</b>\n\n"
+        "Скрипт для автоматичного заповнення та 1-клік авто-подачі ставок на Freelancehunt.\n\n"
+        "📥 <b>Як підключити:</b>\n"
+        "1. Встановіть безкоштовне розширення <b>Tampermonkey</b> у ваш браузер (посилання нижче).\n"
+        "2. Натисніть кнопку <b>«⚡️ Встановити скрипт»</b> (або завантажте прикріплений нижче файл).\n"
+        "3. Натисніть <b>«Встановити»</b> — готові оновлення надалі підтягуватимуться автоматично!"
+    )
+
+    markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⚡️ Встановити скрипт (1 клік)", url=f"{MINI_APP_URL}/freelancehunt_helper.user.js")],
+        [
+            InlineKeyboardButton("🦊 Tampermonkey Firefox", url="https://addons.mozilla.org/firefox/addon/tampermonkey/"),
+            InlineKeyboardButton("🌐 Tampermonkey Chrome", url="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo"),
+        ],
+        [
+            InlineKeyboardButton("📱 Відкрити Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
+        ],
+    ])
+
+    if script_path.is_file():
+        try:
+            with open(script_path, "rb") as f:
+                await context.bot.send_document(
+                    chat_id=update.effective_chat.id,
+                    document=f,
+                    filename="freelancehunt_helper.user.js",
+                    caption=caption,
+                    parse_mode="HTML",
+                    reply_markup=markup,
+                )
+            return
+        except Exception as exc:
+            logger.warning("Could not send document: %s", exc)
+
+    await reply_text(update, caption, parse_mode="HTML", reply_markup=markup)
 
 
 async def reply_safe_markdown(message, text: str, reply_markup=None):
