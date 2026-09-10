@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         Freelancehunt AI Assistant & CRM Co-Pilot
 // @namespace    https://freelans.duckdns.org/
-// @version      1.2.1
+// @version      1.3.0
 // @description  Розумний асистент для фрилансера: аналіз замовлення, автозаповнення ставки, рекомендована ціна та синхронізація з CRM без ризику бану.
 // @author       Freelance AI Helper
+// @updateURL    https://freelans.duckdns.org/freelancehunt_helper.user.js
+// @downloadURL  https://freelans.duckdns.org/freelancehunt_helper.user.js
 // @match        https://freelancehunt.com/project/*
 // @match        https://freelancehunt.ua/project/*
 // @match        https://*.freelancehunt.com/project/*
