@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freelancehunt AI Assistant & CRM Co-Pilot
 // @namespace    https://freelans.duckdns.org/
-// @version      1.1.0
+// @version      1.2.0
 // @description  Розумний асистент для фрилансера: аналіз замовлення, автозаповнення ставки, рекомендована ціна та синхронізація з CRM без ризику бану.
 // @author       Freelance AI Helper
 // @match        https://freelancehunt.com/project/*
@@ -190,11 +190,11 @@
     state.loading = false;
     updateWidgetUI();
 
-    // Automatic fill on page load: enabled by default, or triggered by #autofill in URL
-    const isAutoFillEnabled = localStorage.getItem('fhai_autofill') !== 'false' || window.location.hash.includes('autofill');
+    // Automatic fill on page load: enabled by default, or triggered by #autofill / #autobid in URL
+    const isAutoFillEnabled = localStorage.getItem('fhai_autofill') !== 'false' || window.location.hash.includes('autofill') || window.location.hash.includes('autobid');
     if (isAutoFillEnabled) {
       setTimeout(() => {
-        fillNativeBidForm(true);
+        ensureAndFillBidForm(25);
       }, 400);
     }
   }
@@ -468,28 +468,175 @@
     }
   }
 
-  // Auto-fill Freelancehunt native bid form fields with authentic human events
-  function fillNativeBidForm(quiet = false) {
-    const textToFill = getCurrentBidText();
-
-    // 1. Textarea comment
+  // Find native Freelancehunt bid form input elements
+  function findFormElements() {
     const commentEl = document.querySelector('textarea[name="comment"]') ||
                       document.querySelector('textarea#comment') ||
                       document.querySelector('textarea[name="text"]') ||
                       document.querySelector('#bid-form textarea') ||
-                      document.querySelector('.bid-form textarea');
+                      document.querySelector('.bid-form textarea') ||
+                      document.querySelector('form[action*="bid"] textarea');
 
-    // 2. Days input
     const daysEl = document.querySelector('input[name="days"]') ||
                    document.querySelector('input#days') ||
                    document.querySelector('input[name="period"]') ||
                    document.querySelector('input[name="delivery_period"]');
 
-    // 3. Amount input
     const amountEl = document.querySelector('input[name="amount"]') ||
                      document.querySelector('input#amount') ||
                      document.querySelector('input[name="cost"]') ||
                      document.querySelector('input[name="price"]');
+
+    return { commentEl, daysEl, amountEl };
+  }
+
+  // Attempt to open or expand the bid form if it is hidden behind a button
+  function tryOpenBidForm() {
+    const { commentEl } = findFormElements();
+    if (commentEl && commentEl.offsetParent !== null) {
+      return true; // Already visible
+    }
+
+    const candidates = Array.from(document.querySelectorAll('a, button, [role="button"], input[type="button"]'));
+    const openBtn = candidates.find(el => {
+      if (el.closest('#fhai-root') || el.id === 'fhai-cancel-btn' || el.id === 'fhai-now-btn') return false;
+      const txt = (el.textContent || el.value || '').trim().toLowerCase();
+      const href = (el.getAttribute('href') || '').toLowerCase();
+      return (
+        txt.includes('зробити ставку') ||
+        txt.includes('змінити ставку') ||
+        txt.includes('додати ставку') ||
+        txt.includes('подати ставку') ||
+        txt.includes('редагувати ставку') ||
+        href.includes('#bid') ||
+        href.includes('/bid')
+      );
+    });
+
+    if (openBtn) {
+      console.log('[Freelancehunt AI] Triggering bid form open button:', openBtn);
+      openBtn.click();
+      return true;
+    }
+
+    const bidForm = document.getElementById('bid-form') || document.querySelector('.bid-form');
+    if (bidForm) {
+      bidForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return true;
+    }
+
+    return false;
+  }
+
+  // Poll until the bid form is in DOM and visible, then fill it
+  function ensureAndFillBidForm(retriesLeft = 25) {
+    const { commentEl } = findFormElements();
+
+    if (commentEl && commentEl.offsetParent !== null) {
+      fillNativeBidForm(true);
+      return;
+    }
+
+    tryOpenBidForm();
+
+    if (retriesLeft > 0) {
+      setTimeout(() => {
+        ensureAndFillBidForm(retriesLeft - 1);
+      }, 350);
+    } else {
+      fillNativeBidForm(false);
+    }
+  }
+
+  // Auto-submit countdown timer and submission runner
+  let autoSubmitTimer = null;
+  let autoSubmitSeconds = 5;
+
+  function startAutoSubmitCountdown() {
+    if (autoSubmitTimer) clearInterval(autoSubmitTimer);
+    autoSubmitSeconds = 5;
+
+    const oldBanner = document.getElementById('fhai-autosubmit-banner');
+    if (oldBanner) oldBanner.remove();
+
+    const banner = document.createElement('div');
+    banner.id = 'fhai-autosubmit-banner';
+    banner.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 2px solid #10b981;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+      z-index: 99999999;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      animation: fhai-fade-in 0.2s ease-out;
+    `;
+    banner.innerHTML = `
+      <span>🚀 <b>Авто-відправка ставки</b> через <b id="fhai-sec" style="color:#38bdf8;font-size:16px;">5</b>с...</span>
+      <button id="fhai-cancel-btn" style="background:#ef4444;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">Скасувати</button>
+      <button id="fhai-now-btn" style="background:#10b981;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">Відправити зараз ↵</button>
+    `;
+    document.body.appendChild(banner);
+
+    const cancelBtn = document.getElementById('fhai-cancel-btn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        clearInterval(autoSubmitTimer);
+        banner.remove();
+        showToast('🛑 Авто-відправку скасовано. Форма готова для ручної перевірки.');
+      });
+    }
+
+    function doSubmit() {
+      clearInterval(autoSubmitTimer);
+      banner.remove();
+      const submitBtn = document.querySelector('#bid-form button[type="submit"]') ||
+                        document.querySelector('form.bid-form button[type="submit"]') ||
+                        document.querySelector('button[type="submit"][name="submit"]') ||
+                        document.querySelector('#bid-form input[type="submit"]') ||
+                        Array.from(document.querySelectorAll('button, input[type="submit"], a.btn')).find(b => {
+                          if (b.closest('#fhai-root')) return false;
+                          const t = (b.textContent || b.value || '').trim().toLowerCase();
+                          return (t.includes('зробити ставку') || t.includes('оновити ставку') || t.includes('зберегти')) &&
+                                 !t.includes('автозаповнити');
+                        });
+      if (submitBtn && !submitBtn.disabled) {
+        showToast('🚀 Натискаємо «Зробити ставку»...');
+        submitBtn.click();
+      } else {
+        showToast('⚠️ Форму заповнено, натисніть кнопку відправки на сторінці.');
+      }
+    }
+
+    const nowBtn = document.getElementById('fhai-now-btn');
+    if (nowBtn) {
+      nowBtn.addEventListener('click', doSubmit);
+    }
+
+    autoSubmitTimer = setInterval(() => {
+      autoSubmitSeconds--;
+      const secEl = document.getElementById('fhai-sec');
+      if (secEl) secEl.textContent = String(autoSubmitSeconds);
+
+      if (autoSubmitSeconds <= 0) {
+        doSubmit();
+      }
+    }, 1000);
+  }
+
+  // Auto-fill Freelancehunt native bid form fields with authentic human events
+  function fillNativeBidForm(quiet = false) {
+    const textToFill = getCurrentBidText();
+    const { commentEl, daysEl, amountEl } = findFormElements();
 
     let filledCount = 0;
 
@@ -521,13 +668,18 @@
     }
 
     if (filledCount > 0) {
-      showToast('✨ Форму автоматично заповнено! Перевірте і натисніть «Зробити ставку»');
+      showToast('✨ Форму автоматично відкрито та заповнено!');
       if (commentEl) {
         commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         commentEl.focus();
       }
+
+      const isAutoSubmit = localStorage.getItem('fhai_autosubmit') === 'true' || window.location.hash.includes('autobid');
+      if (isAutoSubmit) {
+        startAutoSubmitCountdown();
+      }
     } else if (!quiet) {
-      showToast('⚠️ Форму ставки не знайдено (можливо, ви не авторизовані)');
+      showToast('⚠️ Форму ставки не знайдено (можливо, прийом ставок завершено)');
       copyTextToClipboard(textToFill);
     }
   }
@@ -633,13 +785,17 @@
 
           <div class="fhai-actions">
             <button class="fhai-btn-primary" id="fhai-autofill-btn">
-              <span>✨ Автозаповнити форму ставки</span>
+              <span>✨ Відкрити та заповнити форму</span>
             </button>
             <div class="fhai-btn-row">
               <button class="fhai-btn-secondary" id="fhai-copy-btn">📋 Скопіювати</button>
               <button class="fhai-btn-secondary" id="fhai-add-q-btn">❓ +Питання</button>
               <button class="fhai-btn-secondary" id="fhai-crm-btn">💼 В CRM</button>
             </div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;cursor:pointer;margin-top:4px;user-select:none;">
+              <input type="checkbox" id="fhai-autosubmit-cb" ${localStorage.getItem('fhai_autosubmit') === 'true' ? 'checked' : ''} style="cursor:pointer;">
+              <span>⚡️ Авто-відправка ставки (5с таймер)</span>
+            </label>
           </div>
         </div>
 
@@ -677,7 +833,15 @@
     });
 
     const autofillBtn = document.getElementById('fhai-autofill-btn');
-    if (autofillBtn) autofillBtn.addEventListener('click', fillNativeBidForm);
+    if (autofillBtn) autofillBtn.addEventListener('click', () => ensureAndFillBidForm(15));
+
+    const autoSubmitCb = document.getElementById('fhai-autosubmit-cb');
+    if (autoSubmitCb) {
+      autoSubmitCb.addEventListener('change', (e) => {
+        localStorage.setItem('fhai_autosubmit', e.target.checked ? 'true' : 'false');
+        showToast(e.target.checked ? '⚡️ Авто-відправку увімкнено (таймер 5 сек)' : 'Ручний режим: авто-відправку вимкнено');
+      });
+    }
 
     const copyBtn = document.getElementById('fhai-copy-btn');
     if (copyBtn) {
