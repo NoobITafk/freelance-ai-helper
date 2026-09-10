@@ -1057,7 +1057,8 @@ async def cases_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await check_user_access(update, context):
         return
 
-    cases = get_portfolio_cases()
+    user_id = str(update.effective_user.id) if update.effective_user else None
+    cases = get_portfolio_cases(user_id=user_id)
     if not cases:
         await reply_text(
             update,
@@ -1109,7 +1110,8 @@ async def case_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = parts[1] if len(parts) > 1 else ""
     desc = parts[2] if len(parts) > 2 else ""
 
-    case_id = add_portfolio_case(category=category, title=title, description=desc, url=url)
+    user_id = str(update.effective_user.id) if update.effective_user else None
+    case_id = add_portfolio_case(category=category, title=title, description=desc, url=url, user_id=user_id)
     await reply_text(
         update,
         f"✅ <b>Кейс успішно додано! [ID {case_id}]</b>\n\n"
@@ -1132,7 +1134,8 @@ async def case_del_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     case_id = int(context.args[0])
-    ok = delete_portfolio_case(case_id)
+    user_id = str(update.effective_user.id) if update.effective_user else None
+    ok = delete_portfolio_case(case_id, user_id=user_id)
     if ok:
         await reply_text(update, f"✅ Кейс [ID {case_id}] видалено з бази.")
     else:
@@ -1147,7 +1150,8 @@ async def income_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await check_user_access(update, context):
         return
 
-    stats = get_crm_stats()
+    user_id = str(update.effective_user.id) if update.effective_user else None
+    stats = get_crm_stats(user_id=user_id)
     text = (
         f"💼 <b>Freelance CRM & Воронка замовлень</b>\n\n"
         f"📊 <b>Конверсія відгуків:</b>\n"
@@ -1377,8 +1381,8 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
     if action in {"great", "good", "maybe", "bad", "not_mine", "skip"}:
-        set_project_rating(project_id, action)
-        logger.info("Project rated %s: %s", action, project_id)
+        set_project_rating(project_id, action, user_id=user_id)
+        logger.info("Project rated %s: %s (user %s)", action, project_id, user_id)
 
         labels = {
             "great": "🔥 Збережено: дуже підходить.",
@@ -1401,7 +1405,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
     elif action == "crm_bid":
-        update_project_pipeline(project_id, "bid_placed")
+        update_project_pipeline(project_id, "bid_placed", user_id=user_id)
         try:
             await query.answer("💼 Заявку додано у воронку CRM!", show_alert=False)
         except Exception:
@@ -1421,7 +1425,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
     elif action == "crm_reply":
-        update_project_pipeline(project_id, "replied")
+        update_project_pipeline(project_id, "replied", user_id=user_id)
         try:
             await query.answer("💬 Статус: Замовник відповів!", show_alert=False)
         except Exception:
@@ -1434,7 +1438,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
     elif action == "crm_work":
-        update_project_pipeline(project_id, "in_progress")
+        update_project_pipeline(project_id, "in_progress", user_id=user_id)
         try:
             await query.answer("🤝 Статус: Проєкт у роботі!", show_alert=False)
         except Exception:
@@ -1477,7 +1481,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         amount, currency, _ = parse_budget_info(project.get("budget"))
         val = float(amount or 0)
         curr = currency or "UAH"
-        update_project_pipeline(project_id, "completed", deal_amount=val, currency=curr)
+        update_project_pipeline(project_id, "completed", deal_amount=val, currency=curr, user_id=user_id)
         context.user_data.pop("pending_crm_done", None)
         try:
             await query.answer(f"💰 Зараховано {val:,.0f} {curr}!", show_alert=False)
@@ -1500,7 +1504,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text("❌ Фіксацію завершення проєкту скасовано.")
 
     elif action == "crm_declined":
-        update_project_pipeline(project_id, "declined")
+        update_project_pipeline(project_id, "declined", user_id=user_id)
         try:
             await query.answer("❌ Проєкт відхилено", show_alert=False)
         except Exception:
@@ -1776,7 +1780,8 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     project = get_project(project_id) or {}
     title = project.get("title", f"ID {project_id}")
 
-    update_project_pipeline(project_id, "completed", deal_amount=amount, currency=currency)
+    user_id = str(update.effective_user.id) if update.effective_user else None
+    update_project_pipeline(project_id, "completed", deal_amount=amount, currency=currency, user_id=user_id)
     context.user_data.pop("pending_crm_done", None)
 
     await message.reply_text(
@@ -1794,21 +1799,22 @@ async def export_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        csv_data = export_crm_data_csv()
+        user_id = str(update.effective_user.id) if update.effective_user else None
+        csv_data = export_crm_data_csv(user_id=user_id)
         import io
         bio = io.BytesIO(csv_data.encode("utf-8"))
         filename = f"crm_export_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
         bio.name = filename
 
-        stats = get_crm_stats()
+        stats = get_crm_stats(user_id=user_id)
         win_rate = stats.get("win_rate", 0.0)
-        total_income = stats.get("total_income", {})
-        income_str = "  •  ".join(f"{v:,.0f} {k}" for k, v in total_income.items()) or "0 UAH"
+        income_month = stats.get("income_month", 0.0)
+        income_total = stats.get("income_total", 0.0)
 
         caption = (
             f"📊 <b>Експорт CRM та фінансової звітності</b>\n\n"
             f"📈 Win Rate: <b>{win_rate:.1f}%</b>\n"
-            f"💰 Загальний дохід: <b>{income_str}</b>\n\n"
+            f"💰 Загальний заробіток: <b>{income_total:,.0f} грн</b>\n\n"
             f"📁 Файл <code>{filename}</code> готовий для відкриття в Excel або Google Sheets."
         )
 

@@ -905,6 +905,9 @@ def main() -> int:
 
     # 20a. New user gets 7-day free trial
     test_uid = "test_user_777"
+    with get_connection() as conn:
+        conn.execute("DELETE FROM subscriptions WHERE user_id = ?", (test_uid,))
+
     trial_sub = init_user_subscription(test_uid, username="tester", full_name="Test User", trial_days=7)
     trial_ok = (
         trial_sub is not None
@@ -944,6 +947,59 @@ def main() -> int:
     else:
         print("=" * 80)
         print(f"Subscription & Trial check: OK (trial=7d, admin=lifetime, paid=+30d, active_subs={len(active_list)})")
+
+    # 21. Multi-user Database & CRM Isolation Check
+    total_checks += 1
+    from freelance_helper.app.database import (
+        add_portfolio_case,
+        delete_portfolio_case,
+        get_crm_projects,
+        get_crm_stats,
+        get_portfolio_cases,
+        update_project_pipeline,
+    )
+
+    u_alpha = "user_alpha_111"
+    u_beta = "user_beta_222"
+
+    c_alpha_id = add_portfolio_case("bot", "Alpha Crypto Bot", "Alpha desc", "https://alpha.com", user_id=u_alpha)
+    c_beta_id = add_portfolio_case("parser", "Beta Scraper", "Beta desc", "https://beta.com", user_id=u_beta)
+
+    cases_alpha = get_portfolio_cases(user_id=u_alpha)
+    cases_beta = get_portfolio_cases(user_id=u_beta)
+
+    cases_isolated = (
+        any(c["id"] == c_alpha_id for c in cases_alpha)
+        and not any(c["id"] == c_beta_id for c in cases_alpha)
+        and any(c["id"] == c_beta_id for c in cases_beta)
+        and not any(c["id"] == c_alpha_id for c in cases_beta)
+    )
+
+    update_project_pipeline("p_alpha_deal", "completed", deal_amount=5000.0, user_id=u_alpha)
+    update_project_pipeline("p_beta_deal", "completed", deal_amount=12000.0, user_id=u_beta)
+
+    stats_alpha = get_crm_stats(user_id=u_alpha)
+    stats_beta = get_crm_stats(user_id=u_beta)
+
+    crm_isolated = (
+        stats_alpha["completed"] == 1
+        and stats_alpha["income_total"] == 5000.0
+        and stats_beta["completed"] == 1
+        and stats_beta["income_total"] == 12000.0
+    )
+
+    # Cleanup test cases
+    delete_portfolio_case(c_alpha_id, user_id=u_alpha)
+    delete_portfolio_case(c_beta_id, user_id=u_beta)
+
+    multiuser_ok = cases_isolated and crm_isolated
+    if not multiuser_ok:
+        failed += 1
+        print("=" * 80)
+        print(f"Multi-user Isolation check: FAIL | cases={cases_isolated} | crm={crm_isolated}")
+    else:
+        print("=" * 80)
+        print(f"Multi-user Isolation check: OK (cases_isolated=True, alpha_crm={stats_alpha['income_total']:.0f} UAH, beta_crm={stats_beta['income_total']:.0f} UAH)")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

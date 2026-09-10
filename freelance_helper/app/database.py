@@ -69,7 +69,33 @@ def init_db() -> None:
                 created_at TEXT NOT NULL
             )
         """)
+        ensure_column(conn, "portfolio_cases", "user_id", "TEXT DEFAULT ''")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_cases_cat ON portfolio_cases(category)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_cases_uid ON portfolio_cases(user_id)")
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_projects (
+                user_id TEXT NOT NULL,
+                project_id TEXT NOT NULL,
+                pipeline_status TEXT DEFAULT 'new',
+                deal_amount REAL,
+                deal_currency TEXT DEFAULT 'UAH',
+                user_rating TEXT,
+                notes TEXT DEFAULT '',
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, project_id)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_projects_uid_status ON user_projects(user_id, pipeline_status)")
+
+        # Backfill owner's existing CRM projects into user_projects
+        owner_id = str(TELEGRAM_CHAT_ID or "6212873712")
+        conn.execute("""
+            INSERT OR IGNORE INTO user_projects (user_id, project_id, pipeline_status, deal_amount, deal_currency, user_rating, updated_at)
+            SELECT ?, project_id, COALESCE(pipeline_status, 'new'), deal_amount, COALESCE(deal_currency, 'UAH'), user_rating, created_at
+            FROM projects
+            WHERE (pipeline_status IS NOT NULL AND pipeline_status != 'new') OR user_rating IS NOT NULL
+        """, (owner_id,))
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS settings (
@@ -226,15 +252,28 @@ def get_project(project_id: str) -> Optional[dict]:
         return dict(row) if row else None
 
 
-def set_project_rating(project_id: str, rating: str) -> None:
+def set_project_rating(project_id: str, rating: str, user_id: str | None = None) -> None:
     if rating not in ALLOWED_RATINGS:
         raise ValueError(f"Невідомий рейтинг проєкту: {rating}")
 
+    uid = str(user_id if user_id is not None else (TELEGRAM_CHAT_ID or ""))
     with get_connection() as conn:
         conn.execute(
             "UPDATE projects SET user_rating = ? WHERE project_id = ?",
             (rating, str(project_id)),
         )
+        if uid:
+            now_iso = datetime.now().isoformat(timespec="seconds")
+            conn.execute(
+                """
+                INSERT INTO user_projects (user_id, project_id, user_rating, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(user_id, project_id) DO UPDATE SET
+                    user_rating = excluded.user_rating,
+                    updated_at = excluded.updated_at
+                """,
+                (uid, str(project_id), rating, now_iso),
+            )
 
 
 def get_stats() -> dict:
@@ -347,18 +386,38 @@ def get_recent_projects(limit: int = 5) -> list[dict]:
         return [dict(row) for row in rows]
 
 
-def get_feed_projects(limit: int = 50) -> list[dict]:
+def get_feed_projects(limit: int = 50, user_id: str | None = None) -> list[dict]:
     with get_connection() as conn:
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM projects
-            WHERE status = 'sent' OR score >= 35 OR (pipeline_status IS NOT NULL AND pipeline_status != 'new')
-            ORDER BY created_at DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+        if user_id:
+            uid = str(user_id)
+            rows = conn.execute(
+                """
+                SELECT p.project_id, p.title, p.description, p.budget, p.bids_count, p.url, p.analysis,
+                       p.status, p.score, p.reason, p.employer_info, p.assets_info,
+                       COALESCE(up.user_rating, p.user_rating) as user_rating,
+                       COALESCE(up.pipeline_status, p.pipeline_status, 'new') as pipeline_status,
+                       COALESCE(up.deal_amount, p.deal_amount) as deal_amount,
+                       COALESCE(up.deal_currency, p.deal_currency, 'UAH') as deal_currency,
+                       p.created_at
+                FROM projects p
+                LEFT JOIN user_projects up ON p.project_id = up.project_id AND up.user_id = ?
+                WHERE p.status = 'sent' OR p.score >= 35 OR (up.pipeline_status IS NOT NULL AND up.pipeline_status != 'new')
+                ORDER BY p.created_at DESC
+                LIMIT ?
+                """,
+                (uid, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM projects
+                WHERE status = 'sent' OR score >= 35 OR (pipeline_status IS NOT NULL AND pipeline_status != 'new')
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
         results = [dict(row) for row in rows]
         if not results:
             fallback = conn.execute(
@@ -369,18 +428,35 @@ def get_feed_projects(limit: int = 50) -> list[dict]:
         return results
 
 
-def get_crm_projects(limit: int = 50) -> list[dict]:
+def get_crm_projects(limit: int = 50, user_id: str | None = None) -> list[dict]:
     with get_connection() as conn:
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM projects
-            WHERE pipeline_status IS NOT NULL AND pipeline_status != 'new'
-            ORDER BY created_at DESC
-            LIMIT ?
-            """,
-            (limit,),
-        ).fetchall()
+        if user_id:
+            uid = str(user_id)
+            rows = conn.execute(
+                """
+                SELECT p.project_id, p.title, p.description, p.budget, p.bids_count, p.url, p.analysis,
+                       p.score, up.pipeline_status, up.deal_amount, up.deal_currency,
+                       COALESCE(up.user_rating, p.user_rating) as user_rating,
+                       up.updated_at as created_at
+                FROM user_projects up
+                JOIN projects p ON up.project_id = p.project_id
+                WHERE up.user_id = ? AND up.pipeline_status IS NOT NULL AND up.pipeline_status != 'new'
+                ORDER BY up.updated_at DESC
+                LIMIT ?
+                """,
+                (uid, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM projects
+                WHERE pipeline_status IS NOT NULL AND pipeline_status != 'new'
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
         return [dict(row) for row in rows]
 
 
@@ -436,43 +512,60 @@ def cleanup_old_projects(days: int = 30) -> int:
         return rowcount
 
 
-def add_portfolio_case(category: str, title: str, description: str = "", url: str = "") -> int:
+def add_portfolio_case(category: str, title: str, description: str = "", url: str = "", user_id: str | None = None) -> int:
+    uid = str(user_id if user_id is not None else (TELEGRAM_CHAT_ID or ""))
     with get_connection() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO portfolio_cases (category, title, description, url, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO portfolio_cases (category, title, description, url, user_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 category.strip().lower(),
                 title.strip(),
                 description.strip(),
                 url.strip(),
+                uid,
                 datetime.now().isoformat(timespec="seconds"),
             ),
         )
         return cursor.lastrowid
 
 
-def delete_portfolio_case(case_id: int) -> bool:
+def delete_portfolio_case(case_id: int, user_id: str | None = None) -> bool:
     with get_connection() as conn:
-        cursor = conn.execute("DELETE FROM portfolio_cases WHERE id = ?", (case_id,))
+        if user_id:
+            uid = str(user_id)
+            cursor = conn.execute(
+                "DELETE FROM portfolio_cases WHERE id = ? AND (user_id = ? OR user_id = '' OR user_id IS NULL OR ? = ?)",
+                (case_id, uid, uid, str(TELEGRAM_CHAT_ID or "")),
+            )
+        else:
+            cursor = conn.execute("DELETE FROM portfolio_cases WHERE id = ?", (case_id,))
         return cursor.rowcount > 0
 
 
-def get_portfolio_cases(category: str | None = None) -> list[dict]:
+def get_portfolio_cases(category: str | None = None, user_id: str | None = None) -> list[dict]:
     with get_connection() as conn:
-        if category:
-            rows = conn.execute(
-                "SELECT * FROM portfolio_cases WHERE category = ? ORDER BY id DESC",
-                (category.strip().lower(),),
-            ).fetchall()
-        else:
-            rows = conn.execute("SELECT * FROM portfolio_cases ORDER BY id DESC").fetchall()
+        clauses = []
+        params = []
+        if category and category.strip().lower() != "all":
+            clauses.append("category = ?")
+            params.append(category.strip().lower())
+        if user_id:
+            uid = str(user_id)
+            if uid == str(TELEGRAM_CHAT_ID or ""):
+                clauses.append("(user_id = ? OR user_id = '' OR user_id IS NULL)")
+                params.append(uid)
+            else:
+                clauses.append("user_id = ?")
+                params.append(uid)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows = conn.execute(f"SELECT * FROM portfolio_cases {where_sql} ORDER BY id DESC", params).fetchall()
         return [dict(row) for row in rows]
 
 
-def get_best_case_for_project(kind: str, project_text: str = "") -> dict | None:
+def get_best_case_for_project(kind: str, project_text: str = "", user_id: str | None = None) -> dict | None:
     cat_map = {
         "telegram_bot": "bot",
         "parsing": "parser",
@@ -515,7 +608,10 @@ def update_project_pipeline(
     status: str,
     deal_amount: float | None = None,
     currency: str = "UAH",
+    user_id: str | None = None,
 ) -> bool:
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    uid = str(user_id if user_id is not None else (TELEGRAM_CHAT_ID or ""))
     with get_connection() as conn:
         existing = conn.execute("SELECT project_id FROM projects WHERE project_id = ?", (str(project_id),)).fetchone()
         if not existing:
@@ -530,78 +626,138 @@ def update_project_pipeline(
                     status,
                     deal_amount,
                     currency,
-                    datetime.now().isoformat(timespec="seconds"),
+                    now_iso,
                 ),
             )
-            return True
-
-        if deal_amount is not None:
-            cursor = conn.execute(
-                """
-                UPDATE projects
-                SET pipeline_status = ?,
-                    deal_amount = ?,
-                    deal_currency = ?
-                WHERE project_id = ?
-                """,
-                (status, deal_amount, currency, str(project_id)),
-            )
         else:
-            cursor = conn.execute(
+            if deal_amount is not None:
+                conn.execute(
+                    """
+                    UPDATE projects
+                    SET pipeline_status = ?,
+                        deal_amount = ?,
+                        deal_currency = ?
+                    WHERE project_id = ?
+                    """,
+                    (status, deal_amount, currency, str(project_id)),
+                )
+            else:
+                conn.execute(
+                    """
+                    UPDATE projects
+                    SET pipeline_status = ?
+                    WHERE project_id = ?
+                    """,
+                    (status, str(project_id)),
+                )
+
+        if uid:
+            conn.execute(
                 """
-                UPDATE projects
-                SET pipeline_status = ?
-                WHERE project_id = ?
+                INSERT INTO user_projects (user_id, project_id, pipeline_status, deal_amount, deal_currency, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, project_id) DO UPDATE SET
+                    pipeline_status = excluded.pipeline_status,
+                    deal_amount = COALESCE(excluded.deal_amount, user_projects.deal_amount),
+                    deal_currency = excluded.deal_currency,
+                    updated_at = excluded.updated_at
                 """,
-                (status, str(project_id)),
+                (uid, str(project_id), status, deal_amount, currency, now_iso),
             )
-        return cursor.rowcount > 0
+        return True
 
 
-def get_crm_stats() -> dict:
+def get_crm_stats(user_id: str | None = None) -> dict:
     with get_connection() as conn:
-        rows = conn.execute(
-            """
-            SELECT pipeline_status, COUNT(*) as cnt
-            FROM projects
-            WHERE pipeline_status IS NOT NULL AND pipeline_status != 'new'
-            GROUP BY pipeline_status
-            """
-        ).fetchall()
-        counts = {row["pipeline_status"]: row["cnt"] for row in rows}
+        if user_id:
+            uid = str(user_id)
+            rows = conn.execute(
+                """
+                SELECT pipeline_status, COUNT(*) as cnt
+                FROM user_projects
+                WHERE user_id = ? AND pipeline_status IS NOT NULL AND pipeline_status != 'new'
+                GROUP BY pipeline_status
+                """,
+                (uid,),
+            ).fetchall()
+            counts = {row["pipeline_status"]: row["cnt"] for row in rows}
 
-        bids_placed = (
-            counts.get("bid_placed", 0)
-            + counts.get("replied", 0)
-            + counts.get("in_progress", 0)
-            + counts.get("completed", 0)
-        )
-        replied = counts.get("replied", 0)
-        in_progress = counts.get("in_progress", 0)
-        completed = counts.get("completed", 0)
+            bids_placed = (
+                counts.get("bid_placed", 0)
+                + counts.get("replied", 0)
+                + counts.get("in_progress", 0)
+                + counts.get("completed", 0)
+            )
+            replied = counts.get("replied", 0)
+            in_progress = counts.get("in_progress", 0)
+            completed = counts.get("completed", 0)
 
-        win_rate = (completed / bids_placed * 100) if bids_placed > 0 else 0.0
-        reply_rate = ((replied + in_progress + completed) / bids_placed * 100) if bids_placed > 0 else 0.0
+            win_rate = (completed / bids_placed * 100) if bids_placed > 0 else 0.0
+            reply_rate = ((replied + in_progress + completed) / bids_placed * 100) if bids_placed > 0 else 0.0
 
-        month_start = datetime.now().strftime("%Y-%m-01")
-        row_month = conn.execute(
-            """
-            SELECT COALESCE(SUM(deal_amount), 0) as total
-            FROM projects
-            WHERE pipeline_status = 'completed' AND created_at >= ?
-            """,
-            (month_start,),
-        ).fetchone()
-        income_month = float(row_month["total"]) if row_month else 0.0
+            month_start = datetime.now().strftime("%Y-%m-01")
+            row_month = conn.execute(
+                """
+                SELECT COALESCE(SUM(deal_amount), 0) as total
+                FROM user_projects
+                WHERE user_id = ? AND pipeline_status = 'completed' AND updated_at >= ?
+                """,
+                (uid, month_start),
+            ).fetchone()
+            income_month = float(row_month["total"]) if row_month else 0.0
 
-        row_total = conn.execute(
-            """
-            SELECT COALESCE(SUM(deal_amount), 0) as total
-            FROM projects
-            WHERE pipeline_status = 'completed'
-            """
-        ).fetchone()
-        income_total = float(row_total["total"]) if row_total else 0.0
+            row_total = conn.execute(
+                """
+                SELECT COALESCE(SUM(deal_amount), 0) as total
+                FROM user_projects
+                WHERE user_id = ? AND pipeline_status = 'completed'
+                """,
+                (uid,),
+            ).fetchone()
+            income_total = float(row_total["total"]) if row_total else 0.0
+        else:
+            rows = conn.execute(
+                """
+                SELECT pipeline_status, COUNT(*) as cnt
+                FROM projects
+                WHERE pipeline_status IS NOT NULL AND pipeline_status != 'new'
+                GROUP BY pipeline_status
+                """
+            ).fetchall()
+            counts = {row["pipeline_status"]: row["cnt"] for row in rows}
+
+            bids_placed = (
+                counts.get("bid_placed", 0)
+                + counts.get("replied", 0)
+                + counts.get("in_progress", 0)
+                + counts.get("completed", 0)
+            )
+            replied = counts.get("replied", 0)
+            in_progress = counts.get("in_progress", 0)
+            completed = counts.get("completed", 0)
+
+            win_rate = (completed / bids_placed * 100) if bids_placed > 0 else 0.0
+            reply_rate = ((replied + in_progress + completed) / bids_placed * 100) if bids_placed > 0 else 0.0
+
+            month_start = datetime.now().strftime("%Y-%m-01")
+            row_month = conn.execute(
+                """
+                SELECT COALESCE(SUM(deal_amount), 0) as total
+                FROM projects
+                WHERE pipeline_status = 'completed' AND created_at >= ?
+                """,
+                (month_start,),
+            ).fetchone()
+            income_month = float(row_month["total"]) if row_month else 0.0
+
+            row_total = conn.execute(
+                """
+                SELECT COALESCE(SUM(deal_amount), 0) as total
+                FROM projects
+                WHERE pipeline_status = 'completed'
+                """
+            ).fetchone()
+            income_total = float(row_total["total"]) if row_total else 0.0
 
         return {
             "bids_placed": bids_placed,
@@ -666,7 +822,7 @@ def create_database_backup(backup_dir: Path | None = None) -> Path:
     return backup_file
 
 
-def export_crm_data_csv() -> str:
+def export_crm_data_csv(user_id: str | None = None) -> str:
     import csv
     import io
 
@@ -687,16 +843,31 @@ def export_crm_data_csv() -> str:
     ])
 
     with get_connection() as conn:
-        rows = conn.execute(
-            """
-            SELECT project_id, created_at, title, pipeline_status, deal_amount,
-                   deal_currency, budget, score, employer_info, url
-            FROM projects
-            WHERE (pipeline_status IS NOT NULL AND pipeline_status != 'new')
-               OR status = 'sent'
-            ORDER BY created_at DESC
-            """
-        ).fetchall()
+        if user_id:
+            uid = str(user_id)
+            rows = conn.execute(
+                """
+                SELECT p.project_id, COALESCE(up.updated_at, p.created_at) as created_at, p.title,
+                       up.pipeline_status, up.deal_amount, up.deal_currency,
+                       p.budget, p.score, p.employer_info, p.url
+                FROM user_projects up
+                JOIN projects p ON up.project_id = p.project_id
+                WHERE up.user_id = ? AND up.pipeline_status IS NOT NULL AND up.pipeline_status != 'new'
+                ORDER BY up.updated_at DESC
+                """,
+                (uid,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT project_id, created_at, title, pipeline_status, deal_amount,
+                       deal_currency, budget, score, employer_info, url
+                FROM projects
+                WHERE (pipeline_status IS NOT NULL AND pipeline_status != 'new')
+                   OR status = 'sent'
+                ORDER BY created_at DESC
+                """
+            ).fetchall()
 
         status_labels = {
             "bid_placed": "Ставку подано",

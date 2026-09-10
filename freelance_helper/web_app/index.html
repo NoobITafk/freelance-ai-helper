@@ -1164,10 +1164,21 @@
       }, 500);
     }
 
+    function getTelegramUserId() {
+      try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+          return String(window.Telegram.WebApp.initDataUnsafe.user.id);
+        }
+      } catch(e) {}
+      const params = new URLSearchParams(window.location.search);
+      return params.get('user_id') || '';
+    }
+
     // Stats
     async function loadStats() {
       try {
-        const res = await fetch('/api/stats');
+        const uid = getTelegramUserId();
+        const res = await fetch(`/api/stats?user_id=${encodeURIComponent(uid)}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.success && data.stats) {
@@ -1182,7 +1193,8 @@
     // Feed Loading & Filtering
     async function loadFeedProjects() {
       try {
-        const res = await fetch('/api/projects?tab=feed');
+        const uid = getTelegramUserId();
+        const res = await fetch(`/api/projects?tab=feed&user_id=${encodeURIComponent(uid)}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.success && Array.isArray(data.projects)) {
@@ -1341,10 +1353,11 @@
       haptic('impact');
 
       try {
+        const uid = getTelegramUserId();
         const res = await fetch('/api/pipeline', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({project_id: pid, status: 'bid_placed'})
+          body: JSON.stringify({project_id: pid, status: 'bid_placed', user_id: uid})
         });
         const data = await res.json();
         if (data.success) {
@@ -1369,7 +1382,8 @@
     // CRM Pipeline Loading & Actions
     async function loadCrmProjects() {
       try {
-        const res = await fetch('/api/projects?tab=crm');
+        const uid = getTelegramUserId();
+        const res = await fetch(`/api/projects?tab=crm&user_id=${encodeURIComponent(uid)}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.success && Array.isArray(data.projects)) {
@@ -1458,6 +1472,7 @@
     async function updateCrmStage(pid, status, amount = null, currency = 'UAH') {
       haptic('impact');
       try {
+        const uid = getTelegramUserId();
         const res = await fetch('/api/pipeline', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -1465,7 +1480,8 @@
             project_id: pid,
             status: status,
             deal_amount: amount,
-            currency: currency
+            currency: currency,
+            user_id: uid
           })
         });
         const data = await res.json();
@@ -1513,7 +1529,10 @@
     // Cases Loading & Adding
     async function loadCases() {
       try {
-        const res = await fetch('/api/cases');
+        const uid = getTelegramUserId();
+        const cat = window.activeCaseFilter && window.activeCaseFilter !== 'all' ? window.activeCaseFilter : '';
+        const url = `/api/cases?user_id=${encodeURIComponent(uid)}` + (cat ? `&category=${encodeURIComponent(cat)}` : '');
+        const res = await fetch(url);
         if (!res.ok) return;
         const data = await res.json();
         if (data.success && Array.isArray(data.cases)) {
@@ -1588,10 +1607,11 @@
       }
 
       try {
+        const uid = getTelegramUserId();
         const res = await fetch('/api/cases', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({category: cat, title, url, description: desc})
+          body: JSON.stringify({category: cat, title, url, description: desc, user_id: uid})
         });
         const data = await res.json();
         if (data.success) {
@@ -1609,7 +1629,8 @@
     async function deleteCase(id) {
       if (!confirm('Видалити цей кейс із портфоліо?')) return;
       try {
-        const res = await fetch(`/api/cases/${id}`, {method: 'DELETE'});
+        const uid = getTelegramUserId();
+        const res = await fetch(`/api/cases/${id}?user_id=${encodeURIComponent(uid)}`, {method: 'DELETE'});
         const data = await res.json();
         if (data.success) {
           showToast('Кейс видалено');
@@ -1635,11 +1656,8 @@
 
     async function loadSubscription() {
       try {
-        let uid = '';
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-          uid = window.Telegram.WebApp.initDataUnsafe.user.id;
-        }
-        const res = await fetch(`/api/subscription?user_id=${uid}`);
+        const uid = getTelegramUserId();
+        const res = await fetch(`/api/subscription?user_id=${encodeURIComponent(uid)}`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.success && data.subscription) {
@@ -1671,18 +1689,58 @@
       } catch (e) {}
     }
 
-    function promptRenewSubscription() {
-      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.close) {
-        window.Telegram.WebApp.close();
-      } else {
-        showToast('Надішліть /subscribe у чат бота');
+    async function promptRenewSubscription() {
+      const btn = document.getElementById('btnRenewSub');
+      const origText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Створення рахунку...';
+      }
+      haptic('impact');
+
+      try {
+        const uid = getTelegramUserId();
+        const res = await fetch('/api/create_invoice', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ user_id: uid })
+        });
+        const data = await res.json();
+        if (data.success && data.invoice_link) {
+          if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openInvoice) {
+            window.Telegram.WebApp.openInvoice(data.invoice_link, function(status) {
+              if (status === 'paid') {
+                showToast('🎉 Оплату успішно здійснено! Підписку активовано на 30 днів.');
+                haptic('success');
+                loadSubscription();
+              } else if (status === 'cancelled') {
+                showToast('Оплату скасовано');
+              } else if (status === 'failed') {
+                showToast('Помилка при проведенні платежу');
+                haptic('error');
+              }
+            });
+          } else {
+            window.open(data.invoice_link, '_blank');
+          }
+        } else {
+          showToast('Помилка: ' + (data.error || 'не вдалося створити рахунок'));
+        }
+      } catch (e) {
+        showToast('Помилка з\'єднання: ' + e.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origText || '💎 Оформити підписку на 1 місяць';
+        }
       }
     }
 
     function downloadCsvExport() {
       haptic('impact');
       showToast('Формування CSV...');
-      const url = window.location.origin + '/api/export';
+      const uid = getTelegramUserId();
+      const url = window.location.origin + `/api/export?user_id=${encodeURIComponent(uid)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
         window.Telegram.WebApp.openLink(url);
       } else {
