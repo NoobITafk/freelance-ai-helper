@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from aiohttp import web
 
-from ..ai_analyzer import generate_bid, generate_questions
+from .ai_analyzer import generate_bid, generate_questions
 from .config import MIN_SCORE, PROJECT_ROOT
 from .database import (
     add_portfolio_case,
