@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freelancehunt AI Assistant & CRM Co-Pilot
 // @namespace    https://freelans.duckdns.org/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Розумний асистент для фрилансера: аналіз замовлення, автозаповнення ставки, рекомендована ціна та синхронізація з CRM без ризику бану.
 // @author       Freelance AI Helper
 // @match        https://freelancehunt.com/project/*
@@ -143,8 +143,54 @@
     return true;
   }
 
-  // Load bid draft data from API
+  // Parse URL hash parameters (e.g. #autobid&amount=3000&days=2&bid=...)
+  function parseHashParams() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return {};
+    const params = {};
+    hash.split('&').forEach(part => {
+      const idx = part.indexOf('=');
+      if (idx !== -1) {
+        const k = part.slice(0, idx);
+        const v = part.slice(idx + 1);
+        try {
+          params[decodeURIComponent(k)] = decodeURIComponent(v);
+        } catch (e) {
+          params[k] = v;
+        }
+      } else if (part) {
+        params[part] = true;
+      }
+    });
+    return params;
+  }
+
+  // Load bid draft data from URL hash or API
   async function loadBidDraft() {
+    const hashParams = parseHashParams();
+    const hasHashData = Boolean(hashParams.bid || hashParams.amount || hashParams.days);
+
+    if (hasHashData) {
+      if (hashParams.bid) {
+        state.bidShort = hashParams.bid;
+        state.bidFull = hashParams.bid;
+      }
+      if (hashParams.amount) {
+        state.recommendedAmount = hashParams.amount;
+      }
+      if (hashParams.days) {
+        state.recommendedDays = hashParams.days;
+      }
+      state.score = 95;
+      state.reason = 'Готова ставка передана напряму з Telegram';
+      state.loading = false;
+      updateWidgetUI();
+      setTimeout(() => {
+        ensureAndFillBidForm(30);
+      }, 150);
+      return;
+    }
+
     state.loading = true;
     updateWidgetUI();
 
@@ -862,6 +908,7 @@
   function init() {
     scrapePageProject();
     injectWidget();
+    tryOpenBidForm();
     loadBidDraft();
   }
 

@@ -1367,17 +1367,20 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             err_text = str(err)
             if "410" in err_text or "deprecation" in err_text.lower():
                 escaped_comment = html.escape(publish_data["comment"])
+                import urllib.parse
                 p_url = project.get("url") or f"https://freelancehunt.com/project/{project_id}.html"
+                comment_encoded = urllib.parse.quote(publish_data["comment"])
+                autobid_url = f"{p_url}#autobid&amount={publish_data['amount']}&days={publish_data['days']}&bid={comment_encoded}"
                 text_410 = (
                     f"⚠️ <b>Freelancehunt вимкнув подачу ставок через прямий API (HTTP 410).</b>\n"
-                    f"Біржа вимагає відправки через веб-сайт, але <b>все вже готово для швидкої відправки в 2 кліки:</b>\n\n"
+                    f"Біржа вимагає відправки через веб-сайт, але <b>ми повністю автоматизували цей процес в 1 клік:</b>\n\n"
                     f"💰 <b>Сума:</b> {publish_data['amount']:,} {publish_data['currency']}  •  ⏱ <b>Термін:</b> {publish_data['days']} дн.\n\n"
-                    f"📋 <b>Ваша ставка (натисніть на текст нижче, щоб скопіювати в 1 клік):</b>\n\n"
+                    f"📋 <b>Ваша згенерована ставка:</b>\n\n"
                     f"<code>{escaped_comment}</code>\n\n"
-                    f"👉 Відкрийте замовлення, вставте текст і натисніть «Зробити ставку»:"
+                    f"👉 <b>Натисніть кнопку нижче:</b> відкриється замовлення у Firefox, скрипт миттєво підставить цю ставку, відкриє форму та запустить авто-відправку:"
                 )
                 markup_410 = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🚀 Відкрити сторінку проєкту", url=p_url)],
+                    [InlineKeyboardButton("🚀 Запустити авто-подачу (1 клік)", url=autobid_url)],
                     [
                         InlineKeyboardButton("💼 Я відправив ставку (в CRM)", callback_data=f"crm_bid:{project_id}"),
                         InlineKeyboardButton("📱 Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
