@@ -181,18 +181,91 @@ async def handle_userscript(request: web.Request) -> web.Response:
     if not script_file.is_file():
         return web.Response(text="// Userscript not found", status=404, content_type="application/javascript")
     content = script_file.read_text(encoding="utf-8")
+    is_download = request.query.get("download") in ("1", "true")
+    content_type = "application/octet-stream" if is_download else "application/javascript"
     headers = {
         "Cache-Control": "no-cache, must-revalidate",
         "Access-Control-Allow-Origin": "*",
     }
-    if request.query.get("download") in ("1", "true"):
+    if is_download:
         headers["Content-Disposition"] = 'attachment; filename="freelancehunt_helper.user.js"'
     return web.Response(
         text=content,
-        content_type="application/javascript",
+        content_type=content_type,
         charset="utf-8",
         headers=headers,
     )
+
+
+async def handle_send_script_to_chat(request: web.Request) -> web.Response:
+    try:
+        data = {}
+        if request.method == "POST":
+            try:
+                data = await request.json()
+            except Exception:
+                data = {}
+
+        chat_id = (
+            data.get("chat_id")
+            or data.get("user_id")
+            or request.query.get("chat_id")
+            or request.query.get("user_id")
+        )
+        if not chat_id:
+            from .config import TELEGRAM_CHAT_ID
+            chat_id = TELEGRAM_CHAT_ID
+
+        if not chat_id:
+            return web.json_response(
+                {"success": False, "error": "chat_id не передано і не налаштовано в .env"},
+                status=400,
+            )
+
+        script_file = WEB_APP_DIR / "freelancehunt_helper.user.js"
+        if not script_file.is_file():
+            return web.json_response(
+                {"success": False, "error": "Файл freelancehunt_helper.user.js не знайдено на сервері"},
+                status=404,
+            )
+
+        bot = request.app.get("bot")
+        should_close_bot = False
+        if bot is None:
+            from .config import TELEGRAM_BOT_TOKEN
+            if not TELEGRAM_BOT_TOKEN:
+                return web.json_response(
+                    {"success": False, "error": "TELEGRAM_BOT_TOKEN не задано в конфігурації"},
+                    status=500,
+                )
+            from telegram import Bot
+            bot = Bot(token=TELEGRAM_BOT_TOKEN)
+            await bot.initialize()
+            should_close_bot = True
+
+        caption = (
+            "🧩 <b>Freelancehunt AI Co-Pilot v1.3.0</b>\n\n"
+            "📥 Файл скрипта надіслано за вашим запитом із Mini App!\n\n"
+            "• Натисніть на файл вище, щоб завантажити його на пристрій або переслати на ПК.\n"
+            "• Для браузера: встановіть розширення <b>Tampermonkey</b> та відкрийте цей файл."
+        )
+
+        try:
+            with open(script_file, "rb") as f:
+                await bot.send_document(
+                    chat_id=int(chat_id),
+                    document=f,
+                    filename="freelancehunt_helper.user.js",
+                    caption=caption,
+                    parse_mode="HTML",
+                )
+            return web.json_response({"success": True, "chat_id": chat_id})
+        finally:
+            if should_close_bot:
+                await bot.shutdown()
+    except Exception as exc:
+        logger.error("API send_script_to_chat error: %s", exc)
+        return web.json_response({"success": False, "error": str(exc)}, status=500)
 
 
 async def handle_bid_draft(request: web.Request) -> web.Response:
@@ -297,10 +370,13 @@ async def handle_bid_draft(request: web.Request) -> web.Response:
         return web.json_response({"success": False, "error": str(e)}, status=500)
 
 
-def create_web_app() -> web.Application:
+def create_web_app(bot=None) -> web.Application:
     app = web.Application()
+    app["bot"] = bot
     app.router.add_get("/", handle_index)
     app.router.add_get("/freelancehunt_helper.user.js", handle_userscript)
+    app.router.add_get("/api/send_script_to_chat", handle_send_script_to_chat)
+    app.router.add_post("/api/send_script_to_chat", handle_send_script_to_chat)
     app.router.add_get("/api/bid_draft", handle_bid_draft)
     app.router.add_post("/api/bid_draft", handle_bid_draft)
     app.router.add_get("/api/stats", handle_stats)
@@ -328,9 +404,9 @@ def create_web_app() -> web.Application:
     return app
 
 
-async def start_background_web_server(host: str = "0.0.0.0", port: int = 8088) -> web.AppRunner | None:
+async def start_background_web_server(host: str = "0.0.0.0", port: int = 8088, bot=None) -> web.AppRunner | None:
     try:
-        app = create_web_app()
+        app = create_web_app(bot=bot)
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, host, port)

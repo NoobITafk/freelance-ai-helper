@@ -127,7 +127,7 @@ async def _on_startup(app: Application) -> None:
     global _web_runner
     from .web_server import start_background_web_server
     port = int(os.getenv("WEB_APP_PORT", "8088"))
-    _web_runner = await start_background_web_server(host="0.0.0.0", port=port)
+    _web_runner = await start_background_web_server(host="0.0.0.0", port=port, bot=app.bot)
 
 
 async def _on_shutdown(app: Application) -> None:

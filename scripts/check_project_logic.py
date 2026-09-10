@@ -857,9 +857,9 @@ def main() -> int:
         print("=" * 80)
         print(f"Feed & CRM queries check: OK (feed={len(feed)}, crm={len(crm)})")
 
-    # 19. Browser Assistant Userscript & Bid Draft API
+    # 19. Browser Assistant Userscript & Bid Draft API & Send Script to Chat
     total_checks += 1
-    from freelance_helper.app.web_server import create_web_app, WEB_APP_DIR
+    from freelance_helper.app.web_server import create_web_app, WEB_APP_DIR, handle_userscript, handle_send_script_to_chat
     userscript_path = WEB_APP_DIR / "freelancehunt_helper.user.js"
     userscript_ok = (
         userscript_path.is_file()
@@ -868,10 +868,18 @@ def main() -> int:
         and "fhai-root" in userscript_path.read_text(encoding="utf-8")
     )
 
-    test_app = create_web_app()
+    class MockBot:
+        def __init__(self):
+            self.sent_docs = []
+        async def send_document(self, chat_id, document, filename=None, caption=None, parse_mode=None):
+            self.sent_docs.append({"chat_id": chat_id, "filename": filename, "caption": caption})
+
+    mock_bot = MockBot()
+    test_app = create_web_app(bot=mock_bot)
     routes = [r.resource.canonical for r in test_app.router.routes() if hasattr(r, "resource") and r.resource]
     has_userscript_route = "/freelancehunt_helper.user.js" in routes
     has_bid_draft_route = "/api/bid_draft" in routes
+    has_send_chat_route = "/api/send_script_to_chat" in routes
 
     # Invoke handle_bid_draft with mock request
     from aiohttp.test_utils import make_mocked_request
@@ -881,18 +889,48 @@ def main() -> int:
     mock_req = make_mocked_request("GET", "/api/bid_draft?project_id=mock99&title=Telegram-бот&budget=3500+грн", app=test_app)
     loop = asyncio.new_event_loop()
     resp = loop.run_until_complete(handle_bid_draft(mock_req))
-    loop.close()
     draft_data = json.loads(resp.text)
     draft_ok = draft_data.get("success") is True and "Telegram" in draft_data.get("bid_short", "") and draft_data.get("recommended_amount") == 3500
 
-    assistant_ok = userscript_ok and has_userscript_route and has_bid_draft_route and draft_ok
+    # Test download octet-stream headers
+    mock_dl_req = make_mocked_request("GET", "/freelancehunt_helper.user.js?download=1", app=test_app)
+    resp_dl = loop.run_until_complete(handle_userscript(mock_dl_req))
+    download_header_ok = (
+        resp_dl.content_type == "application/octet-stream"
+        and 'attachment; filename="freelancehunt_helper.user.js"' in resp_dl.headers.get("Content-Disposition", "")
+    )
+
+    # Test standard javascript content type without download param
+    mock_raw_req = make_mocked_request("GET", "/freelancehunt_helper.user.js", app=test_app)
+    resp_raw = loop.run_until_complete(handle_userscript(mock_raw_req))
+    raw_header_ok = resp_raw.content_type == "application/javascript"
+
+    # Test send script to chat API
+    mock_send_req = make_mocked_request("POST", "/api/send_script_to_chat", app=test_app)
+    mock_send_req._read_bytes = json.dumps({"chat_id": 99887766}).encode("utf-8")
+    resp_send = loop.run_until_complete(handle_send_script_to_chat(mock_send_req))
+    send_data = json.loads(resp_send.text)
+    send_ok = send_data.get("success") is True and len(mock_bot.sent_docs) == 1 and mock_bot.sent_docs[0]["chat_id"] == 99887766
+
+    loop.close()
+
+    assistant_ok = (
+        userscript_ok
+        and has_userscript_route
+        and has_bid_draft_route
+        and has_send_chat_route
+        and draft_ok
+        and download_header_ok
+        and raw_header_ok
+        and send_ok
+    )
     if not assistant_ok:
         failed += 1
         print("=" * 80)
-        print(f"Browser Assistant check: FAIL | file={userscript_ok} | userjs_route={has_userscript_route} | draft_route={has_bid_draft_route} | draft_api={draft_ok}")
+        print(f"Browser Assistant check: FAIL | file={userscript_ok} | userjs_route={has_userscript_route} | send_chat={has_send_chat_route} | draft_ok={draft_ok} | dl_header={download_header_ok} | raw_header={raw_header_ok} | send_ok={send_ok}")
     else:
         print("=" * 80)
-        print(f"Browser Assistant & Userscript check: OK (10-browser userscript present, API routes & bid draft payload verified)")
+        print(f"Browser Assistant & Userscript check: OK (10-browser userscript, octet-stream download, chat dispatch & draft API verified)")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

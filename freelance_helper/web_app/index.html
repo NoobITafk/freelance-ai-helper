@@ -617,25 +617,24 @@
 
         <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
           <b style="color: #f8fafc;">💡 Як встановити без показу сирого коду:</b><br/>
-          • У вашому браузері має бути встановлено менеджер скриптів <b>Tampermonkey</b>.<br/>
-          • Якщо Tampermonkey ще не встановлено — браузер просто показує текст файлу. Встановіть Tampermonkey нижче або завантажте сам файл.
+          • У мобільному Telegram браузер не зберігає файли на диск напряму — натисніть <b>«💬 Надіслати файл у Telegram чат»</b>, і бот надішле готовий файл прямо у ваші повідомлення.<br/>
+          • Для ПК та звичайних браузерів: встановіть <b>Tampermonkey</b> або завантажте файл кнопками нижче.
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <a href="/freelancehunt_helper.user.js?download=1" download="freelancehunt_helper.user.js" style="text-decoration: none;">
-            <button class="btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <span>💾 Завантажити файл скрипта (.user.js)</span>
-            </button>
-          </a>
+          <button id="btnSendScriptChat" class="btn-primary" onclick="sendScriptToChat()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 600;">
+            <span>💬 Надіслати файл у Telegram чат</span>
+          </button>
 
           <div style="display: flex; gap: 8px;">
-            <a href="/freelancehunt_helper.user.js" target="_blank" style="flex: 1; text-decoration: none;">
-              <button class="btn-secondary" style="width: 100%; font-size: 0.78rem; padding: 9px 8px;">
-                ⚡️ Встановити в Tampermonkey
-              </button>
-            </a>
-            <button class="btn-secondary" style="flex: 1; font-size: 0.78rem; padding: 9px 8px;" onclick="copyScriptCode()">
-              📋 Скопіювати код
+            <button class="btn-secondary" onclick="downloadUserScript()" style="flex: 1; font-size: 0.78rem; padding: 9px 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              💾 Завантажити
+            </button>
+            <button class="btn-secondary" onclick="installUserScript()" style="flex: 1; font-size: 0.78rem; padding: 9px 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              ⚡️ Встановити
+            </button>
+            <button class="btn-secondary" onclick="copyScriptCode()" style="flex: 1; font-size: 0.78rem; padding: 9px 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              📋 Код
             </button>
           </div>
         </div>
@@ -643,9 +642,9 @@
         <div style="margin-top: 12px; padding: 10px; background: rgba(30, 41, 59, 0.4); border-radius: 8px; font-size: 0.76rem; color: #94a3b8;">
           <div style="margin-bottom: 6px; color: #cbd5e1; font-weight: 600;">Встановлення Tampermonkey під ваш браузер:</div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-            <a href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🦊 Firefox</a>
-            <a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🌐 Chrome / Kiwi Android</a>
-            <a href="https://apps.apple.com/app/userscripts/id1463298887" target="_blank" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🧭 iOS Safari (Userscripts)</a>
+            <a href="javascript:void(0)" onclick="openExternalLink('https://addons.mozilla.org/firefox/addon/tampermonkey/')" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🦊 Firefox</a>
+            <a href="javascript:void(0)" onclick="openExternalLink('https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo')" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🌐 Chrome / Kiwi Android</a>
+            <a href="javascript:void(0)" onclick="openExternalLink('https://apps.apple.com/app/userscripts/id1463298887')" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🧭 iOS Safari (Userscripts)</a>
           </div>
         </div>
       </div>
@@ -1304,6 +1303,70 @@
       } catch(e) {}
     }
 
+    async function sendScriptToChat() {
+      haptic('impact');
+      const btn = document.getElementById('btnSendScriptChat');
+      if (btn) btn.disabled = true;
+      showToast('⏳ Відправляємо файл у ваш чат...');
+      try {
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        const chatId = tgUser ? tgUser.id : '';
+        const res = await fetch('/api/send_script_to_chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          haptic('success');
+          showToast('✅ Файл надіслано в чат!');
+          if (window.Telegram?.WebApp?.showAlert) {
+            window.Telegram.WebApp.showAlert('✅ Файл freelancehunt_helper.user.js надіслано у ваш чат з ботом!\n\nВи можете зберегти його на пристрій або переслати на ПК прямо з повідомлення.');
+          }
+        } else {
+          showToast('⚠️ ' + (data.error || 'Не вдалося надіслати файл'));
+        }
+      } catch (err) {
+        showToast('⚠️ Помилка з\'єднання: ' + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function downloadUserScript() {
+      haptic('impact');
+      showToast('⏳ Завантаження скрипта...');
+      const url = window.location.origin + '/freelancehunt_helper.user.js?download=1';
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        try {
+          const res = await fetch('/freelancehunt_helper.user.js?download=1');
+          const blob = await res.blob();
+          const b = new Blob([blob], { type: 'application/octet-stream' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = 'freelancehunt_helper.user.js';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast('✅ Файл завантажено!');
+        } catch(e) {
+          window.location.href = url;
+        }
+      }
+    }
+
+    function installUserScript() {
+      haptic('impact');
+      const url = window.location.origin + '/freelancehunt_helper.user.js';
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
     async function copyScriptCode() {
       haptic('impact');
       showToast('⏳ Копіюю код скрипта...');
@@ -1311,6 +1374,7 @@
         const res = await fetch('/freelancehunt_helper.user.js');
         const code = await res.text();
         await navigator.clipboard.writeText(code);
+        haptic('success');
         showToast('📋 Код скрипта успішно скопійовано!');
       } catch(e) {
         showToast('Помилка: ' + e.message);
@@ -1320,7 +1384,12 @@
     function downloadCsvExport() {
       haptic('impact');
       showToast('⏳ Формую CSV файл...');
-      window.location.href = '/api/export';
+      const url = window.location.origin + '/api/export';
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        window.location.href = url;
+      }
     }
 
     function escapeHtml(str) {
