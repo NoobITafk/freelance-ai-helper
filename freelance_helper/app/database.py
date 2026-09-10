@@ -903,6 +903,7 @@ def init_user_subscription(
     username: str | None = None,
     full_name: str | None = None,
     trial_days: int = TRIAL_DAYS,
+    status: str | None = None,
 ) -> dict:
     user_id_str = str(user_id)
     chat_id_str = str(chat_id or user_id)
@@ -925,12 +926,16 @@ def init_user_subscription(
             return get_user_subscription(user_id_str)
 
         is_owner = TELEGRAM_CHAT_ID and user_id_str == str(TELEGRAM_CHAT_ID)
-        if is_owner:
-            status = "lifetime"
+        if status:
+            chosen_status = status
+            expires_at = "2099-12-31T23:59:59" if status == "lifetime" else (datetime.now() + timedelta(days=trial_days)).isoformat(timespec="seconds")
+            plan = "admin_lifetime" if status == "lifetime" else f"trial_{trial_days}d"
+        elif is_owner:
+            chosen_status = "lifetime"
             expires_at = "2099-12-31T23:59:59"
             plan = "admin_lifetime"
         else:
-            status = "trial"
+            chosen_status = "trial"
             expires_at = (datetime.now() + timedelta(days=trial_days)).isoformat(timespec="seconds")
             plan = f"trial_{trial_days}d"
 
@@ -948,7 +953,7 @@ def init_user_subscription(
                 chat_id_str,
                 username or "",
                 full_name or "",
-                status,
+                chosen_status,
                 plan,
                 now_iso,
                 expires_at,
