@@ -181,14 +181,17 @@ async def handle_userscript(request: web.Request) -> web.Response:
     if not script_file.is_file():
         return web.Response(text="// Userscript not found", status=404, content_type="application/javascript")
     content = script_file.read_text(encoding="utf-8")
+    headers = {
+        "Cache-Control": "no-cache, must-revalidate",
+        "Access-Control-Allow-Origin": "*",
+    }
+    if request.query.get("download") in ("1", "true"):
+        headers["Content-Disposition"] = 'attachment; filename="freelancehunt_helper.user.js"'
     return web.Response(
         text=content,
         content_type="application/javascript",
         charset="utf-8",
-        headers={
-            "Cache-Control": "no-cache, must-revalidate",
-            "Access-Control-Allow-Origin": "*",
-        },
+        headers=headers,
     )
 
 

@@ -615,17 +615,39 @@
           <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">📱 Kiwi Android</span>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
-          <b style="color: #f8fafc;">Швидкий старт за 2 кроки:</b><br/>
-          1. Встановіть розширення <b>Tampermonkey</b> (для Safari — <i>Userscripts</i> або <i>Tampermonkey</i> з App Store).<br/>
-          2. Натисніть кнопку нижче — браузер автоматично відкриє вікно інсталяції скрипта.
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+          <b style="color: #f8fafc;">💡 Як встановити без показу сирого коду:</b><br/>
+          • У вашому браузері має бути встановлено менеджер скриптів <b>Tampermonkey</b>.<br/>
+          • Якщо Tampermonkey ще не встановлено — браузер просто показує текст файлу. Встановіть Tampermonkey нижче або завантажте сам файл.
         </div>
 
-        <a href="/freelancehunt_helper.user.js" target="_blank" style="text-decoration: none;">
-          <button class="btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span>📥 Встановити асистента для браузера (.user.js)</span>
-          </button>
-        </a>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="/freelancehunt_helper.user.js?download=1" download="freelancehunt_helper.user.js" style="text-decoration: none;">
+            <button class="btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>💾 Завантажити файл скрипта (.user.js)</span>
+            </button>
+          </a>
+
+          <div style="display: flex; gap: 8px;">
+            <a href="/freelancehunt_helper.user.js" target="_blank" style="flex: 1; text-decoration: none;">
+              <button class="btn-secondary" style="width: 100%; font-size: 0.78rem; padding: 9px 8px;">
+                ⚡️ Встановити в Tampermonkey
+              </button>
+            </a>
+            <button class="btn-secondary" style="flex: 1; font-size: 0.78rem; padding: 9px 8px;" onclick="copyScriptCode()">
+              📋 Скопіювати код
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; padding: 10px; background: rgba(30, 41, 59, 0.4); border-radius: 8px; font-size: 0.76rem; color: #94a3b8;">
+          <div style="margin-bottom: 6px; color: #cbd5e1; font-weight: 600;">Встановлення Tampermonkey під ваш браузер:</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <a href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🦊 Firefox</a>
+            <a href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🌐 Chrome / Kiwi Android</a>
+            <a href="https://apps.apple.com/app/userscripts/id1463298887" target="_blank" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🧭 iOS Safari (Userscripts)</a>
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -1280,6 +1302,19 @@
           document.getElementById('healthThreshold').textContent = `${data.min_score || 35}+`;
         }
       } catch(e) {}
+    }
+
+    async function copyScriptCode() {
+      haptic('impact');
+      showToast('⏳ Копіюю код скрипта...');
+      try {
+        const res = await fetch('/freelancehunt_helper.user.js');
+        const code = await res.text();
+        await navigator.clipboard.writeText(code);
+        showToast('📋 Код скрипта успішно скопійовано!');
+      } catch(e) {
+        showToast('Помилка: ' + e.message);
+      }
     }
 
     function downloadCsvExport() {
