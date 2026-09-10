@@ -347,7 +347,7 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Fallback to Telegram Stars
     try:
-        stars_price = SUBSCRIPTION_STARS_PRICE
+        stars_price = int(get_setting("sub_stars_price", str(SUBSCRIPTION_STARS_PRICE)))
         prices = [LabeledPrice("Підписка на 1 місяць (30 днів)", stars_price)]
         await context.bot.send_invoice(
             chat_id=chat_id,
@@ -509,12 +509,18 @@ async def set_price_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
     if not args or not args[0].isdigit():
         curr_price = get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE))
-        await reply_text(update, f"Поточна вартість підписки: {curr_price} грн.\nЗмінити: /set_price <сума_в_грн>")
+        curr_stars = get_setting("sub_stars_price", str(SUBSCRIPTION_STARS_PRICE))
+        await reply_text(update, f"Поточна вартість підписки: {curr_price} грн ({curr_stars} ⭐️ Stars).\nЗмінити: /set_price <сума_в_грн> [кількість_зірок]")
         return
 
     new_price = int(args[0])
     set_setting("sub_price", str(new_price))
-    await reply_text(update, f"✅ Вартість підписки на 1 місяць встановлено: {new_price} грн.")
+    if len(args) > 1 and args[1].isdigit():
+        new_stars = int(args[1])
+    else:
+        new_stars = new_price
+    set_setting("sub_stars_price", str(new_stars))
+    await reply_text(update, f"✅ Вартість підписки на 1 місяць встановлено: {new_price} грн ({new_stars} ⭐️ Stars).")
 
 
 async def test_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):

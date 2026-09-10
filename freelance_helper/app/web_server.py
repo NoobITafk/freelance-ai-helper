@@ -197,12 +197,17 @@ async def handle_subscription_status(request: web.Request) -> web.Response:
                 init_user_subscription(user_id, chat_id=user_id, status="trial")
             sub = get_user_subscription(user_id)
 
-        price = int(get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE)))
+        price_uah = int(get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE)))
+        stars_price = int(get_setting("sub_stars_price", str(SUBSCRIPTION_STARS_PRICE)))
+        use_stars = not bool(PAYMENT_PROVIDER_TOKEN)
         return web.json_response({
             "success": True,
             "subscription": sub,
-            "price": price,
-            "currency": "UAH",
+            "price": stars_price if use_stars else price_uah,
+            "currency": "XTR" if use_stars else "UAH",
+            "price_uah": price_uah,
+            "price_stars": stars_price,
+            "is_stars": use_stars,
         })
     except Exception as e:
         logger.error("API subscription error: %s", e)
@@ -229,6 +234,7 @@ async def handle_create_invoice(request: web.Request) -> web.Response:
 
         from telegram import LabeledPrice
         price_uah = int(get_setting("sub_price", str(SUBSCRIPTION_MONTH_PRICE)))
+        stars_price = int(get_setting("sub_stars_price", str(SUBSCRIPTION_STARS_PRICE)))
 
         if PAYMENT_PROVIDER_TOKEN:
             link = await bot.create_invoice_link(
@@ -252,13 +258,13 @@ async def handle_create_invoice(request: web.Request) -> web.Response:
                 payload=f"sub_month_{user_id}",
                 provider_token="",
                 currency="XTR",
-                prices=[LabeledPrice(label="Підписка на 1 місяць", amount=SUBSCRIPTION_STARS_PRICE)],
+                prices=[LabeledPrice(label="Підписка на 1 місяць", amount=stars_price)],
             )
             return web.json_response({
                 "success": True,
                 "invoice_link": link,
                 "currency": "XTR",
-                "price": SUBSCRIPTION_STARS_PRICE,
+                "price": stars_price,
             })
     except Exception as e:
         logger.error("API create invoice error: %s", e)

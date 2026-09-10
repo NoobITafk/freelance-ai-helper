@@ -878,7 +878,7 @@
           Перевірка статусу підписки...
         </div>
         <button class="btn-primary" id="btnRenewSub" style="display: none; padding: 10px 14px; font-size: 0.84rem;" onclick="promptRenewSubscription()">
-          Оформити підписку на 1 місяць (<span id="subPriceDisplay">99</span> грн)
+          Оформити підписку на 1 місяць (<span id="subPriceDisplay">99 грн</span>)
         </button>
       </div>
 
@@ -1666,7 +1666,13 @@
           const text = document.getElementById('subDetailsText');
           const btn = document.getElementById('btnRenewSub');
           const priceSpan = document.getElementById('subPriceDisplay');
-          if (priceSpan && data.price) priceSpan.textContent = data.price;
+          if (priceSpan && data.price) {
+            if (data.is_stars || data.currency === 'XTR') {
+              priceSpan.textContent = `⭐️ ${data.price} Stars (~${data.price_uah || data.price} грн)`;
+            } else {
+              priceSpan.textContent = `${data.price} грн`;
+            }
+          }
 
           if (s.status === 'lifetime') {
             if (badge) { badge.textContent = 'Безстроково'; badge.style.color = 'var(--primary)'; }
