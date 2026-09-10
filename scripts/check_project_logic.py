@@ -997,9 +997,42 @@ def main() -> int:
         failed += 1
         print("=" * 80)
         print(f"Multi-user Isolation check: FAIL | cases={cases_isolated} | crm={crm_isolated}")
+    # 22. Referral System Check
+    total_checks += 1
+    from freelance_helper.app.database import get_referral_stats, process_referral, get_user_subscription
+
+    u_ref_host = "test_referrer_999"
+    u_ref_guest = "test_referred_888"
+
+    init_user_subscription(u_ref_host, chat_id=u_ref_host, status="trial")
+    sub_before = get_user_subscription(u_ref_host)
+
+    # Self-referral must fail
+    self_ok = not process_referral(u_ref_host, u_ref_host)
+
+    # Valid referral gives +7 days
+    ref_ok = process_referral(u_ref_host, u_ref_guest, bonus_days=7)
+    sub_after = get_user_subscription(u_ref_host)
+    stats_ref = get_referral_stats(u_ref_host)
+
+    # Duplicate referral of same guest must fail
+    dup_ok = not process_referral(u_ref_host, u_ref_guest)
+
+    referral_passed = (
+        self_ok
+        and ref_ok
+        and dup_ok
+        and stats_ref["invited_count"] >= 1
+        and sub_after["days_left"] >= sub_before["days_left"] + 6
+    )
+
+    if not referral_passed:
+        failed += 1
+        print("=" * 80)
+        print(f"Referral check: FAIL | self={self_ok} | ref={ref_ok} | dup={dup_ok} | stats={stats_ref}")
     else:
         print("=" * 80)
-        print(f"Multi-user Isolation check: OK (cases_isolated=True, alpha_crm={stats_alpha['income_total']:.0f} UAH, beta_crm={stats_beta['income_total']:.0f} UAH)")
+        print(f"Referral check: OK (invited={stats_ref['invited_count']}, bonus=+{stats_ref['bonus_days_earned']}d, days_after={sub_after['days_left']})")
 
     print("=" * 80)
     print(f"Result: {total_checks - failed}/{total_checks} passed")

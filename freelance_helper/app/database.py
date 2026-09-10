@@ -8,6 +8,7 @@ from .config import (
     PROJECT_ROOT,
     SUBSCRIPTION_MONTH_PRICE,
     SUBSCRIPTION_REQUIRED,
+    SUBSCRIPTION_STARS_PRICE,
     TELEGRAM_CHAT_ID,
     TRIAL_DAYS,
 )
@@ -153,6 +154,22 @@ def init_db() -> None:
         """,
             (str(SUBSCRIPTION_MONTH_PRICE),),
         )
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO settings (key, value)
+            VALUES ('sub_stars_price', ?)
+        """,
+            (str(SUBSCRIPTION_STARS_PRICE),),
+        )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS referrals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referrer_id TEXT NOT NULL,
+                referred_id TEXT UNIQUE NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id)")
 
 
 def ensure_column(
@@ -1124,4 +1141,47 @@ def get_all_subscriptions() -> list[dict]:
 def get_active_subscribers() -> list[dict]:
     all_subs = get_all_subscriptions()
     return [s for s in all_subs if s.get("is_active")]
+
+
+def process_referral(referrer_id: str | int, new_user_id: str | int, bonus_days: int = 7) -> bool:
+    ref_id = str(referrer_id).strip()
+    new_id = str(new_user_id).strip()
+    if not ref_id or not new_id or ref_id == new_id:
+        return False
+
+    with get_connection() as conn:
+        existing = conn.execute("SELECT id FROM referrals WHERE referred_id = ?", (new_id,)).fetchone()
+        if existing:
+            return False
+
+        now_iso = datetime.now().isoformat(timespec="seconds")
+        try:
+            conn.execute(
+                "INSERT INTO referrals (referrer_id, referred_id, created_at) VALUES (?, ?, ?)",
+                (ref_id, new_id, now_iso),
+            )
+        except Exception:
+            return False
+
+    try:
+        activate_user_subscription(
+            user_id=ref_id,
+            days=bonus_days,
+            amount=0.0,
+            provider="referral",
+            payment_id=f"ref_{new_id}",
+            currency="UAH",
+        )
+        return True
+    except Exception:
+        return False
+
+
+def get_referral_stats(user_id: str | int) -> dict:
+    uid = str(user_id).strip()
+    with get_connection() as conn:
+        row = conn.execute("SELECT COUNT(*) AS c FROM referrals WHERE referrer_id = ?", (uid,)).fetchone()
+        count = row["c"] if row else 0
+    return {"invited_count": count, "bonus_days_earned": count * 7}
+
 

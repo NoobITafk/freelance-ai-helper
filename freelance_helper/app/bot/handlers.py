@@ -3,6 +3,7 @@ import html
 import re
 import time
 from datetime import datetime
+from urllib.parse import quote
 
 from telegram import (
     InlineKeyboardButton,
@@ -76,6 +77,7 @@ from ..database import (
     get_portfolio_links,
     get_project,
     get_recent_projects,
+    get_referral_stats,
     get_setting,
     get_stats,
     get_user_subscription,
@@ -83,6 +85,7 @@ from ..database import (
     init_user_subscription,
     is_quiet_hours_now,
     is_user_subscribed,
+    process_referral,
     set_portfolio_link,
     set_project_rating,
     set_setting,
@@ -252,6 +255,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         trial_days=TRIAL_DAYS,
     )
 
+    # Process referral code if new user was referred
+    if context.args and context.args[0].startswith("ref_"):
+        referrer_id = context.args[0][4:].strip()
+        if referrer_id and referrer_id != str(user_id):
+            rewarded = process_referral(referrer_id, user_id, bonus_days=7)
+            if rewarded:
+                try:
+                    await context.bot.send_message(
+                        chat_id=int(referrer_id),
+                        text=(
+                            f"🎉 <b>Новий реферал!</b>\n"
+                            f"За вашим запрошенням до бота приєднався новий користувач ({full_name or username or user_id}).\n"
+                            f"🎁 Вам нараховано <b>+7 днів безкоштовної підписки</b>!"
+                        ),
+                        parse_mode="HTML",
+                    )
+                except Exception as e:
+                    logger.debug("Could not notify referrer %s: %s", referrer_id, e)
+
     if sub.get("status") == "lifetime":
         sub_info = "⭐️ Статус: Безстроковий доступ (Адміністратор)"
     elif sub.get("status") == "trial":
@@ -265,7 +287,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update,
         f"Бот працює ✅\n"
         f"{sub_info}\n\n"
-        f"💡 Натисніть /help для переліку команд або /webapp для відкриття Mini App.",
+        f"💡 Натисніть /help для переліку команд, /ref для отримання реферального посилання (+7 днів за друга) або /webapp для відкриття Mini App.",
     )
 
 
@@ -275,6 +297,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 /start — запуск бота
 /help — список команд
+/ref — реферальне посилання (+7 днів за кожного запрошеного друга)
 /check — перевірити проєкти зараз
 /subscribe — оформити або подовжити підписку
 /subscription — перевірити статус підписки
@@ -312,6 +335,38 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🔁 Нова ставка | ⏭ Пропустити
 """
     await reply_text(update, text)
+
+
+async def ref_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    user_id = user.id if user else (update.effective_chat.id if update.effective_chat else None)
+    if not user_id:
+        return
+
+    bot_username = context.bot.username if context.bot and context.bot.username else "HUNTua_bot"
+    ref_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
+    stats = get_referral_stats(user_id)
+    invited = stats.get("invited_count", 0)
+    bonus_days = stats.get("bonus_days_earned", 0)
+
+    share_text = "Привіт! Спробуй AI-бота для Freelancehunt — моніторить проекти та пише влучні ставки. Перші 7 днів безкоштовно!"
+    share_url = f"https://t.me/share/url?url={ref_link}&text={quote(share_text)}"
+
+    text = (
+        f"🎁 <b>Партнерська програма (Реферали)</b>\n\n"
+        f"Запрошуйте знайомих фрілансерів і отримуйте <b>+7 днів безкоштовної підписки</b> за кожного нового користувача!\n\n"
+        f"🔗 <b>Ваше персональне посилання:</b>\n"
+        f"<code>{ref_link}</code>\n\n"
+        f"📊 <b>Ваша статистика:</b>\n"
+        f"• Запрошено колег: <b>{invited}</b>\n"
+        f"• Отримано бонусних днів: <b>+{bonus_days} дн.</b>\n\n"
+        f"💡 Скопіюйте це посилання або натисніть кнопку нижче, щоб надіслати в чат або другові."
+    )
+    keyboard = [
+        [InlineKeyboardButton("📢 Поділитися посиланням", url=share_url)],
+        [InlineKeyboardButton("💎 Оформити підписку", callback_data="sub_open")],
+    ]
+    await reply_text(update, text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
 
 
 async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

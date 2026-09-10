@@ -41,6 +41,7 @@ from .bot.handlers import (
     profile_set_command,
     quiet_command,
     recent_command,
+    ref_command,
     set_price_command,
     settings_command,
     start,
@@ -205,6 +206,8 @@ def run_bot() -> None:
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("ref", ref_command))
+    app.add_handler(CommandHandler("referral", ref_command))
     app.add_handler(CommandHandler("health", health_command))
     app.add_handler(CommandHandler("test_ai", test_ai))
     app.add_handler(CommandHandler("check", check_projects))
