@@ -17,7 +17,6 @@ from .bot.handlers import (
     case_del_command,
     cases_command,
     check_projects,
-    copilot_command,
     crm_command,
     digest_command,
     export_command,
@@ -213,8 +212,6 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("digest", digest_command))
     app.add_handler(CommandHandler("backup", backup_command))
     app.add_handler(CommandHandler("webapp", webapp_command))
-    app.add_handler(CommandHandler("copilot", copilot_command))
-    app.add_handler(CommandHandler("extension", copilot_command))
     app.add_handler(CommandHandler("export", export_command))
     app.add_handler(CommandHandler("ai_on", ai_on))
     app.add_handler(CommandHandler("ai_off", ai_off))

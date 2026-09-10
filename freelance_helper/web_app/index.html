@@ -590,57 +590,7 @@
 
     <!-- TAB 4: ОПЦІЇ (SETTINGS & HEALTH) -->
     <div id="tabSettings" class="tab-content">
-      <!-- BROWSER CO-PILOT CARD -->
-      <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%);">
-        <div class="card-header">
-          <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
-            <span>🤖 Браузерний Co-Pilot</span>
-            <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">🛡 100% Anti-Ban</span>
-          </div>
-        </div>
-        <p style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.5; margin: 0 0 10px 0;">
-          Розумний асистент, що працює прямо на сторінках проєктів Freelancehunt: миттєвий аналіз замовлення, рекомендована сума (sweet spot), термін у днях та автозаповнення ставки в 1 клік.
-        </p>
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px;">
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🌐 Chrome</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🦊 Firefox</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🌊 Edge</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🦁 Brave</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🔴 Opera</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🎮 Opera GX</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🧭 Safari</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">⚡️ Vivaldi</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">🌀 Arc</span>
-          <span class="chip" style="font-size: 0.72rem; padding: 3px 8px;">📱 Kiwi Android</span>
-        </div>
 
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; font-size: 0.8rem; color: #94a3b8; line-height: 1.6; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
-          <b style="color: #38bdf8;">📱 На телефоні розширення не потрібне!</b><br/>
-          У мобільному браузері Chrome компанія Google взагалі заблокувала роботу будь-яких розширень. Але вони вам і <b>не потрібні</b>: у Telegram-боті та у вкладці <b>«Стрічка»</b> готова ставка копіюється <b>в 1 дотик пальцем</b> — після чого ви просто вставляєте її у замовлення.<br/><br/>
-          <b style="color: #34d399;">💻 Для роботи на комп'ютері (автозаповнення):</b><br/>
-          Встановіть Tampermonkey на ПК та отримайте файл скрипта через кнопки нижче.
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <button id="btnSendScriptChat" class="btn-primary" onclick="sendScriptToChat()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.88rem; font-weight: 600;">
-            <span>💬 Надіслати файл .user.js у чат бота</span>
-          </button>
-
-          <button class="btn-secondary" onclick="downloadUserScript()" style="width: 100%; font-size: 0.82rem; padding: 10px 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            <span>💾 Завантажити файл скрипта на ПК</span>
-          </button>
-        </div>
-
-        <div style="margin-top: 12px; padding: 10px; background: rgba(30, 41, 59, 0.4); border-radius: 8px; font-size: 0.76rem; color: #94a3b8;">
-          <div style="margin-bottom: 6px; color: #cbd5e1; font-weight: 600;">Tampermonkey для комп'ютера або мобільного Firefox:</div>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-            <a href="javascript:void(0)" onclick="openExternalLink('https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo')" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🌐 Chrome / Edge (ПК)</a>
-            <a href="javascript:void(0)" onclick="openExternalLink('https://addons.mozilla.org/firefox/addon/tampermonkey/')" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🦊 Firefox (ПК / Android)</a>
-            <a href="javascript:void(0)" onclick="openExternalLink('https://apps.apple.com/app/userscripts/id1463298887')" class="chip" style="color:#38bdf8; text-decoration:none; font-size:0.72rem;">🧭 Safari (Mac / iOS)</a>
-          </div>
-        </div>
-      </div>
 
       <div class="card">
         <div class="card-header">
@@ -1296,59 +1246,7 @@
       } catch(e) {}
     }
 
-    async function sendScriptToChat() {
-      haptic('impact');
-      const btn = document.getElementById('btnSendScriptChat');
-      if (btn) btn.disabled = true;
-      showToast('⏳ Відправляємо файл у ваш чат...');
-      try {
-        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        const chatId = tgUser ? tgUser.id : '';
-        const res = await fetch('/api/send_script_to_chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: chatId })
-        });
-        const data = await res.json();
-        if (data.success) {
-          haptic('success');
-          showToast('✅ Файл надіслано в чат!');
-          if (window.Telegram?.WebApp?.showAlert) {
-            window.Telegram.WebApp.showAlert('✅ Файл freelancehunt_helper.user.js надіслано у ваш чат з ботом!\n\nВи можете зберегти його на пристрій або переслати на ПК прямо з повідомлення.');
-          }
-        } else {
-          showToast('⚠️ ' + (data.error || 'Не вдалося надіслати файл'));
-        }
-      } catch (err) {
-        showToast('⚠️ Помилка з\'єднання: ' + err.message);
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    }
 
-    async function downloadUserScript() {
-      haptic('impact');
-      showToast('⏳ Завантаження скрипта...');
-      const url = window.location.origin + '/freelancehunt_helper.user.js?download=1';
-      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
-        window.Telegram.WebApp.openLink(url);
-      } else {
-        try {
-          const res = await fetch('/freelancehunt_helper.user.js?download=1');
-          const blob = await res.blob();
-          const b = new Blob([blob], { type: 'application/octet-stream' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(b);
-          a.download = 'freelancehunt_helper.user.js';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          showToast('✅ Файл завантажено!');
-        } catch(e) {
-          window.location.href = url;
-        }
-      }
-    }
 
 
 

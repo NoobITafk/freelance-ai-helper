@@ -1,16 +1,8 @@
-import re
 from datetime import datetime
 from pathlib import Path
 from aiohttp import web
 
-from .ai_analyzer import (
-    calculate_score,
-    extract_project_insights,
-    generate_bid,
-    generate_questions,
-    is_technical_project,
-    project_type,
-)
+from .ai_analyzer import generate_bid
 from .config import MIN_SCORE, PROJECT_ROOT
 from .database import (
     add_portfolio_case,
@@ -27,8 +19,6 @@ from .database import (
     update_project_pipeline,
 )
 from .logger import logger
-from .rules import classify_project, count_good_keyword_matches, parse_budget_info
-from .services.project_service import calculate_sweet_spot
 
 WEB_APP_DIR = PROJECT_ROOT / "freelance_helper" / "web_app"
 
@@ -176,206 +166,10 @@ async def handle_export_csv(request: web.Request) -> web.Response:
         return web.Response(text=f"Export error: {e}", status=500)
 
 
-async def handle_userscript(request: web.Request) -> web.Response:
-    script_file = WEB_APP_DIR / "freelancehunt_helper.user.js"
-    if not script_file.is_file():
-        return web.Response(text="// Userscript not found", status=404, content_type="text/plain")
-    content = script_file.read_text(encoding="utf-8")
-    headers = {
-        "Cache-Control": "no-cache, must-revalidate",
-        "Access-Control-Allow-Origin": "*",
-        "Content-Disposition": 'attachment; filename="freelancehunt_helper.user.js"',
-    }
-    return web.Response(
-        text=content,
-        content_type="application/octet-stream",
-        charset="utf-8",
-        headers=headers,
-    )
-
-
-async def handle_send_script_to_chat(request: web.Request) -> web.Response:
-    try:
-        data = {}
-        if request.method == "POST":
-            try:
-                data = await request.json()
-            except Exception:
-                data = {}
-
-        chat_id = (
-            data.get("chat_id")
-            or data.get("user_id")
-            or request.query.get("chat_id")
-            or request.query.get("user_id")
-        )
-        if not chat_id:
-            from .config import TELEGRAM_CHAT_ID
-            chat_id = TELEGRAM_CHAT_ID
-
-        if not chat_id:
-            return web.json_response(
-                {"success": False, "error": "chat_id не передано і не налаштовано в .env"},
-                status=400,
-            )
-
-        script_file = WEB_APP_DIR / "freelancehunt_helper.user.js"
-        if not script_file.is_file():
-            return web.json_response(
-                {"success": False, "error": "Файл freelancehunt_helper.user.js не знайдено на сервері"},
-                status=404,
-            )
-
-        bot = request.app.get("bot")
-        should_close_bot = False
-        if bot is None:
-            from .config import TELEGRAM_BOT_TOKEN
-            if not TELEGRAM_BOT_TOKEN:
-                return web.json_response(
-                    {"success": False, "error": "TELEGRAM_BOT_TOKEN не задано в конфігурації"},
-                    status=500,
-                )
-            from telegram import Bot
-            bot = Bot(token=TELEGRAM_BOT_TOKEN)
-            await bot.initialize()
-            should_close_bot = True
-
-        caption = (
-            "🧩 <b>Freelancehunt AI Co-Pilot v1.3.0</b>\n\n"
-            "📥 Файл скрипта надіслано за вашим запитом із Mini App!\n\n"
-            "• Натисніть на файл вище, щоб завантажити його на пристрій або переслати на ПК.\n"
-            "• Для браузера: встановіть розширення <b>Tampermonkey</b> та відкрийте цей файл."
-        )
-
-        try:
-            with open(script_file, "rb") as f:
-                await bot.send_document(
-                    chat_id=int(chat_id),
-                    document=f,
-                    filename="freelancehunt_helper.user.js",
-                    caption=caption,
-                    parse_mode="HTML",
-                )
-            return web.json_response({"success": True, "chat_id": chat_id})
-        finally:
-            if should_close_bot:
-                await bot.shutdown()
-    except Exception as exc:
-        logger.error("API send_script_to_chat error: %s", exc)
-        return web.json_response({"success": False, "error": str(exc)}, status=500)
-
-
-async def handle_bid_draft(request: web.Request) -> web.Response:
-    try:
-        data = {}
-        if request.method == "POST":
-            try:
-                data = await request.json()
-            except Exception:
-                data = {}
-
-        project_id = request.query.get("project_id") or data.get("project_id", "")
-        project_id = str(project_id).strip()
-
-        project = None
-        if project_id:
-            project = get_project(project_id)
-
-        if not project:
-            title = request.query.get("title") or data.get("title", "")
-            description = request.query.get("description") or data.get("description", "")
-            budget = request.query.get("budget") or data.get("budget", "")
-            bids_count = request.query.get("bids_count") or data.get("bids_count", 0)
-            url = request.query.get("url") or data.get("url", "")
-            try:
-                bids_count = int(bids_count)
-            except (ValueError, TypeError):
-                bids_count = 0
-
-            project = {
-                "project_id": project_id or "temp",
-                "title": title,
-                "description": description,
-                "budget": budget,
-                "bids_count": bids_count,
-                "url": url,
-            }
-            full_text = f"{title} {description}"
-            filter_res = classify_project(title, description)
-            is_tech = is_technical_project(project)
-            good_matches = count_good_keyword_matches(title, description)
-            score = 65 if is_tech else 20
-            if filter_res.category == "good":
-                score += 10
-            if good_matches:
-                score += min(len(good_matches) * 5, 20)
-            project["score"] = min(score, 99)
-            project["reason"] = filter_res.reason or (f"Категорія: {filter_res.category}" if is_tech else "Не відповідає профілю")
-            project["pipeline_status"] = "new"
-
-        try:
-            bid_short = generate_bid(project, variant="short")
-        except Exception:
-            bid_short = f"Вітаю! Ознайомився із завданням «{project.get('title', '')}» та готовий якісно реалізувати."
-
-        try:
-            bid_full = generate_bid(project, variant="full")
-        except Exception:
-            bid_full = bid_short
-
-        try:
-            questions = generate_questions(project)
-        except Exception:
-            questions = ""
-
-        budget_info = parse_budget_info(project.get("budget"))
-        amount, currency, _ = budget_info
-        bids_cnt = int(project.get("bids_count") or 0)
-        sweet_spot = calculate_sweet_spot(budget_info, bids_cnt)
-
-        rec_days = 2
-        try:
-            insights = extract_project_insights(project)
-            time_est = insights.get("time_estimate", "1-2 дні")
-            days_match = re.findall(r"\d+", time_est)
-            if days_match:
-                rec_days = int(days_match[-1])
-        except Exception:
-            rec_days = 2
-
-        rec_amount = amount if amount else None
-        if amount and bids_cnt > 10:
-            rec_amount = int(amount * 0.95 / 50) * 50
-
-        return web.json_response({
-            "success": True,
-            "project_id": project.get("project_id"),
-            "title": project.get("title"),
-            "score": project.get("score", 70),
-            "reason": project.get("reason", ""),
-            "pipeline_status": project.get("pipeline_status", "new"),
-            "recommended_amount": rec_amount,
-            "recommended_currency": currency or "UAH",
-            "recommended_days": rec_days,
-            "sweet_spot": sweet_spot or (f"{amount} {currency}" if amount else "За домовленістю"),
-            "bid_short": bid_short,
-            "bid_full": bid_full,
-            "questions": questions,
-        })
-    except Exception as e:
-        logger.error("API bid draft error: %s", e)
-        return web.json_response({"success": False, "error": str(e)}, status=500)
-
-
 def create_web_app(bot=None) -> web.Application:
     app = web.Application()
     app["bot"] = bot
     app.router.add_get("/", handle_index)
-    app.router.add_get("/freelancehunt_helper.user.js", handle_userscript)
-    app.router.add_get("/api/send_script_to_chat", handle_send_script_to_chat)
-    app.router.add_post("/api/send_script_to_chat", handle_send_script_to_chat)
-    app.router.add_get("/api/bid_draft", handle_bid_draft)
-    app.router.add_post("/api/bid_draft", handle_bid_draft)
     app.router.add_get("/api/stats", handle_stats)
     app.router.add_get("/api/projects", handle_projects)
     app.router.add_post("/api/pipeline", handle_update_pipeline)

@@ -292,40 +292,6 @@ journalctl -u freelance-helper -f
 
 ---
 
-## 🤖 Браузерний Co-Pilot (10 браузерів, 100% Anti-Ban)
-
-Для максимального прискорення подачі заявок на Freelancehunt створено вбудований браузерний асистент (**Co-Pilot**), який працює безпосередньо на сторінках замовлень (`https://freelancehunt.com/project/*`).
-
-### 🛡 Чому це 100% безпечно (Zero Ban Risk)
-1. **Жодних headless-ботів**: скрипт не використовує Selenium, Puppeteer чи датацентрові IP, які легко відстежуються Cloudflare або антиспам-фільтрами біржі.
-2. **Ваша реальна сесія**: асистент працює як Userscript у вашому особистому повсякденному браузері з вашої домашньої IP-адреси та з вашими реальними cookie авторизації.
-3. **Людина в центрі процесу (Human-in-the-loop)**: скрипт заповнює текст ставки, рекомендовану суму та термін через імітацію нативних подій вводу (`input`, `change`, `blur`), а фінальну відправку підтверджуєте ви самі. Для Freelancehunt це виглядає як 100% природна дія звичайного користувача.
-
-### 🌐 Підтримка 10 популярних браузерів
-Скрипт стандартизовано та протестовано для роботи у:
-- **Google Chrome** (через розширення Tampermonkey)
-- **Mozilla Firefox** (через Tampermonkey / Violentmonkey)
-- **Microsoft Edge** (через Tampermonkey)
-- **Brave Browser** (через Tampermonkey / Violentmonkey)
-- **Opera** (через Tampermonkey)
-- **Opera GX** (через Tampermonkey)
-- **Vivaldi** (через Tampermonkey / Violentmonkey)
-- **Safari** (macOS / iOS через розширення *Tampermonkey* або безкоштовний *Userscripts*)
-- **Arc Browser** (через Tampermonkey)
-- **Kiwi Browser / Chromium** (Android / Desktop з підтримкою розширень)
-
-### 🚀 Швидке встановлення в 1 клік
-1. Встановіть розширення **Tampermonkey** (або Violentmonkey) у вашому браузері.
-2. Відкрийте посилання: **`https://freelans.duckdns.org/freelancehunt_helper.user.js`**
-3. Менеджер розширень автоматично запропонує кнопку **«Встановити»** (Install).
-4. Відкрийте будь-який проєкт на Freelancehunt — у правому нижньому кутку з'явиться плаваючий віджет асистента:
-   - показує AI Score та відповідність навичкам;
-   - рекомендує оптимальний бюджет (sweet spot) та термін у днях;
-   - кнопка **«✨ Автозаповнити форму ставки»** заповнює поля заявки та прокручує екран до форми;
-   - кнопка **«💼 В CRM»** в один клік синхронізує статус із Mini App воронкою.
-
----
-
 ## Як перевірити, що бот працює
 
 ### Локально
@@ -379,7 +345,6 @@ python -m compileall freelance_helper
 | `/digest` | ранковий звіт найкращих нічних проєктів |
 | `/backup` | миттєве створення та відправка бекапу бази SQLite у чат |
 | `/webapp` | інформація про інтерактивний Telegram Mini App інтерфейс |
-| `/copilot` | відправка файлу скрипта та кнопок швидкого встановлення розширення (alias `/extension`) |
 | `/test_ai` | швидкий тест аналізатора на тестовому проєкті |
 | `/recent` | останні проєкти з бази (sent/skipped) |
 | `/last` | alias для `/recent` |
@@ -473,7 +438,6 @@ git add freelance_helper/app/services/project_service.py
 git add freelance_helper/app/rules.py
 git add freelance_helper/app/web_server.py
 git add freelance_helper/web_app/index.html
-git add freelance_helper/web_app/freelancehunt_helper.user.js
 git add scripts/check_project_logic.py
 git commit -m "Implement full upgrade suite"
 git push

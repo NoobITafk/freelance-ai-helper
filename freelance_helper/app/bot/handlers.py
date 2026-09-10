@@ -224,7 +224,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /digest — ранковий дайджест проєктів за ніч
 /backup — надіслати бекап бази даних у чат
 /webapp — Telegram Mini App інтерфейс
-/copilot (або /extension) — завантажити скрипт авто-ставок у чат
 /test_ai — тест роботи аналізатора
 /why project_id — показати збережений аналіз
 
@@ -989,51 +988,7 @@ async def webapp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await reply_text(update, text, parse_mode="HTML")
 
 
-async def copilot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_authorized(update):
-        return
 
-    from ..web_server import WEB_APP_DIR
-    script_path = WEB_APP_DIR / "freelancehunt_helper.user.js"
-
-    caption = (
-        "🧩 <b>Freelancehunt AI Co-Pilot v1.3.0</b>\n\n"
-        "Скрипт для автозаповнення ставок на Freelancehunt.\n\n"
-        "💻 <b>На комп'ютері (ПК / Ноутбук):</b>\n"
-        "1. Встановіть Tampermonkey (посилання нижче).\n"
-        "2. Завантажте прикріплений файл та відкрийте його в Tampermonkey.\n\n"
-        "📱 <b>На телефоні (смартфоні):</b>\n"
-        "• У мобільному Chrome розширення не підтримуються Google.\n"
-        "• <b>Але на телефоні розширення не потрібне:</b> просто торкніться тексту згенерованої ставки у повідомленні (вона скопіюється в 1 дотик) та вставте у замовлення."
-    )
-
-    markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("💾 Завантажити файл .user.js", url=f"{MINI_APP_URL}/freelancehunt_helper.user.js?download=1")],
-        [
-            InlineKeyboardButton("🌐 Chrome (ПК)", url="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo"),
-            InlineKeyboardButton("🦊 Firefox (ПК / Android)", url="https://addons.mozilla.org/firefox/addon/tampermonkey/"),
-        ],
-        [
-            InlineKeyboardButton("📱 Відкрити Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
-        ],
-    ])
-
-    if script_path.is_file():
-        try:
-            with open(script_path, "rb") as f:
-                await context.bot.send_document(
-                    chat_id=update.effective_chat.id,
-                    document=f,
-                    filename="freelancehunt_helper.user.js",
-                    caption=caption,
-                    parse_mode="HTML",
-                    reply_markup=markup,
-                )
-            return
-        except Exception as exc:
-            logger.warning("Could not send document: %s", exc)
-
-    await reply_text(update, caption, parse_mode="HTML", reply_markup=markup)
 
 
 async def reply_safe_markdown(message, text: str, reply_markup=None):
@@ -1415,20 +1370,17 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             err_text = str(err)
             if "410" in err_text or "deprecation" in err_text.lower():
                 escaped_comment = html.escape(publish_data["comment"])
-                import urllib.parse
                 p_url = project.get("url") or f"https://freelancehunt.com/project/{project_id}.html"
-                comment_encoded = urllib.parse.quote(publish_data["comment"])
-                autobid_url = f"{p_url}#autobid&amount={publish_data['amount']}&days={publish_data['days']}&bid={comment_encoded}"
                 text_410 = (
                     f"⚠️ <b>Freelancehunt вимкнув подачу ставок через прямий API (HTTP 410).</b>\n"
-                    f"Біржа вимагає відправки через веб-сайт, але <b>ми повністю автоматизували цей процес в 1 клік:</b>\n\n"
+                    f"Біржа дозволяє робити ставки тільки безпосередньо на сторінці проєкту:\n\n"
                     f"💰 <b>Сума:</b> {publish_data['amount']:,} {publish_data['currency']}  •  ⏱ <b>Термін:</b> {publish_data['days']} дн.\n\n"
                     f"📋 <b>Ваша згенерована ставка:</b>\n\n"
                     f"<code>{escaped_comment}</code>\n\n"
-                    f"👉 <b>Натисніть кнопку нижче:</b> відкриється замовлення у Firefox, скрипт миттєво підставить цю ставку, відкриє форму та запустить авто-відправку:"
+                    f"👉 Торкніться тексту ставки вище, щоб скопіювати його, відкрийте замовлення та вставте у форму:"
                 )
                 markup_410 = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🚀 Запустити авто-подачу (1 клік)", url=autobid_url)],
+                    [InlineKeyboardButton("🔗 Відкрити замовлення на біржі", url=p_url)],
                     [
                         InlineKeyboardButton("💼 Я відправив ставку (в CRM)", callback_data=f"crm_bid:{project_id}"),
                         InlineKeyboardButton("📱 Mini App", web_app=WebAppInfo(url=MINI_APP_URL)),
