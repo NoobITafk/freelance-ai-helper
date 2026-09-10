@@ -1,3 +1,6 @@
+import html
+import json
+import time
 from datetime import datetime
 from pathlib import Path
 from aiohttp import web
@@ -12,6 +15,8 @@ from .config import (
     TELEGRAM_CHAT_ID,
 )
 from .database import (
+    add_bonus_days,
+    add_feedback,
     add_portfolio_case,
     check_database,
     delete_portfolio_case,
@@ -137,11 +142,63 @@ async def handle_add_case(request: web.Request) -> web.Response:
 async def handle_delete_case(request: web.Request) -> web.Response:
     try:
         user_id = request.query.get("user_id")
+        if not user_id:
+            return web.json_response({"success": False, "error": "user_id is required"}, status=400)
         case_id = int(request.match_info.get("id", 0))
         ok = delete_portfolio_case(case_id, user_id=user_id)
         return web.json_response({"success": ok})
     except Exception as e:
         logger.error("API delete case error: %s", e)
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_add_feedback(request: web.Request) -> web.Response:
+    try:
+        try:
+            data = await request.json()
+        except Exception:
+            try:
+                raw_bytes = await request.read()
+                data = json.loads(raw_bytes.decode("utf-8")) if raw_bytes else {}
+            except Exception:
+                data = {}
+
+        text = str(data.get("text", "")).strip()
+        user_id = str(data.get("user_id") or request.query.get("user_id") or "").strip()
+        username = str(data.get("username", "")).strip()
+        full_name = str(data.get("full_name", "")).strip()
+
+        if not text:
+            return web.json_response({"success": False, "error": "Текст пропозиції обов'язковий"}, status=400)
+        if len(text) > 2000:
+            return web.json_response({"success": False, "error": "Текст занадто довгий (макс 2000 симв.)"}, status=400)
+
+        fid = add_feedback(user_id=user_id or "anonymous", text=text, username=username, full_name=full_name)
+
+        # Grant +3 bonus days to the user
+        if user_id and user_id != "anonymous":
+            try:
+                add_bonus_days(user_id, days=3, reason="feedback")
+            except Exception as bonus_err:
+                logger.debug("Failed adding feedback bonus days: %s", bonus_err)
+
+        bot = request.app.get("bot")
+        if bot and TELEGRAM_CHAT_ID:
+            try:
+                user_label = f"@{username}" if username else (full_name or f"ID: {user_id}")
+                admin_msg = (
+                    f"💡 <b>Нова пропозиція / відгук від користувача!</b>\n\n"
+                    f"👤 Від: <b>{html.escape(user_label)}</b> (<code>{user_id}</code>)\n"
+                    f"🎁 Нараховано бонус: +3 дні підписки\n\n"
+                    f"📝 <i>{html.escape(text)}</i>"
+                )
+                await bot.send_message(chat_id=int(TELEGRAM_CHAT_ID), text=admin_msg, parse_mode="HTML")
+            except Exception as notify_err:
+                logger.debug("Failed notifying admin about feedback: %s", notify_err)
+
+        return web.json_response({"success": True, "id": fid, "bonus_days": 3})
+    except Exception as e:
+        logger.error("API feedback error: %s", e)
         return web.json_response({"success": False, "error": str(e)}, status=500)
 
 
@@ -167,6 +224,8 @@ async def handle_health(request: web.Request) -> web.Response:
 async def handle_export_csv(request: web.Request) -> web.Response:
     try:
         user_id = request.query.get("user_id")
+        if not user_id:
+            return web.json_response({"success": False, "error": "user_id is required for export"}, status=400)
         csv_text = export_crm_data_csv(user_id=user_id)
         filename = f"crm_export_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
         return web.Response(
@@ -285,20 +344,55 @@ def create_web_app(bot=None) -> web.Application:
     app.router.add_get("/api/export", handle_export_csv)
     app.router.add_get("/api/subscription", handle_subscription_status)
     app.router.add_post("/api/create_invoice", handle_create_invoice)
+    app.router.add_post("/api/feedback", handle_add_feedback)
 
-    # Allow CORS so Mini App can call API from any client
+    ip_request_counts = {}
+
     @web.middleware
-    async def cors_middleware(request, handler):
+    async def security_and_rate_limit_middleware(request, handler):
         if request.method == "OPTIONS":
             response = web.Response(status=204)
-        else:
-            response = await handler(request)
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+            return response
+
+        # Anti-DDoS Rate limiting for API requests (max 120 req / 60s per IP)
+        if request.path.startswith("/api/"):
+            peername = request.transport.get_extra_info("peername") if request.transport else None
+            client_ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or (peername[0] if peername else "127.0.0.1")
+
+            now = time.time()
+            if len(ip_request_counts) > 2000:
+                expired = [ip for ip, timestamps in ip_request_counts.items() if not timestamps or now - timestamps[-1] > 120]
+                for exp_ip in expired:
+                    ip_request_counts.pop(exp_ip, None)
+
+            records = ip_request_counts.get(client_ip, [])
+            records = [ts for ts in records if now - ts < 60.0]
+
+            if len(records) >= 120:
+                logger.warning("API rate limit exceeded for IP %s on %s", client_ip, request.path)
+                return web.json_response(
+                    {"success": False, "error": "Забагато запитів. Спробуйте пізніше."},
+                    status=429,
+                    headers={"Retry-After": "60"},
+                )
+
+            records.append(now)
+            ip_request_counts[client_ip] = records
+
+        response = await handler(request)
+
+        # Security Headers & CORS
         response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         return response
 
-    app.middlewares.append(cors_middleware)
+    app.middlewares.append(security_and_rate_limit_middleware)
     return app
 
 

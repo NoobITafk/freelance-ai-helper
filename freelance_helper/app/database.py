@@ -177,6 +177,17 @@ def init_db() -> None:
                 posted_at TEXT NOT NULL
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                username TEXT DEFAULT '',
+                full_name TEXT DEFAULT '',
+                text TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_feedback_uid ON feedback(user_id)")
 
 
 def ensure_column(
@@ -561,7 +572,7 @@ def delete_portfolio_case(case_id: int, user_id: str | None = None) -> bool:
         if user_id:
             uid = str(user_id)
             cursor = conn.execute(
-                "DELETE FROM portfolio_cases WHERE id = ? AND (user_id = ? OR user_id = '' OR user_id IS NULL OR ? = ?)",
+                "DELETE FROM portfolio_cases WHERE id = ? AND (user_id = ? OR ? = ?)",
                 (case_id, uid, uid, str(TELEGRAM_CHAT_ID or "")),
             )
         else:
@@ -1207,6 +1218,63 @@ def record_channel_broadcast(project_id: str | int, channel_id: str) -> None:
             "INSERT OR REPLACE INTO channel_posts (project_id, channel_id, posted_at) VALUES (?, ?, ?)",
             (pid, str(channel_id), now_iso),
         )
+
+
+def add_feedback(user_id: str | int, text: str, username: str = "", full_name: str = "") -> int:
+    uid = str(user_id).strip()
+    clean_text = str(text).strip()
+    if not uid or not clean_text:
+        return 0
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "INSERT INTO feedback (user_id, username, full_name, text, created_at) VALUES (?, ?, ?, ?, ?)",
+            (uid, str(username or ""), str(full_name or ""), clean_text, now_iso),
+        )
+        return cursor.lastrowid or 0
+
+
+def add_bonus_days(user_id: str | int, days: int = 3, reason: str = "feedback") -> dict:
+    return activate_user_subscription(
+        user_id=user_id,
+        days=days,
+        amount=0.0,
+        provider=reason,
+        payment_id=f"{reason}_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        currency="UAH",
+    )
+
+
+def get_market_digest_stats() -> dict:
+    with get_connection() as conn:
+        total_projects = conn.execute("SELECT COUNT(*) AS c FROM projects").fetchone()["c"]
+        sent_projects = conn.execute("SELECT COUNT(*) AS c FROM projects WHERE status = 'sent'").fetchone()["c"]
+        completed_deals = conn.execute(
+            "SELECT COUNT(*) AS c, COALESCE(SUM(deal_amount), 0) AS total_sum FROM projects WHERE pipeline_status = 'completed'"
+        ).fetchone()
+
+        recent_it = conn.execute(
+            "SELECT title, budget, score FROM projects WHERE status = 'sent' ORDER BY created_at DESC LIMIT 5"
+        ).fetchall()
+
+        return {
+            "total_projects": total_projects,
+            "sent_projects": sent_projects,
+            "completed_deals_count": completed_deals["c"] if completed_deals else 0,
+            "completed_deals_sum": completed_deals["total_sum"] if completed_deals else 0.0,
+            "recent_top": [dict(r) for r in recent_it],
+        }
+
+
+def get_recent_feedback(limit: int = 20) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM feedback ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
 
 
 

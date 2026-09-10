@@ -28,6 +28,7 @@ from .bot.handlers import (
     crm_command,
     digest_command,
     export_command,
+    feedback_command,
     grant_sub_command,
     group_added_handler,
     handle_button,
@@ -37,6 +38,7 @@ from .bot.handlers import (
     hot_command,
     income_command,
     last_command,
+    market_command,
     portfolio_command,
     portfolio_set_command,
     pre_checkout_handler,
@@ -48,6 +50,7 @@ from .bot.handlers import (
     set_channel_command,
     set_price_command,
     settings_command,
+    share_command,
     start,
     stats_command,
     subscribers_command,
@@ -244,6 +247,11 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("sub", subscription_command))
     app.add_handler(CommandHandler("grant_sub", grant_sub_command))
     app.add_handler(CommandHandler("hot", hot_command))
+    app.add_handler(CommandHandler("share", share_command))
+    app.add_handler(CommandHandler("market", market_command))
+    app.add_handler(CommandHandler("feedback", feedback_command))
+    app.add_handler(CommandHandler("suggest", feedback_command))
+    app.add_handler(CommandHandler("idea", feedback_command))
     app.add_handler(CommandHandler("set_channel", set_channel_command))
     app.add_handler(CommandHandler("channel_off", channel_off_command))
     app.add_handler(CommandHandler("subscribers", subscribers_command))

@@ -920,6 +920,19 @@
         </button>
       </div>
 
+      <div class="card" id="feedbackCard">
+        <div class="card-header">
+          <div class="card-title">💡 Запропонувати ідею (+3 дні)</div>
+          <span class="badge-status" style="color: #fbbf24;">Зворотний зв'язок</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px;">
+          Маєте ідею для нових функцій або помітили помилку? За кожну корисну пропозицію ми автоматично даруємо <b>+3 дні безкоштовної підписки</b>!
+        </div>
+        <button class="btn-primary" style="padding: 10px 14px; font-size: 0.84rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="openFeedbackModal()">
+          <span>✍️ Запропонувати покращення</span>
+        </button>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <div class="card-title">Параметри системи</div>
@@ -1049,6 +1062,25 @@
       <div class="btn-row" style="margin-top: 10px;">
         <button class="btn-primary" onclick="submitNewCase()">Зберегти кейс</button>
         <button class="btn-secondary" onclick="closeAddCaseModal()">Скасувати</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Feedback -->
+  <div class="modal-overlay" id="modalFeedback">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>💡 Ваша пропозиція або ідея</span>
+        <span class="modal-close" onclick="closeFeedbackModal()">&times;</span>
+      </div>
+      <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 12px;">
+        Опишіть, які функції чи покращення були б для вас корисними. За кожну змістовну пропозицію вам автоматично нараховується <b>+3 дні підписки</b>!
+      </div>
+      <label class="input-label">Текст пропозиції чи відгуку:</label>
+      <textarea class="input-field" id="feedbackTextInput" placeholder="Наприклад: було б зручно додати фільтр за замовниками або інтеграцію з..." style="min-height: 100px; resize: vertical;"></textarea>
+      <div class="btn-row" style="margin-top: 10px;">
+        <button class="btn-primary" id="btnSendFeedback" onclick="submitFeedback()">Надіслати (+3 дні)</button>
+        <button class="btn-secondary" onclick="closeFeedbackModal()">Скасувати</button>
       </div>
     </div>
   </div>
@@ -1798,6 +1830,58 @@
       const botUser = 'HUNTua_bot';
       const link = `https://t.me/${botUser}?start=ref_${uid}`;
       copyToClipboard(link, '🔗 Реферальне посилання скопійовано! Надішліть його колезі.');
+    }
+
+    function openFeedbackModal() {
+      haptic('impact');
+      const m = document.getElementById('modalFeedback');
+      if (m) m.classList.add('open');
+    }
+
+    function closeFeedbackModal() {
+      haptic('selection');
+      const m = document.getElementById('modalFeedback');
+      if (m) m.classList.remove('open');
+    }
+
+    async function submitFeedback() {
+      const input = document.getElementById('feedbackTextInput');
+      const text = (input ? input.value : '').trim();
+      if (!text) {
+        showToast('Будь ласка, введіть текст вашої ідеї чи відгуку');
+        return;
+      }
+      const btn = document.getElementById('btnSendFeedback');
+      if (btn) { btn.disabled = true; btn.textContent = 'Надсилання...'; }
+      try {
+        const uid = getTelegramUserId();
+        const u = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe ? window.Telegram.WebApp.initDataUnsafe.user : null;
+        const res = await fetch(`${API_BASE}/api/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: uid,
+            username: u ? u.username || '' : '',
+            full_name: u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : '',
+            text: text,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          haptic('notification_success');
+          showToast('🎉 Дякуємо! Пропозицію передано розробникам, +3 дні підписки зараховано!');
+          if (input) input.value = '';
+          closeFeedbackModal();
+          loadSubscription();
+        } else {
+          showToast('Помилка: ' + (data.error || 'Не вдалося надіслати'));
+        }
+      } catch (err) {
+        console.error('Feedback submit error:', err);
+        showToast('Помилка з\'єднання із сервером');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Надіслати (+3 дні)'; }
+      }
     }
 
     function escapeHtml(str) {

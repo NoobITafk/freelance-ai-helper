@@ -63,6 +63,8 @@ from ..config import (
 from ..freelancehunt_api import FreelancehuntAPIError, get_projects, submit_project_bid
 from ..database import (
     activate_user_subscription,
+    add_bonus_days,
+    add_feedback,
     add_portfolio_case,
     check_database,
     cleanup_old_projects,
@@ -72,6 +74,7 @@ from ..database import (
     get_active_subscribers,
     get_all_subscriptions,
     get_crm_stats,
+    get_market_digest_stats,
     get_night_projects,
     get_portfolio_cases,
     get_portfolio_links,
@@ -514,13 +517,34 @@ async def channel_off_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     await reply_text(update, "⏹ Трансляцію в публічний канал вимкнено.")
 
 
+_group_hot_cooldown: dict[int, float] = {}
+
+
 async def hot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    is_group = update.effective_chat and update.effective_chat.type in ("group", "supergroup")
+    bot_username = context.bot.username or "HUNTua_bot"
+
+    if is_group:
+        chat_id = update.effective_chat.id
+        now = time.time()
+        last_call = _group_hot_cooldown.get(chat_id, 0.0)
+        if now - last_call < 600.0:  # 10 minutes cooldown per group
+            wait_sec = int(600.0 - (now - last_call))
+            wait_min = max(1, (wait_sec + 59) // 60)
+            await reply_text(
+                update,
+                f"⏱ <b>Команда /hot у групах доступна раз на 10 хв</b> (антиспам захист).\n"
+                f"Зачекайте ще {wait_min} хв або запустіть @{bot_username} в особистих повідомленнях — там проекти приходять миттєво!",
+                parse_mode="HTML",
+            )
+            return
+        _group_hot_cooldown[chat_id] = now
+
     recent = get_recent_projects(limit=3)
     if not recent:
         await reply_text(update, "Наразі немає свіжих замовлень у базі. Зачекайте автоперевірки через кілька хвилин!")
         return
 
-    bot_username = context.bot.username or "HUNTua_bot"
     lines = ["🔥 <b>Топ свіжих замовлень Freelancehunt:</b>\n"]
 
     for idx, p in enumerate(recent, 1):
@@ -540,6 +564,131 @@ async def hot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🚀 Запустити персонального бота", url=f"https://t.me/{bot_username}?start=group_hot")]
     ]
     await reply_text(update, "\n".join(lines), reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user:
+        return
+    user_id = str(user.id)
+    text = " ".join(context.args).strip() if context.args else ""
+    bot_username = context.bot.username or "HUNTua_bot"
+
+    if not text:
+        await reply_text(
+            update,
+            f"💡 <b>Маєте ідею, як покращити бота, або помітили баг?</b>\n\n"
+            f"Напишіть нам прямо зараз:\n"
+            f"<code>/feedback Текст вашої ідеї або зауваження</code>\n\n"
+            f"🎁 <b>Бонус:</b> За кожну змістовну пропозицію ми автоматично нараховуємо <b>+3 дні безкоштовної підписки</b> до вашого акаунту!\n\n"
+            f"Також можна надіслати ідею через Mini App у розділі «Параметри».",
+            parse_mode="HTML",
+        )
+        return
+
+    if len(text) > 2000:
+        await reply_text(update, "⚠️ Текст занадто довгий. Будь ласка, скоротіть до 2000 символів.")
+        return
+
+    username = user.username or ""
+    full_name = user.full_name or ""
+    add_feedback(user_id=user_id, text=text, username=username, full_name=full_name)
+
+    try:
+        add_bonus_days(user_id, days=3, reason="feedback")
+    except Exception as bonus_err:
+        logger.debug("Failed adding feedback bonus days: %s", bonus_err)
+
+    if TELEGRAM_CHAT_ID:
+        try:
+            user_label = f"@{username}" if username else (full_name or f"ID: {user_id}")
+            admin_msg = (
+                f"💡 <b>Нова пропозиція / ідея від користувача!</b>\n\n"
+                f"👤 Від: <b>{html.escape(user_label)}</b> (<code>{user_id}</code>)\n"
+                f"🎁 Нараховано бонус: +3 дні підписки\n\n"
+                f"📝 <i>{html.escape(text)}</i>"
+            )
+            await context.bot.send_message(chat_id=int(TELEGRAM_CHAT_ID), text=admin_msg, parse_mode="HTML")
+        except Exception as admin_err:
+            logger.debug("Failed notifying admin of feedback: %s", admin_err)
+
+    reply_msg = (
+        f"🎉 <b>Дякуємо за ваш відгук!</b>\n\n"
+        f"Вашу пропозицію успішно збережено та передано розробнику.\n"
+        f"🎁 Вам нараховано <b>+3 дні повної підписки</b> як подяку за допомогу в розвитку бота!"
+    )
+    await reply_text(update, reply_msg, parse_mode="HTML")
+
+
+async def share_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if not user:
+        return
+    user_id = str(user.id)
+    bot_username = context.bot.username or "HUNTua_bot"
+    ref_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
+
+    share_text = (
+        "🔥 Знайшов крутого AI-бота для Freelancehunt: "
+        "моніторить проекти кожні 3 хв і за 2 сек пише виграшні відгуки з розрахунком ціни! "
+        "Спробуй безкоштовно 7 днів 👇"
+    )
+    share_url = f"https://t.me/share/url?url={ref_link}&text={quote(share_text)}"
+
+    text = (
+        f"📢 <b>Поділитися ботом із колегами (+7 днів за кожного)</b>\n\n"
+        f"Натисніть кнопку нижче, щоб надіслати рекомендацію у свої чати фрілансерів або друзям.\n\n"
+        f"🔗 <b>Ваше партнерське посилання:</b>\n<code>{ref_link}</code>\n\n"
+        f"🎁 За кожного, хто приєднається, ви автоматично отримуєте <b>+7 днів повної підписки</b>!"
+    )
+    keyboard = [
+        [InlineKeyboardButton("📢 Надіслати в чат / другу", url=share_url)],
+        [InlineKeyboardButton("📊 Статистика партнерки", callback_data="sub_open")],
+    ]
+    await reply_text(update, text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
+
+
+async def market_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    stats = get_market_digest_stats()
+    bot_username = context.bot.username or "HUNTua_bot"
+    user = update.effective_user
+    user_id = str(user.id) if user else ""
+    ref_link = f"https://t.me/{bot_username}?start=ref_{user_id}" if user_id else f"https://t.me/{bot_username}"
+
+    total = stats.get("total_projects", 0)
+    sent = stats.get("sent_projects", 0)
+    deals = stats.get("completed_deals_count", 0)
+    deals_sum = stats.get("completed_deals_sum", 0.0)
+    top = stats.get("recent_top", [])
+
+    lines = [
+        "📊 <b>Пульс біржі Freelancehunt (Аналітика AI Helper):</b>\n",
+        f"🔍 Оброблено замовлень у базі: <b>{total}</b>",
+        f"🎯 Релевантних IT-проектів: <b>{sent}</b>",
+        f"💰 Зафіксовано угод у CRM: <b>{deals}</b> (на суму <b>{deals_sum:,.0f} грн</b>)\n",
+    ]
+
+    if top:
+        lines.append("🔥 <b>Останні гарячі замовлення з високим Score:</b>")
+        for idx, p in enumerate(top[:3], 1):
+            t = p.get("title", "")
+            b = p.get("budget") or "Договірний"
+            s = p.get("score", 0)
+            lines.append(f"{idx}. {html.escape(t[:45])} — <b>{html.escape(str(b))}</b> ({s}%)")
+        lines.append("")
+
+    lines.append(f"⚡️ <i>Отримуйте такі замовлення миттєво з готовою ставкою в @{bot_username}!</i>")
+
+    share_text = f"📊 Пульс біржі Freelancehunt: {total} проектів у моніторингу! AI помічник для ставок: {ref_link}"
+    share_url = f"https://t.me/share/url?url={ref_link}&text={quote(share_text)}"
+
+    keyboard = [
+        [InlineKeyboardButton("📢 Поділитися аналітикою в чат", url=share_url)],
+        [InlineKeyboardButton("🚀 Запустити пошук проектів", url=f"https://t.me/{bot_username}?start=market")]
+    ]
+
+    await reply_text(update, "\n".join(lines), reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="HTML")
+
 
 
 async def group_added_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1003,6 +1152,17 @@ async def auto_check(context: ContextTypes.DEFAULT_TYPE):
 async def auto_on(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.effective_chat:
         logger.warning("Cannot enable auto check: update has no effective_chat")
+        return
+
+    if update.effective_chat.type in ("group", "supergroup"):
+        bot_username = context.bot.username or "HUNTua_bot"
+        await reply_text(
+            update,
+            f"⚠️ <b>Автоперевірка доступна лише в особистих повідомленнях!</b>\n\n"
+            f"У групових чатах автоматичну розсилку кожні 3 хвилини вимкнено, щоб уникнути спаму та бану бота.\n"
+            f"👉 Запустіть бота особисто: @{bot_username}",
+            parse_mode="HTML",
+        )
         return
 
     if not context.job_queue:
